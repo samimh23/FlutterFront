@@ -1,33 +1,34 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-import 'ConstForResponsive.dart';
+class ResponsiveLayout {
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < 650;
 
-class ResponsiveLayout extends StatelessWidget {
+  static bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 650 &&
+          MediaQuery.of(context).size.width < 1100;
 
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1100;
 
-  final Widget mobilebody;
-  final Widget desktopbody;
-  
-  const ResponsiveLayout({
-    super.key,
-    required this.mobilebody,
-    required this.desktopbody
-    });
+  static double getWidth(BuildContext context) =>
+      MediaQuery.of(context).size.width;
 
-  static bool isMobile  (BuildContext context)=>
-    MediaQuery.sizeOf(context).width<600;
+  static double getHeight(BuildContext context) =>
+      MediaQuery.of(context).size.height;
 
-  static bool isDesktop (BuildContext context)=>
-      MediaQuery.sizeOf(context).width<1280 &&
-          MediaQuery.sizeOf(context).width<904;
-
-  @override
-  Widget build(BuildContext context) {
-    final Size size = MediaQuery.sizeOf(context);
-    if (size.width >= DesktopWidh) {
-      return desktopbody;
+  static Widget builder({
+    required BuildContext context,
+    required Widget mobile,
+    Widget? tablet,
+    Widget? desktop,
+  }) {
+    if (isDesktop(context) && desktop != null) {
+      return desktop;
+    } else if (isTablet(context) && tablet != null) {
+      return tablet;
     } else {
-      return mobilebody;
+      return mobile;
     }
   }
 }

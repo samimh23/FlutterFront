@@ -1,3 +1,4 @@
+import '../../data/models/create_user_dto.dart';
 import '../entities/user.dart';
 
 abstract class AuthRepository {
@@ -5,6 +6,8 @@ abstract class AuthRepository {
     required String email,
     required String password,
   });
+  Future<User> registerUser(CreateUserDto createUserDto);
+
 
 
 

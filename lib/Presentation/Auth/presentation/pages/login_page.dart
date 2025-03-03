@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../../../Core/Utils/validators.dart';
+import '../../../../responsive/responsive_layout.dart';
 import '../controller/login_controller.dart';
 
 class LoginPage extends StatelessWidget {
@@ -10,27 +12,76 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: ResponsiveLayout.isMobile(context)
+          ? AppBar(title: const Text('Login'))
+          : null,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Center(
-            child: SingleChildScrollView(
+        child: ResponsiveLayout.builder(
+          context: context,
+          mobile: _MobileLayout(),
+          tablet: _TabletLayout(),
+          desktop: _DesktopLayout(),
+        ),
+      ),
+    );
+  }
+}
+
+// Mobile layout view
+class _MobileLayout extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Welcome Back',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            _LoginForm(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Tablet layout view
+class _TabletLayout extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        child: SizedBox(
+          width: ResponsiveLayout.getWidth(context) * 0.7,
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo or App Name
                   const Text(
-                    'Welcome Back',
+                    'Sign In to Your Account',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 48),
-
-                  // Login Form
+                  const SizedBox(height: 40),
                   _LoginForm(),
                 ],
               ),
@@ -38,6 +89,98 @@ class LoginPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// Desktop layout view
+class _DesktopLayout extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        // Left side - Brand/Information panel
+        Expanded(
+          flex: 5,
+          child: Container(
+            color: Theme.of(context).primaryColor,
+            child: Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Welcome to\nHanouty',
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Sign in to access your account and continue shopping.',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  // Add brand logo or illustration here
+                  const Spacer(),
+                  Row(
+                    children: [
+                      const Text(
+                        'Don\'t have an account?',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pushReplacementNamed('/register'),
+                        child: const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Right side - Login form
+        Expanded(
+          flex: 7,
+          child: Center(
+            child: Container(
+              width: ResponsiveLayout.getWidth(context) * 0.35,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 40.0,
+                  vertical: 40.0
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Sign In',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  _LoginForm(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -53,6 +196,8 @@ class _LoginFormState extends State<_LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Form(
       key: _formKey,
       child: Consumer<AuthProvider>(
@@ -61,44 +206,30 @@ class _LoginFormState extends State<_LoginForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Email Field
-              TextFormField(
+              _buildTextField(
                 controller: authProvider.emailController,
+                label: 'Email',
+                hint: 'Enter your email',
+                icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
-                ),
                 validator: Validators.validateEmail,
                 enabled: authProvider.status != AuthStatus.loading,
               ),
               const SizedBox(height: 16),
 
               // Password Field
-              TextFormField(
-                controller: authProvider.passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
+              _buildPasswordField(authProvider),
+              const SizedBox(height: 16),
+
+              // Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    // Navigate to forgot password page
+                  },
+                  child: const Text('Forgot Password?'),
                 ),
-                validator: Validators.validatePassword,
-                enabled: authProvider.status != AuthStatus.loading,
               ),
               const SizedBox(height: 24),
 
@@ -119,6 +250,7 @@ class _LoginFormState extends State<_LoginForm> {
               // Login Button
               SizedBox(
                 height: 50,
+                width: isDesktop ? 300 : double.infinity,
                 child: ElevatedButton(
                   onPressed: authProvider.status == AuthStatus.loading
                       ? null
@@ -127,6 +259,8 @@ class _LoginFormState extends State<_LoginForm> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
                   ),
                   child: authProvider.status == AuthStatus.loading
                       ? const SizedBox(
@@ -134,10 +268,11 @@ class _LoginFormState extends State<_LoginForm> {
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
+                      color: Colors.white,
                     ),
                   )
                       : const Text(
-                    'Login',
+                    'Sign In',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -145,6 +280,23 @@ class _LoginFormState extends State<_LoginForm> {
                   ),
                 ),
               ),
+
+              // Register Link (only for mobile and tablet)
+              if (!isDesktop) ...[
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Don\'t have an account?'),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/register');
+                      },
+                      child: const Text('Create Account'),
+                    ),
+                  ],
+                ),
+              ],
             ],
           );
         },
@@ -157,14 +309,78 @@ class _LoginFormState extends State<_LoginForm> {
       final success = await authProvider.login();
       if (success && mounted) {
         // Navigate to home page or dashboard
-        // You might want to use a route name constant
         Navigator.of(context).pushReplacementNamed('/home');
       }
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  // Helper method for creating text fields
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    bool enabled = true,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor),
+        ),
+      ),
+      validator: validator,
+      enabled: enabled,
+    );
+  }
+
+  // Helper method for creating password field
+  Widget _buildPasswordField(AuthProvider authProvider) {
+    return TextFormField(
+      controller: authProvider.passwordController,
+      obscureText: _obscurePassword,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        hintText: 'Enter your password',
+        prefixIcon: const Icon(Icons.lock_outline),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          ),
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor),
+        ),
+      ),
+      validator: Validators.validatePassword,
+      enabled: authProvider.status != AuthStatus.loading,
+    );
   }
 }

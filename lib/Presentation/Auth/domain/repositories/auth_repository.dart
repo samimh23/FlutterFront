@@ -7,7 +7,19 @@ abstract class AuthRepository {
     required String password,
   });
   Future<User> registerUser(CreateUserDto createUserDto);
+  Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  });
 
+  Future<Map<String, dynamic>> verifyResetCode({
+    required String resetToken,
+    required String code,
+  });
+
+  Future<Map<String, dynamic>> resetPassword({
+    required String verifiedToken,
+    required String newPassword,
+  });
 
 
 

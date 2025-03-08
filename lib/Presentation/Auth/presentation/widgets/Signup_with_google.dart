@@ -24,7 +24,7 @@ class _SignupWithGoogleState extends State<SignupWithGoogle> {
     borderRadius: BorderRadius.circular(15),
     side: const BorderSide(color: Colors.grey),)
     ),
-          child: Row(
+          child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.face),

@@ -42,5 +42,46 @@ class AuthRepositoryImpl implements AuthRepository {
 
    }
 
+  @override
+  Future<Map<String, dynamic>> forgotPassword({required String email}) async {
+    final response = await _apiClient.post(
+      endpoint:  ApiEndpoints.forgetPasswordEndpoint,
+      data: {
+        'email': email,
+      },
+    );
+    return response;
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyResetCode({
+    required String resetToken,
+    required String code,
+  }) async {
+    final response = await _apiClient.post(
+      endpoint:  ApiEndpoints.verifyResetCodeEndpoint,
+      data: {
+        'resetToken': resetToken,
+        'code': code,
+      },
+    );
+    return response;
+  }
+
+  @override
+  Future<Map<String, dynamic>> resetPassword({
+    required String verifiedToken,
+    required String newPassword,
+  }) async {
+    final response = await _apiClient.post(
+     endpoint:  ApiEndpoints.resetPasswordEndpoint,
+      data: {
+        'verifiedToken': verifiedToken,
+        'newPassword': newPassword,
+      },
+    );
+    return response;
+  }
+
 
 }

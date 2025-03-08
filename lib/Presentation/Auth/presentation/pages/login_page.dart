@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/Auth/presentation/pages/password_reset_page.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -7,7 +8,7 @@ import '../../../../responsive/responsive_layout.dart';
 import '../controller/login_controller.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -220,17 +221,34 @@ class _LoginFormState extends State<_LoginForm> {
               // Password Field
               _buildPasswordField(authProvider),
               const SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: authProvider.rememberMe,
+                    onChanged: (value) {
+                      authProvider.setRememberMe(value ?? false);
+                    },
+                    activeColor: Theme.of(context).primaryColor,
+                  ),
+                  const Text('Remember me'),
+                  const Spacer(),
+                  // Forgot Password Link
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PasswordResetPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('Forgot Password?'),
+                  ),
+                ],
+              ),
 
               // Forgot Password Link
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    // Navigate to forgot password page
-                  },
-                  child: const Text('Forgot Password?'),
-                ),
-              ),
+          // Forgot Password Link
               const SizedBox(height: 24),
 
               // Error Message

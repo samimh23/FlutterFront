@@ -20,6 +20,9 @@ class AuthProvider extends ChangeNotifier {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  // emember checkbox  state
+  bool rememberMe=false ;
+
   AuthStatus _status = AuthStatus.initial;
   String? _errorMessage;
 
@@ -32,7 +35,11 @@ class AuthProvider extends ChangeNotifier {
     SecureStorageService? secureStorageService,
   }) :
         _loginUseCase = loginUseCase,
-        _secureStorageService = secureStorageService ?? SecureStorageService();
+        _secureStorageService = secureStorageService ?? SecureStorageService(){
+    _checkSavedCredentials();
+
+  }
+
 
   // Clean up controllers when no longer needed
   @override
@@ -40,6 +47,28 @@ class AuthProvider extends ChangeNotifier {
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+  void setRememberMe(bool value) {
+    rememberMe = value;
+    notifyListeners();
+  }
+
+  Future<void> _checkSavedCredentials() async {
+    final savedEmail = await _secureStorageService.getEmail();
+    final savedPassword = await _secureStorageService.getPassword();
+    final isRemembered = await _secureStorageService.getRememberMe();
+
+    if (isRemembered == 'true' && savedEmail != null && savedPassword != null) {
+      emailController.text = savedEmail;
+      passwordController.text = savedPassword;
+      rememberMe = true;
+
+      // Optionally auto-login the user
+      // Uncomment the next line if you want to automatically log in the user
+      // await login();
+
+      notifyListeners();
+    }
   }
 
   Future<bool> login() async {
@@ -69,6 +98,18 @@ class AuthProvider extends ChangeNotifier {
       await _secureStorageService.saveAccessToken(authresponse.accessToken);
       await _secureStorageService.saveRefreshToken(authresponse.refreshToken);
 
+      if (rememberMe) {
+        await _secureStorageService.saveEmail(email);
+        await _secureStorageService.savePassword(password);
+        await _secureStorageService.saveRememberMe('true');
+        final savedEmail = await _secureStorageService.getEmail();
+        final savedRememberMe = await _secureStorageService.getRememberMe();
+        print('Verification - Email: $savedEmail, Remember Me: $savedRememberMe');
+      } else {
+        await _secureStorageService.clearSavedCredentials();
+      }
+
+
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
@@ -83,5 +124,19 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+
+
+  }
+  Future<void> logout() async {
+    // Clear auth tokens
+    await _secureStorageService.clearTokens();
+
+    // If rememberMe is not checked, also clear the saved credentials
+    if (!rememberMe) {
+      await _secureStorageService.clearSavedCredentials();
+    }
+
+    _status = AuthStatus.initial;
+    notifyListeners();
   }
 }

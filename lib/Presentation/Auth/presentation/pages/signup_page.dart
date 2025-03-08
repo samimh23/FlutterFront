@@ -701,9 +701,9 @@ class _RegisterFormState extends State<_RegisterForm> {
                 fit: BoxFit.cover,
               ),
             )
-                : Column(
+                : const Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
+              children: [
                 Icon(Icons.upload_file, size: 30),
                 SizedBox(height: 8),
                 Text('Tap to upload patent image'),

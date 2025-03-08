@@ -8,7 +8,7 @@ class ApiEndpoints {
   static const String signupEndpint ='/users/signup';
 
   // Password reset endpoints
-  static const String forgetPasswordEndpoint = '/users/forget-password';
+  static const String forgetPasswordEndpoint = '/users/forgot-password';
   static const String verifyResetCodeEndpoint = '/users/verify-reset-code';
   static const String resetPasswordEndpoint = '/users/reset-password';
 

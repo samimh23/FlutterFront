@@ -83,5 +83,77 @@ class AuthRepositoryImpl implements AuthRepository {
     return response;
   }
 
+  // Get profile method
+
+  @override
+  Future<Map<String, dynamic>> getProfile() async {
+    final response = await _apiClient.get(endpoint: ApiEndpoints.getprofile);
+    return response;
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> updatedData) async {
+    final response = await _apiClient.put(
+      endpoint: ApiEndpoints.updateProfileEndpoint,  // Update with the actual endpoint
+      data: updatedData,
+    );
+    return response;
+  }
+
+  @override
+  Future<Map<String, dynamic>> deleteProfilePicture() async {
+    final response = await _apiClient.delete(endpoint: ApiEndpoints.removeProfilePictureEndpoint);
+    return response;
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyTwoFactorAuth({
+    required String userId,
+    required String twoFactorCode,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        endpoint: ApiEndpoints.verifyTwoFactorEndpoint,
+        data: {
+          'userId': userId,
+          'twoFactorCode': twoFactorCode,
+        },
+      );
+      return response;
+    } catch (e) {
+      rethrow; // Let the error handler in ApiClient handle this
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> generateTwoFactorSecret() async {
+    try {
+      final response = await _apiClient.get(endpoint: ApiEndpoints.generateTwoFactorSecretEndpoint);
+      return response;
+    } catch (e) {
+      rethrow; // Let the error handler in ApiClient handle this
+    }
+  }
+
+  @override
+  Future<void> enableTwoFactor(String verificationCode) async {
+    try {
+      await _apiClient.post(
+        endpoint: ApiEndpoints.enableTwoFactorEndpoint,
+        data: {'twoFactorCode': verificationCode},
+      );
+    } catch (e) {
+      rethrow; // Let the error handler in ApiClient handle this
+    }
+  }
+
+  @override
+  Future<void> disableTwoFactor() async {
+    try {
+      await _apiClient.post(endpoint: ApiEndpoints.disableTwoFactorEndpoint, data: { });
+    } catch (e) {
+      rethrow; // Let the error handler in ApiClient handle this
+    }
+  }
 
 }

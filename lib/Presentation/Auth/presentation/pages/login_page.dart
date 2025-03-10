@@ -326,8 +326,8 @@ class _LoginFormState extends State<_LoginForm> {
     if (_formKey.currentState?.validate() ?? false) {
       final success = await authProvider.login();
       if (success && mounted) {
-        // Navigate to home page or dashboard
-        Navigator.of(context).pushReplacementNamed('/home');
+        // Use role-based navigation instead of fixed navigation to '/home'
+        authProvider.navigateBasedOnRole(context);
       }
     }
   }

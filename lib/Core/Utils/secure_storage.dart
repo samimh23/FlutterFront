@@ -16,6 +16,8 @@ class SecureStorageService {
   static const String emailKey = 'user_email';
   static const String passwordKey = 'user_password';
   static const String rememberMeKey = 'remember_me';
+  static const String userIdKey = 'user_id'; // Added for user ID
+
 
   // Authentication token methods
   Future<void> saveAccessToken(String token) async {
@@ -33,10 +35,20 @@ class SecureStorageService {
   Future<String?> getRefreshToken() async {
     return await _storage.read(key: refreshTokenKey);
   }
+  // User ID methods
+  Future<void> saveUserId(String userId) async {
+    await _storage.write(key: userIdKey, value: userId);
+  }
+
+  Future<String?> getUserId() async {
+    return await _storage.read(key: userIdKey);
+  }
 
   Future<void> clearTokens() async {
     await _storage.delete(key: accessTokenKey);
     await _storage.delete(key: refreshTokenKey);
+    await _storage.delete(key: userIdKey); // Clear user ID as well
+
   }
 
   // Remember Me functionality methods

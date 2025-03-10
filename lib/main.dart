@@ -1,10 +1,30 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
+import 'package:hanouty/Core/theme/theme_provider.dart';
 import 'package:hanouty/Presentation/Auth/domain/use_cases/verify_reset_code_usecase.dart';
 import 'package:hanouty/Presentation/Auth/presentation/controller/password_reset_controller.dart';
-import 'package:hanouty/responsive/Homepage.dart';
+import 'package:hanouty/Presentation/Farm_Crop/Presentation_Layer/pages/farm_main_screen.dart';
+import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote_datasources.dart';
+import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/repositories/normamarket_domain_repository.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/create_fractional_nft.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/give_shares.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_add.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_delete.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_getall.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_getbyid.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_update.dart';
+import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/dashboard_page.dart';
+import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
+import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
+import 'package:hanouty/Presentation/product/presentation/pages/home_screen.dart';
+import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
+import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
+import 'package:hanouty/nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'Core/api/Api_Serice.dart';
+import 'Core/theme/theme_data.dart';
 import 'Presentation/Auth/data/repositories/auth_repository_impl.dart';
 import 'Presentation/Auth/domain/repositories/auth_repository.dart';
 import 'Presentation/Auth/domain/use_cases/forget_password_usecase.dart';
@@ -12,13 +32,36 @@ import 'Presentation/Auth/domain/use_cases/login_usecase.dart';
 import 'Presentation/Auth/domain/use_cases/register_use_case.dart';
 import 'Presentation/Auth/domain/use_cases/reset_password_use_case.dart';
 import 'Presentation/Auth/presentation/controller/login_controller.dart';
+import 'Presentation/Auth/presentation/controller/profilep^rovider.dart';
 import 'Presentation/Auth/presentation/controller/register_controler.dart';
+import 'Presentation/Auth/presentation/pages/farmerscreen.dart';
 import 'Presentation/Auth/presentation/pages/login_page.dart';
 import 'Presentation/Auth/presentation/pages/signup_page.dart';
+import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
+import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
+import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/add_farm_crop.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/calculate_total_expenses.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/delete_farm_crop.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_all_farm_crops.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_id.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/update_farm_crop.dart';
+import 'Presentation/Farm_Crop/Presentation_Layer/viewmodels/farm_crop_viewmodel.dart';
+import 'Presentation/Sales/Data_Layer/datasources/Sale_Remote_DataSource.dart';
+import 'Presentation/Sales/Data_Layer/repositories/sale_repository_impl.dart';
+import 'Presentation/Sales/Domain_Layer/usecases/add_sale.dart';
+import 'Presentation/Sales/Domain_Layer/usecases/delete_sale.dart';
+import 'Presentation/Sales/Domain_Layer/usecases/get_all_sales.dart';
+import 'Presentation/Sales/Domain_Layer/usecases/get_sale_by_id.dart';
+import 'Presentation/Sales/Domain_Layer/usecases/get_sales_by_crop_id.dart';
+import 'Presentation/Sales/Domain_Layer/usecases/update_sale.dart';
+import 'Presentation/Sales/Presentation_Layer/viewmodels/sale_viewmodel.dart';
+import 'injection_container.dart' as di;
 
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
+  await di.init();
 
   // Check for saved credentials
   final secureStorageService = SecureStorageService();
@@ -53,50 +96,246 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Create instances of dependencies
     final ApiClient apiClient = ApiClient();
-    final AuthRepository authRepository = AuthRepositoryImpl(apiClient: apiClient);
+    final AuthRepository authRepository = AuthRepositoryImpl(
+        apiClient: apiClient);
     final LoginUseCase loginUseCase = LoginUseCase(authRepository);
     final RegisterUseCase registerUseCase = RegisterUseCase(authRepository);
-    final ForgotPasswordUseCase forgotPasswordUseCase = ForgotPasswordUseCase(authRepository);
-    final VerifyResetCodeUseCase verifyResetCodeUseCase = VerifyResetCodeUseCase(authRepository);
-    final ResetPasswordUseCase resetPasswordUseCase = ResetPasswordUseCase(authRepository);
+    final ForgotPasswordUseCase forgotPasswordUseCase = ForgotPasswordUseCase(
+        authRepository);
+    final VerifyResetCodeUseCase verifyResetCodeUseCase = VerifyResetCodeUseCase(
+        authRepository);
+    final ResetPasswordUseCase resetPasswordUseCase = ResetPasswordUseCase(
+        authRepository);
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (context) => AuthProvider(
-            loginUseCase: loginUseCase,
-            secureStorageService: secureStorageService,
+            //alaaa
+        Provider<Dio>(
+          create: (_) => Dio(BaseOptions(
+            // For web deployment, using relative URL to match the hosting domain
+            baseUrl: 'http://localhost:3000/normal',
+            connectTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 10),
+            contentType: 'application/json',
+          )),
+        ),
+
+        // Data sources
+        Provider<NormalMarketRemoteDataSource>(
+          create: (context) => NormalMarketRemoteDataSourceImpl(
+            dio: context.read<Dio>(),
+              secureStorageService
           ),
         ),
-        ChangeNotifierProvider(
 
-          create: (context) => RegisterProvider(
-
-            registerUseCase: registerUseCase,
-
+        // Repositories
+        Provider<NormalMarketRepository>(
+          create: (context) => NormalMarketRepositoryImpl(
+            remoteDataSource: context.read<NormalMarketRemoteDataSource>(),
           ),
+        ),
+
+        // Use cases for normal markets
+        Provider<GetNormalMarkets>(
+          create: (context) =>
+              GetNormalMarkets(context.read<NormalMarketRepository>()),
+        ),
+        Provider<GetNormalMarketById>(
+          create: (context) =>
+              GetNormalMarketById(context.read<NormalMarketRepository>()),
+        ),
+        Provider<CreateNormalMarket>(
+          create: (context) =>
+              CreateNormalMarket(context.read<NormalMarketRepository>()),
+        ),
+        Provider<UpdateNormalMarket>(
+          create: (context) =>
+              UpdateNormalMarket(context.read<NormalMarketRepository>()),
+        ),
+        Provider<DeleteNormalMarket>(
+          create: (context) =>
+              DeleteNormalMarket(context.read<NormalMarketRepository>()),
+        ),
+        Provider<ShareFractionalNFT>(
+          create: (context) =>
+              ShareFractionalNFT(context.read<NormalMarketRepository>()),
+        ),
+        Provider<CreateFractionalNFT>(
+          create: (context) =>
+              CreateFractionalNFT(context.read<NormalMarketRepository>()),
+        ),
+
+        // Application state provider - initialized immediately with lazy: false
+        ChangeNotifierProvider<NormalMarketProvider>(
+          create: (context) => NormalMarketProvider(
+            getNormalMarkets: context.read<GetNormalMarkets>(),
+            getNormalMarketById: context.read<GetNormalMarketById>(),
+            createNormalMarket: context.read<CreateNormalMarket>(),
+            updateNormalMarket: context.read<UpdateNormalMarket>(),
+            deleteNormalMarket: context.read<DeleteNormalMarket>(),
+            shareFractionalNFT: context.read<ShareFractionalNFT>(),
+            createFractionalNFT: context.read<CreateFractionalNFT>(),
+          ),
+          lazy: false,
+        ),
+
+        //alaaaa
+
+
+        //ouseema
+
+        ChangeNotifierProvider(
+          create: (_) => di.sl<ProductProvider>(),
 
         ),
         ChangeNotifierProvider(
-          create: (context) => PasswordResetProvider(
-            forgotPasswordUseCase: forgotPasswordUseCase,
-            verifyResetCodeUseCase: verifyResetCodeUseCase,
-            resetPasswordUseCase: resetPasswordUseCase,
+          create: (_) => di.sl<CartProvider>(),
+
+        ),
+        ChangeNotifierProvider(
+          create: (_) => di.sl<OrderProvider>(),
+
+        ),
+
+        // oussema
+
+        //ahmed
+
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+        ),
+
+        // Farm crop providers
+        Provider<FarmCropRemoteDataSource>(
+          create: (_) => FarmCropRemoteDataSource(),
+        ),
+        Provider<FarmCropRepositoryImpl>(
+          create: (context) => FarmCropRepositoryImpl(
+            remoteDataSource: context.read<FarmCropRemoteDataSource>(),
           ),
+        ),
+        Provider<GetAllFarmCrops>(
+          create: (context) => GetAllFarmCrops(context.read<FarmCropRepositoryImpl>()),
+        ),
+        Provider<GetFarmCropById>(
+          create: (context) => GetFarmCropById(context.read<FarmCropRepositoryImpl>()),
+        ),
+        Provider<AddFarmCrop>(
+          create: (context) => AddFarmCrop(context.read<FarmCropRepositoryImpl>()),
+        ),
+        Provider<UpdateFarmCrop>(
+          create: (context) => UpdateFarmCrop(context.read<FarmCropRepositoryImpl>()),
+        ),
+        Provider<DeleteFarmCrop>(
+          create: (context) => DeleteFarmCrop(context.read<FarmCropRepositoryImpl>()),
+        ),
+        Provider<CalculateTotalExpenses>(
+          create: (context) => CalculateTotalExpenses(),
+        ),
+        ChangeNotifierProvider<FarmCropViewModel>(
+          create: (context) => FarmCropViewModel(
+            getAllFarmCrops: context.read<GetAllFarmCrops>(),
+            getFarmCropById: context.read<GetFarmCropById>(),
+            addFarmCrop: context.read<AddFarmCrop>(),
+            updateFarmCrop: context.read<UpdateFarmCrop>(),
+            deleteFarmCrop: context.read<DeleteFarmCrop>(),
+            // calculateTotalExpenses: context.read<CalculateTotalExpenses>(),
+          ),
+          lazy: false,
+        ),
+        // Sale providers
+        Provider<SaleRemoteDataSource>(
+          create: (_) => SaleRemoteDataSource(),
+        ),
+        Provider<SaleRepositoryImpl>(
+          create: (context) => SaleRepositoryImpl(
+            remoteDataSource: context.read<SaleRemoteDataSource>(),
+          ),
+        ),
+        Provider<GetAllSales>(
+          create: (context) => GetAllSales(context.read<SaleRepositoryImpl>()),
+        ),
+        Provider<GetSaleById>(
+          create: (context) => GetSaleById(context.read<SaleRepositoryImpl>()),
+        ),
+        Provider<GetSalesByCropId>(
+          create: (context) => GetSalesByCropId(context.read<SaleRepositoryImpl>()),
+        ),
+        Provider<AddSale>(
+          create: (context) => AddSale(context.read<SaleRepositoryImpl>()),
+        ),
+        Provider<UpdateSale>(
+          create: (context) => UpdateSale(context.read<SaleRepositoryImpl>()),
+        ),
+        Provider<DeleteSale>(
+          create: (context) => DeleteSale(context.read<SaleRepositoryImpl>()),
+        ),
+
+        ChangeNotifierProvider<SaleViewModel>(
+          create: (context) => SaleViewModel(
+            getAllSales: context.read<GetAllSales>(),
+            getSaleById: context.read<GetSaleById>(),
+            getSalesByCropId: context.read<GetSalesByCropId>(),
+            addSale: context.read<AddSale>(),
+            updateSale: context.read<UpdateSale>(),
+            deleteSale: context.read<DeleteSale>(),
+            getFarmCropById: context.read<GetFarmCropById>(),
+          ),
+        ),
+
+        //ahmedd
+
+        ChangeNotifierProvider(
+          create: (context) =>
+              AuthProvider(
+                loginUseCase: loginUseCase,
+                secureStorageService: secureStorageService,
+              ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              RegisterProvider(
+                registerUseCase: registerUseCase,
+              ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              PasswordResetProvider(
+                forgotPasswordUseCase: forgotPasswordUseCase,
+                verifyResetCodeUseCase: verifyResetCodeUseCase,
+                resetPasswordUseCase: resetPasswordUseCase,
+              ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ProfileProvider(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Hanouty',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
+      child: Builder(
+        builder: (context) {
+          return Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) {
+                print('Building MaterialApp with themeMode: ${themeProvider
+                    .themeMode}');
+
+
+                return MaterialApp(
+                  title: 'Hanouty',
+                  theme:   lightTheme,
+                  themeMode: themeProvider.themeMode,
+                  initialRoute: initialRoute,
+                  routes: {
+                    '/login': (context) => const LoginPage(),
+                    '/register': (context) => const RegisterPage(),
+                    '/home': (context) => const MainScreen(),
+                    '/farmer': (context) => const FarmMainScreen(),
+                    '/merchant': (context) => const DashboardPage(),
+                  },
+                );
+              }
+          );
+        }
         ),
-        initialRoute: initialRoute,
-        routes: { 
-          '/login': (context) => const LoginPage(),
-          '/register': (context) => const RegisterPage(),
-          '/home': (context) => const Homepage(),
-        },
-      ),
     );
   }
+
 }

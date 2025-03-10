@@ -6,7 +6,9 @@ abstract class AuthRepository {
     required String email,
     required String password,
   });
+
   Future<User> registerUser(CreateUserDto createUserDto);
+
   Future<Map<String, dynamic>> forgotPassword({
     required String email,
   });
@@ -21,6 +23,20 @@ abstract class AuthRepository {
     required String newPassword,
   });
 
+  // Add get profile method
+  Future<Map<String, dynamic>> getProfile();
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> updatedData);
+  Future<Map<String, dynamic>> deleteProfilePicture();
 
 
+  Future<Map<String, dynamic>> verifyTwoFactorAuth({
+    required String userId,
+    required String twoFactorCode,
+  });
+
+  Future<Map<String, dynamic>> generateTwoFactorSecret();
+
+  Future<void> enableTwoFactor(String verificationCode);
+
+  Future<void> disableTwoFactor();
 }

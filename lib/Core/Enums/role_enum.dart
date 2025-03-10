@@ -2,7 +2,10 @@ enum Role {
   Admin,
   Client,
   Deliverer,
-  Shop
+  Merchant,
+  Shop,
+  Farmer,
+  Wholesaler
   // Add other roles as needed
 }
 

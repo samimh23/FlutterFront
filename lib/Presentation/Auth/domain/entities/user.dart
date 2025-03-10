@@ -4,7 +4,7 @@ import '../../../../Core/Enums/role_enum.dart';
 
 class User {
   final String? id;
-  final String? firstName;
+  final String? name;
   final String? lastName;
   final String email;
   final List<int>? phoneNumbers;
@@ -16,7 +16,7 @@ class User {
 
   User({
     this.id,
-    this.firstName,
+    this.name,
     this.lastName,
     required this.email,
     this.phoneNumbers,
@@ -30,7 +30,7 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['_id'] ?? json['id'],
-      firstName: json['firstName'],
+      name: json['name'],
       lastName: json['lastName'],
       email: json['email'],
       phoneNumbers: json['phonenumbers'] != null
@@ -56,7 +56,7 @@ class User {
     };
 
     if (id != null) data['id'] = id;
-    if (firstName != null) data['firstName'] = firstName;
+    if (name != null) data['firstName'] = name;
     if (lastName != null) data['lastName'] = lastName;
     if (phoneNumbers != null) data['phonenumbers'] = phoneNumbers;
     if (cin != null) data['cin'] = cin;
@@ -69,7 +69,7 @@ class User {
   // Create a copy with optional updated fields
   User copyWith({
     String? id,
-    String? firstName,
+    String? name,
     String? lastName,
     String? email,
     List<int>? phoneNumbers,
@@ -81,7 +81,7 @@ class User {
   }) {
     return User(
       id: id ?? this.id,
-      firstName: firstName ?? this.firstName,
+      name: name ?? this.name,
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       phoneNumbers: phoneNumbers ?? this.phoneNumbers,

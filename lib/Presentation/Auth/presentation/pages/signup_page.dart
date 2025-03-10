@@ -489,7 +489,7 @@ class _RegisterFormState extends State<_RegisterForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful! Please log in.')),
         );
-        Navigator.of(context).pop(); // Return to login page
+        Navigator.of(context).pushNamed('/login');// Return to login page
       }
     }
   }

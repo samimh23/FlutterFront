@@ -106,54 +106,31 @@ class AuthRepositoryImpl implements AuthRepository {
     return response;
   }
 
+  // Two-factor authentication methods
   @override
   Future<Map<String, dynamic>> verifyTwoFactorAuth({
     required String userId,
     required String twoFactorCode,
   }) async {
-    try {
-      final response = await _apiClient.post(
-        endpoint: ApiEndpoints.verifyTwoFactorEndpoint,
-        data: {
-          'userId': userId,
-          'twoFactorCode': twoFactorCode,
-        },
-      );
-      return response;
-    } catch (e) {
-      rethrow; // Let the error handler in ApiClient handle this
-    }
+    return await _apiClient.verifyTwoFactorAuth(
+      userId: userId,
+      twoFactorCode: twoFactorCode,
+    );
   }
 
   @override
   Future<Map<String, dynamic>> generateTwoFactorSecret() async {
-    try {
-      final response = await _apiClient.get(endpoint: ApiEndpoints.generateTwoFactorSecretEndpoint);
-      return response;
-    } catch (e) {
-      rethrow; // Let the error handler in ApiClient handle this
-    }
+    return await _apiClient.generateTwoFactorSecret();
   }
 
   @override
-  Future<void> enableTwoFactor(String verificationCode) async {
-    try {
-      await _apiClient.post(
-        endpoint: ApiEndpoints.enableTwoFactorEndpoint,
-        data: {'twoFactorCode': verificationCode},
-      );
-    } catch (e) {
-      rethrow; // Let the error handler in ApiClient handle this
-    }
+  Future<Map<String, dynamic>> enableTwoFactor(String verificationCode) async {
+    return await _apiClient.enableTwoFactor(verificationCode);
   }
 
   @override
-  Future<void> disableTwoFactor() async {
-    try {
-      await _apiClient.post(endpoint: ApiEndpoints.disableTwoFactorEndpoint, data: { });
-    } catch (e) {
-      rethrow; // Let the error handler in ApiClient handle this
-    }
+  Future<Map<String, dynamic>> disableTwoFactor() async {
+    return await _apiClient.disableTwoFactor();
   }
 
 }

@@ -2,13 +2,13 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/Auth/presentation/controller/profilep%5Erovider.dart';
+import 'package:hanouty/Presentation/Auth/presentation/pages/SetupTwoFactorAuthScreen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../Subscription/presentation/manager/subsservice.dart';
 import '../../data/models/user.dart';
-import '../controller/profilep^rovider.dart';
-import '../controller/profileservice.dart';
-import '../../../../Core/Utils/uploadservice.dart';
+
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -80,12 +80,19 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
     }
   }
 
+  // Navigate to 2FA setup screen
+  void _navigateToTwoFactorSetup() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SetupTwoFactorAuthScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-      ),
       body: Consumer<ProfileProvider>(
         builder: (context, provider, child) {
           if (provider.status == ProfileStatus.loading) {
@@ -93,21 +100,7 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
           }
 
           if (provider.status == ProfileStatus.error) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('Error: ${provider.errorMessage ?? "Unknown error"}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => provider.loadProfile(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
+            return _buildErrorState(provider);
           }
 
           final user = provider.user;
@@ -115,73 +108,450 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
             return const Center(child: Text('No profile data available'));
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Profile Image with Upload Button
-                Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    provider.status == ProfileStatus.uploading
-                        ? _buildUploadingAvatar(provider, user)
-                        : _buildProfileAvatar(user),
-                    if (provider.status != ProfileStatus.uploading)
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: IconButton(
-                          iconSize: 18,
-                          color: Colors.white,
-                          icon: const Icon(Icons.camera_alt),
-                          onPressed: _pickAndUploadImage,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+          return CustomScrollView(
+            slivers: [
+              _buildSliverAppBar(user, provider),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (user.role == "Client")
+                        _buildUpgradeCard(),
 
-                if (user.role == "Client")
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.upgrade),
-                    label: const Text('Upgrade Account'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber[700],
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    onPressed: _showSubscriptionDialog,
-                  ),
-                // User Info
-                Text(
-                  user.name,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  user.email,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                // Additional User Info
-                _buildInfoCard('Role', user.role, Icons.work),
-                _buildPhoneNumbersList(user),
-              ],
-            ),
+                      _buildSecuritySection(user, theme),
+
+                      const SizedBox(height: 24),
+
+                      _buildUserInfoSection(user, theme),
+
+                      const SizedBox(height: 24),
+
+                      _buildContactSection(user, theme),
+
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
-  // Add this method to show the subscription options dialog
+
+  Widget _buildCameraButton() {
+    return Material(
+      elevation: 4,
+      shape: const CircleBorder(),
+      child: CircleAvatar(
+        radius: 18,
+        backgroundColor: Theme.of(context).primaryColor,
+        child: IconButton(
+          iconSize: 18,
+          color: Colors.white,
+          icon: const Icon(Icons.camera_alt),
+          onPressed: _pickAndUploadImage,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpgradeCard() {
+    return Card(
+      margin: const EdgeInsets.only(top: 16),
+      elevation: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.amber.shade700, Colors.orange.shade800],
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: _showSubscriptionDialog,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.star,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Upgrade Your Account',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Get access to premium features',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecuritySection(User user, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
+          child: Text(
+            'Security',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              _buildSecurityTile(
+                icon: Icons.security,
+                title: 'Two-Factor Authentication',
+                subtitle: user.isTwoFactorEnabled == true
+                    ? 'Enabled - Extra security active'
+                    : 'Disabled - Enable for better security',
+                iconColor: user.isTwoFactorEnabled == true
+                    ? Colors.green
+                    : Colors.orange,
+                onTap: _navigateToTwoFactorSetup,
+              ),
+              const Divider(height: 1),
+              _buildSecurityTile(
+                icon: Icons.password,
+                title: 'Change Password',
+                subtitle: 'Update your password periodically',
+                iconColor: Colors.blue,
+                onTap: () {
+                  // Navigate to change password screen
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecurityTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 8,
+      ),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: iconColor),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildUserInfoSection(User user, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
+          child: Text(
+            'Account Information',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildInfoRow(
+                  icon: Icons.work,
+                  iconColor: Colors.purple,
+                  label: 'Role',
+                  value: user.role,
+                ),
+                if (user.phonenumbers.isNotEmpty) ...[
+                  const Divider(height: 24),
+                  _buildInfoRow(
+                    icon: Icons.phone,
+                    iconColor: Colors.green,
+                    label: 'Primary Phone',
+                    value: user.phonenumbers.first.toString(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: iconColor),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactSection(User user, ThemeData theme) {
+    if (user.phonenumbers.length <= 1) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
+          child: Text(
+            'Additional Contact Numbers',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: user.phonenumbers.length - 1,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              // Skip the first number as it's shown in the info section
+              final phoneNumber = user.phonenumbers[index + 1];
+              return ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.phone_android,
+                    color: Colors.blue,
+                  ),
+                ),
+                title: Text(
+                  phoneNumber.toString(),
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSliverAppBar(User user, ProfileProvider provider) {
+    return SliverAppBar(
+      expandedHeight: 200.0,
+      floating: false,
+      pinned: true,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColor.withOpacity(0.8),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 20),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    provider.status == ProfileStatus.uploading
+                        ? _buildUploadingAvatar(provider, user)
+                        : _buildProfileAvatar(user),
+                    if (provider.status != ProfileStatus.uploading)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: _buildCameraButton(),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  user.name,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  user.email,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildErrorState(ProfileProvider provider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 60,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Error: ${provider.errorMessage ?? "Unknown error"}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => provider.loadProfile(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showSubscriptionDialog() {
     showDialog(
       context: context,
@@ -290,14 +660,9 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
     if (user.profilepicture.isNotEmpty) {
       return CircleAvatar(
         radius: 50,
-        backgroundImage: NetworkImage(
-          user.profilepicture,
-          // The error handler shouldn't return a widget
-
-
-            // We can't return a widget from here, just handle the error
-          
-        ),
+        backgroundImage: NetworkImage(user.profilepicture),
+        // Fallback for network image errors
+        onBackgroundImageError: (exception, stackTrace) {},
         // Instead, use a fallback child that will show if the image fails to load
         child: user.name.isNotEmpty
             ? Text(
@@ -319,6 +684,7 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
       );
     }
   }
+
   Widget _buildUploadingAvatar(ProfileProvider provider, User user) {
     return Stack(
       alignment: Alignment.center,

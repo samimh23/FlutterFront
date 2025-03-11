@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/Farm/Presentation_Layer/pages/FarmListScreen.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/theme_data.dart';
 import '../../../../core/theme/theme_provider.dart';
@@ -17,7 +18,7 @@ class _FarmMainScreen extends State<FarmMainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const Center(child: Text('Dashboard')), // Placeholder for Dashboard
+    FarmListScreen(), // Placeholder for Dashboard
     const FarmCropManager(), // FarmCropManager screen
     const SaleDashboard(), // SaleDashboard screen
     const Center(child: Text('Profile')), // Placeholder for Profile

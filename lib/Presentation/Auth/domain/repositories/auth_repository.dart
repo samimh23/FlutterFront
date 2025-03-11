@@ -34,9 +34,8 @@ abstract class AuthRepository {
     required String twoFactorCode,
   });
 
+  // These 2FA methods require authentication (token)
   Future<Map<String, dynamic>> generateTwoFactorSecret();
-
-  Future<void> enableTwoFactor(String verificationCode);
-
-  Future<void> disableTwoFactor();
-}
+  Future<Map<String, dynamic>> enableTwoFactor(String verificationCode);
+  Future<Map<String, dynamic>> disableTwoFactor();
+  }

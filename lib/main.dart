@@ -4,6 +4,15 @@ import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/theme/theme_provider.dart';
 import 'package:hanouty/Presentation/Auth/domain/use_cases/verify_reset_code_usecase.dart';
 import 'package:hanouty/Presentation/Auth/presentation/controller/password_reset_controller.dart';
+import 'package:hanouty/Presentation/Auth/presentation/pages/SetupTwoFactorAuthScreen.dart';
+import 'package:hanouty/Presentation/Farm/Data_Layer/datasources/farm_remote_data_source.dart';
+import 'package:hanouty/Presentation/Farm/Data_Layer/repositories/farm_repository_impl.dart';
+import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/addfarm.dart';
+import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/delete_farm_market.dart';
+import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_all_farm_markets.dart';
+import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_farm_market_by_id.dart';
+import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/update_farm_market.dart';
+import 'package:hanouty/Presentation/Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
 import 'package:hanouty/Presentation/Farm_Crop/Presentation_Layer/pages/farm_main_screen.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote_datasources.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
@@ -98,7 +107,9 @@ class MyApp extends StatelessWidget {
     final ApiClient apiClient = ApiClient();
     final AuthRepository authRepository = AuthRepositoryImpl(
         apiClient: apiClient);
-    final LoginUseCase loginUseCase = LoginUseCase(authRepository);
+    final LoginUseCase loginUseCase = LoginUseCase(
+        authRepository: authRepository,
+        secureStorageService: secureStorageService);
     final RegisterUseCase registerUseCase = RegisterUseCase(authRepository);
     final ForgotPasswordUseCase forgotPasswordUseCase = ForgotPasswordUseCase(
         authRepository);
@@ -201,6 +212,40 @@ class MyApp extends StatelessWidget {
 
         //ahmed
 
+
+        Provider<FarmMarketRemoteDataSource>(
+          create: (_) => FarmMarketRemoteDataSource(),
+        ),
+        Provider<FarmMarketRepositoryImpl>(
+          create: (context) => FarmMarketRepositoryImpl(
+            remoteDataSource: context.read<FarmMarketRemoteDataSource>(),
+          ),
+        ),
+        Provider<GetAllFarmMarkets>(
+          create: (context) => GetAllFarmMarkets(context.read<FarmMarketRepositoryImpl>()),
+        ),
+        Provider<GetFarmMarketById>(
+          create: (context) => GetFarmMarketById(context.read<FarmMarketRepositoryImpl>()),
+        ),
+        Provider<AddFarmMarket>(
+          create: (context) => AddFarmMarket(context.read<FarmMarketRepositoryImpl>()),
+        ),
+        Provider<UpdateFarmMarket>(
+          create: (context) => UpdateFarmMarket(context.read<FarmMarketRepositoryImpl>()),
+        ),
+        Provider<DeleteFarmMarket>(
+          create: (context) => DeleteFarmMarket(context.read<FarmMarketRepositoryImpl>()),
+        ),
+        ChangeNotifierProvider<FarmMarketViewModel>(
+          create: (context) => FarmMarketViewModel(
+            getAllFarmMarkets: context.read<GetAllFarmMarkets>(),
+            getFarmMarketById: context.read<GetFarmMarketById>(),
+            addFarmMarket: context.read<AddFarmMarket>(),
+            updateFarmMarket: context.read<UpdateFarmMarket>(),
+            deleteFarmMarket: context.read<DeleteFarmMarket>(),
+          ),
+          lazy: false,
+        ),
         ChangeNotifierProvider(
           create: (_) => ThemeProvider(),
         ),
@@ -329,6 +374,7 @@ class MyApp extends StatelessWidget {
                     '/home': (context) => const MainScreen(),
                     '/farmer': (context) => const FarmMainScreen(),
                     '/merchant': (context) => const DashboardPage(),
+                    '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
                   },
                 );
               }

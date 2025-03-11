@@ -5,7 +5,8 @@ class Farm {
   final String? farmPhone;
   final String? farmEmail;
   final String? marketImage;
-  final List<String>? crops;
+  final List<String>? crops;  // This should be ObjectIDs referencing FarmCrop documents
+
   // Properties inherited from Markets schema
   final String? marketName;
   final String? marketLocation;
@@ -27,6 +28,11 @@ class Farm {
     this.marketCategory,
     this.marketRating,
   });
+
+
+
+// Other methods remain the same...
+
 
   factory Farm.fromJson(Map<String, dynamic> json) {
     return Farm(
@@ -59,7 +65,7 @@ class Farm {
     if (farmPhone != null) data['farmPhone'] = farmPhone;
     if (farmEmail != null) data['farmEmail'] = farmEmail;
     if (marketImage != null) data['marketImage'] = marketImage;
-    if (crops != null) data['crops'] = crops;
+    if (crops != null) data['crops'] = crops;  // Should be a list of ObjectIDs
     if (marketName != null) data['marketName'] = marketName;
     if (marketLocation != null) data['marketLocation'] = marketLocation;
     if (marketDescription != null) data['marketDescription'] = marketDescription;
@@ -68,7 +74,6 @@ class Farm {
 
     return data;
   }
-
   Farm copyWith({
     String? id,
     String? farmName,

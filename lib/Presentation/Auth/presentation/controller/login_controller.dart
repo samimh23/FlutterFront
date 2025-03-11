@@ -6,6 +6,7 @@ import 'package:hanouty/Presentation/Auth/data/models/auth_response.dart';
 import 'package:hanouty/Presentation/Auth/domain/use_cases/login_usecase.dart';
 import 'package:hanouty/Presentation/Auth/presentation/controller/role_based_roter.dart';
 import '../../../../Core/Utils/secure_storage.dart';
+import 'GoogleAuthService.dart';
 
 enum AuthStatus {
   initial,
@@ -19,6 +20,8 @@ enum AuthStatus {
 class AuthProvider extends ChangeNotifier {
   final LoginUseCase _loginUseCase;
   final SecureStorageService _secureStorageService;
+  late final GoogleAuthService _googleAuthService;
+
 
   // Text controllers for form fields
   final TextEditingController emailController = TextEditingController();
@@ -46,8 +49,8 @@ class AuthProvider extends ChangeNotifier {
         _loginUseCase = loginUseCase,
         _secureStorageService = secureStorageService ?? SecureStorageService() {
     _checkSavedCredentials();
+    _googleAuthService = GoogleAuthService();
   }
-
   // Clean up controllers when no longer needed
   @override
   void dispose() {
@@ -142,34 +145,63 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // New method for 2FA verification
+// New method for 2FA verification with improved logging
   Future<bool> verifyTwoFactorCode() async {
     if (_userId == null) {
+      print('❌ ERROR: userId is null during 2FA verification');
       _status = AuthStatus.error;
       _errorMessage = 'Authentication session expired';
       notifyListeners();
       return false;
     }
 
-    final twoFactorCode = twoFactorCodeController.text.trim();
+    // Clean up the 2FA code - remove spaces and ensure digits only
+    final enteredCode = twoFactorCodeController.text.trim();
+    final twoFactorCode = enteredCode.replaceAll(RegExp(r'\s+'), '');
+
+    // Validate the code
+    final digitRegex = RegExp(r'^\d+$');
     if (twoFactorCode.isEmpty) {
+      print('❌ ERROR: 2FA code is empty');
       _status = AuthStatus.error;
       _errorMessage = 'Please enter the verification code';
       notifyListeners();
       return false;
     }
 
+    if (!digitRegex.hasMatch(twoFactorCode)) {
+      print('❌ ERROR: 2FA code should only contain digits');
+      _status = AuthStatus.error;
+      _errorMessage = 'Verification code should only contain digits';
+      notifyListeners();
+      return false;
+    }
+
+    if (twoFactorCode.length != 6) {
+      print('❌ ERROR: 2FA code should be 6 digits');
+      _status = AuthStatus.error;
+      _errorMessage = 'Verification code should be 6 digits';
+      notifyListeners();
+      return false;
+    }
+
+    print('🔄 Verifying 2FA code: $twoFactorCode for user: $_userId');
     _status = AuthStatus.twoFactorVerifying;
     _errorMessage = null;
     notifyListeners();
 
     try {
       // Call your 2FA verification API
+      print('📡 Sending 2FA verification request...');
       final result = await _loginUseCase.verifyTwoFactorAuth(
         userId: _userId!,
         twoFactorCode: twoFactorCode,
       );
 
+      print('✅ 2FA verification response: $result');
+
       _authResponse = AuthResponse.fromJson(result);
+      print('✅ Access token received: ${_authResponse!.accessToken.substring(0, min(10, _authResponse!.accessToken.length))}...');
 
       await _secureStorageService.saveAccessToken(_authResponse!.accessToken);
       await _secureStorageService.saveRefreshToken(_authResponse!.refreshToken);
@@ -178,11 +210,13 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } on ApiException catch(e) {
+      print('❌ ApiException during 2FA verification: ${e.message}');
       _status = AuthStatus.requiresTwoFactor; // Keep in 2FA state
       _errorMessage = e.message;
       notifyListeners();
       return false;
     } catch (e) {
+      print('❌ Unexpected error during 2FA verification: $e');
       _status = AuthStatus.requiresTwoFactor; // Keep in 2FA state
       _errorMessage = 'Failed to verify code';
       notifyListeners();
@@ -190,17 +224,38 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Methods for 2FA setup
+  void signInWithGoogle(BuildContext context) async {
+    try {
+      _status = AuthStatus.loading;
+      _errorMessage = null;
+      notifyListeners();
+
+      await _googleAuthService.signInWithGoogle(context);
+
+      // The actual authentication will happen after redirect
+      // Reset status after launching the external auth flow
+      _status = AuthStatus.initial;
+      notifyListeners();
+    } catch (e) {
+      _status = AuthStatus.error;
+      _errorMessage = 'Failed to launch Google Sign-In';
+      notifyListeners();
+    }
+  }
+// Methods for 2FA setup
   Future<Map<String, dynamic>> generateTwoFactorSecret() async {
     try {
-      // Call your API to generate 2FA secret
+      print('🔄 Generating 2FA secret...');
       final result = await _loginUseCase.generateTwoFactorSecret();
+      print('✅ 2FA secret generated successfully: $result');
       return result;
     } on ApiException catch(e) {
+      print('❌ ApiException generating 2FA secret: ${e.message}');
       _errorMessage = e.message;
       notifyListeners();
       throw e;
     } catch (e) {
+      print('❌ Error generating 2FA secret: $e');
       _errorMessage = 'Failed to generate 2FA secret';
       notifyListeners();
       throw Exception(_errorMessage);

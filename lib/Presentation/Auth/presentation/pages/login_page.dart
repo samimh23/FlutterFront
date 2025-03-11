@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../Core/Utils/validators.dart';
 import '../../../../responsive/responsive_layout.dart';
 import '../controller/login_controller.dart';
+import 'TwoFactorAuthScreen.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -194,7 +195,9 @@ class _LoginForm extends StatefulWidget {
 class _LoginFormState extends State<_LoginForm> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
+  @override
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
@@ -247,8 +250,6 @@ class _LoginFormState extends State<_LoginForm> {
                 ],
               ),
 
-              // Forgot Password Link
-          // Forgot Password Link
               const SizedBox(height: 24),
 
               // Error Message
@@ -299,6 +300,33 @@ class _LoginFormState extends State<_LoginForm> {
                 ),
               ),
 
+              // ADD THESE LINES - Start
+              const SizedBox(height: 20),
+
+              // OR Divider
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'OR',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Google Sign-In Button
+              _buildGoogleSignInButton(authProvider),
+              // ADD THESE LINES - End
+
               // Register Link (only for mobile and tablet)
               if (!isDesktop) ...[
                 const SizedBox(height: 24),
@@ -321,17 +349,37 @@ class _LoginFormState extends State<_LoginForm> {
       ),
     );
   }
-
   Future<void> _handleLogin(BuildContext context, AuthProvider authProvider) async {
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() {
+        // Show loading indicator if you have one
+        _isLoading = true;
+      });
+
       final success = await authProvider.login();
-      if (success && mounted) {
-        // Use role-based navigation instead of fixed navigation to '/home'
-        authProvider.navigateBasedOnRole(context);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (success) {
+          // Check if 2FA is required
+          if (authProvider.status == AuthStatus.requiresTwoFactor) {
+            // Navigate to 2FA verification screen
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const TwoFactorAuthScreen(),
+              ),
+            );
+          } else if (authProvider.status == AuthStatus.authenticated) {
+            // Normal authentication flow - navigate based on role
+            authProvider.navigateBasedOnRole(context);
+          }
+        }
       }
     }
   }
-
   // Helper method for creating text fields
   Widget _buildTextField({
     required TextEditingController controller,
@@ -364,6 +412,36 @@ class _LoginFormState extends State<_LoginForm> {
       validator: validator,
       enabled: enabled,
     );
+  }
+  Widget _buildGoogleSignInButton(AuthProvider authProvider) {
+    return OutlinedButton.icon(
+      onPressed: authProvider.status == AuthStatus.loading
+          ? null
+          : () => _handleGoogleSignIn(context, authProvider),
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        side: BorderSide(color: Colors.grey.shade300),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        backgroundColor: Colors.white,
+      ),
+      icon: const Icon(
+        Icons.g_mobiledata,
+        size: 30,
+        color: Colors.red,
+      ),
+      label: const Text(
+        'Sign in with Google',
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+  Future<void> _handleGoogleSignIn(BuildContext context, AuthProvider authProvider) async {
+    authProvider.signInWithGoogle(context);
   }
 
   // Helper method for creating password field

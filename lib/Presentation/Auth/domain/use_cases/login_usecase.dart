@@ -1,11 +1,17 @@
 
 
+import '../../../../Core/Utils/secure_storage.dart';
 import '../repositories/auth_repository.dart';
 
 class LoginUseCase {
   final AuthRepository _authRepository;
-
-  LoginUseCase(this._authRepository);
+  final SecureStorageService _secureStorageService;
+  LoginUseCase({
+    required AuthRepository authRepository,
+    SecureStorageService? secureStorageService,
+  }) :
+        _authRepository = authRepository,
+        _secureStorageService = secureStorageService ?? SecureStorageService();
 
   Future<Map<String, dynamic>> execute({
     required String email,
@@ -15,49 +21,30 @@ class LoginUseCase {
       email: email,
       password: password,
     );
-
   }
 
+  // Two-factor authentication methods
   Future<Map<String, dynamic>> verifyTwoFactorAuth({
     required String userId,
     required String twoFactorCode,
   }) async {
-    try {
-      final response = await _authRepository.verifyTwoFactorAuth(
-        userId: userId,
-        twoFactorCode: twoFactorCode,
-      );
-      return response;
-    } catch (e) {
-      rethrow;
-    }
+    return await _authRepository.verifyTwoFactorAuth(
+      userId: userId,
+      twoFactorCode: twoFactorCode,
+    );
   }
 
-// Method to generate 2FA secret
   Future<Map<String, dynamic>> generateTwoFactorSecret() async {
-    try {
-      final response = await _authRepository.generateTwoFactorSecret();
-      return response;
-    } catch (e) {
-      rethrow;
-    }
+    return await _authRepository.generateTwoFactorSecret();
   }
 
-// Method to enable 2FA
-  Future<void> enableTwoFactor(String verificationCode) async {
-    try {
-      await _authRepository.enableTwoFactor(verificationCode);
-    } catch (e) {
-      rethrow;
-    }
+  Future<Map<String, dynamic>> enableTwoFactor(String verificationCode) async {
+    return await _authRepository.enableTwoFactor(verificationCode);
   }
 
-// Method to disable 2FA
-  Future<void> disableTwoFactor() async {
-    try {
-      await _authRepository.disableTwoFactor();
-    } catch (e) {
-      rethrow;
-    }
+  Future<Map<String, dynamic>> disableTwoFactor() async {
+    return await _authRepository.disableTwoFactor();
   }
+
+
 }

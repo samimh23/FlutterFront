@@ -141,4 +141,90 @@ class ApiClient {
 
     return NetworkException('Connection error: ${error.message}');
   }
+
+  Future<Options> _getAuthOptions() async {
+    final accessToken = await _secureStorageService.getAccessToken();
+    if (accessToken == null || accessToken.isEmpty) {
+      throw UnauthorizedException('Authentication token not available');
+    }
+    return Options(headers: {'Authorization': 'Bearer $accessToken'});
+  }
+
+  // 2FA Methods
+  Future<Map<String, dynamic>> generateTwoFactorSecret() async {
+    try {
+      final options = await _getAuthOptions();
+      final response = await _dio.get(
+        ApiEndpoints.generateTwoFactorSecretEndpoint,
+        options: options,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error generating 2FA secret: ${e.response?.data}');
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> enableTwoFactor(String verificationCode) async {
+    try {
+      final options = await _getAuthOptions();
+      final response = await _dio.post(
+        ApiEndpoints.enableTwoFactorEndpoint,
+        data: {'twoFactorCode': verificationCode},
+        options: options,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error enabling 2FA: ${e.response?.data}');
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> disableTwoFactor() async {
+    try {
+      final options = await _getAuthOptions();
+      final response = await _dio.post(
+        ApiEndpoints.disableTwoFactorEndpoint,
+        options: options,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      print('Error disabling 2FA: ${e.response?.data}');
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyTwoFactorAuth({
+    required String userId,
+    required String twoFactorCode,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiEndpoints.verifyTwoFactorEndpoint,
+        data: {
+          'userId': userId,
+          'twoFactorCode': twoFactorCode,
+        },
+      );
+
+      // If verification is successful and returns tokens, save them
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        if (data.containsKey('accessToken')) {
+          await _secureStorageService.saveAccessToken(data['accessToken']);
+        }
+        if (data.containsKey('refreshToken')) {
+          await _secureStorageService.saveRefreshToken(data['refreshToken']);
+        }
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      print('Error verifying 2FA: ${e.response?.data}');
+      throw _handleError(e);
+    }
+  }
+
+  // Error handling
+
 }

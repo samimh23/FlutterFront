@@ -5,6 +5,7 @@ class User {
   final List<dynamic> phonenumbers; // Changed from List<String>
   final String profilepicture;
   final String role;
+  final bool isTwoFactorEnabled; // Added property for 2FA status
 
   User({
     required this.id,
@@ -13,6 +14,7 @@ class User {
     required this.phonenumbers,
     required this.profilepicture,
     required this.role,
+    this.isTwoFactorEnabled = false, // Default to false if not provided
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class User {
       phonenumbers: phoneList,
       profilepicture: json['profilepicture'] ?? '',
       role: json['role'] ?? '',
+      isTwoFactorEnabled: json['isTwoFactorEnabled'] ?? false, // Parse from JSON
     );
   }
 
@@ -47,6 +50,28 @@ class User {
       'phonenumbers': phonenumbers,
       'profilepicture': profilepicture,
       'role': role,
+      'isTwoFactorEnabled': isTwoFactorEnabled, // Include in JSON output
     };
+  }
+
+  // Create a copy of this User with modified fields
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    List<dynamic>? phonenumbers,
+    String? profilepicture,
+    String? role,
+    bool? isTwoFactorEnabled,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phonenumbers: phonenumbers ?? this.phonenumbers,
+      profilepicture: profilepicture ?? this.profilepicture,
+      role: role ?? this.role,
+      isTwoFactorEnabled: isTwoFactorEnabled ?? this.isTwoFactorEnabled,
+    );
   }
 }

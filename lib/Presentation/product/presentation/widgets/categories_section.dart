@@ -8,6 +8,10 @@ class CategoriesSection extends StatelessWidget {
   // Categories list
   final List<Map<String, dynamic>> categories = const [
     {
+      'title': 'All',
+      'image': 'assets/icons/flame.png',
+    },
+    {
       'title': 'Sweets',
       'image': 'assets/icons/sweets.png',
     },
@@ -25,76 +29,55 @@ class CategoriesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Header row with "All Categories" and "See All"
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'All Categories',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.black,
-                ),
+          padding: const EdgeInsets.only(left: 24.0, top: 16.0, bottom: 8.0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Categories',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.black,
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CategoryProductsScreen(
-                          category: 'All',
-                        ),
-                      ),
-                    );
-                },
-                child: Row(
-                  children: const [
-                    Text(
-                      'See All ',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 14,
-                      color: AppColors.primary,
-                    )
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 10),
         SizedBox(
           height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                child: CategoryItem(
-                  title: categories[index]['title'],
-                  image: categories[index]['image'],
-                  onTap: () {
-                    // Navigate to the category screen, passing the chosen category title
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CategoryProductsScreen(
-                          category: categories[index]['title'],
-                        ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate item width based on available width
+              final availableWidth = constraints.maxWidth;
+              final itemWidth = (availableWidth - 32) / categories.length;
+              
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: itemWidth,
+                    child: Center(
+                      child: CategoryItem(
+                        title: categories[index]['title'],
+                        image: categories[index]['image'],
+                        onTap: () {
+                          // Navigate to the category screen, passing the chosen category title
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CategoryProductsScreen(
+                                category: categories[index]['title'],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -104,7 +87,7 @@ class CategoriesSection extends StatelessWidget {
   }
 }
 
-class CategoryItem extends StatelessWidget {
+class CategoryItem extends StatefulWidget {
   final String title;
   final String image;
   final VoidCallback onTap;
@@ -117,31 +100,45 @@ class CategoryItem extends StatelessWidget {
   });
 
   @override
+  State<CategoryItem> createState() => _CategoryItemState();
+}
+
+class _CategoryItemState extends State<CategoryItem> {
+  bool isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              image: DecorationImage(
-                image: AssetImage(image),
-                fit: BoxFit.cover,
+    return MouseRegion(
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: isHovered ? 75 : 70,
+              height: isHovered ? 75 : 70,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                
+                image: DecorationImage(
+                  image: AssetImage(widget.image),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 5),
+            Text(
+              widget.title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isHovered ? FontWeight.bold : FontWeight.w500,
+                color: isHovered ? AppColors.black : AppColors.white,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

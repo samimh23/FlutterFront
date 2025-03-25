@@ -367,6 +367,7 @@ class MyApp extends StatelessWidget {
                   title: 'Hanouty',
                   theme:   lightTheme,
                   themeMode: themeProvider.themeMode,
+                  darkTheme: darkTheme,
                   initialRoute: initialRoute,
                   routes: {
                     '/login': (context) => const LoginPage(),

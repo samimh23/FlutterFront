@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 
 class CartItem {
   final String id;
@@ -28,6 +29,18 @@ class CartProvider with ChangeNotifier {
     return _items.values.fold(
       0.0,
       (sum, item) => sum + (item.price * item.quantity),
+    );
+  }
+
+  void addToCart(Product product) {
+    final productId = product.id.toString();
+    final imageUrl = product.images.isNotEmpty ? product.images.first : '';
+    
+    addItem(
+      productId,
+      product.name,
+      product.originalPrice,
+      imageUrl,
     );
   }
 

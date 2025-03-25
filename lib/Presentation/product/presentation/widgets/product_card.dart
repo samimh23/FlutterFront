@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/product_details_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:hanouty/responsive/responsive_layout.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -11,6 +13,19 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get responsive dimensions based on device type
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final isTablet = ResponsiveLayout.isTablet(context);
+    
+    // Adjust card width based on device type
+    final cardWidth = isDesktop ? 220.0 : (isTablet ? 180.0 : 120.0);
+    final borderRadius = isDesktop ? 12.0 : 8.0;
+    final fontSize = isDesktop ? 14.0 : (isTablet ? 13.0 : 12.0);
+    final priceFontSize = isDesktop ? 14.0 : (isTablet ? 13.0 : 12.0);
+    final discountFontSize = isDesktop ? 12.0 : (isTablet ? 11.0 : 10.0);
+    final imageHeight = isDesktop ? 140.0 : (isTablet ? 120.0 : 100.0);
+    final horizontalPadding = isDesktop ? 10.0 : (isTablet ? 8.0 : 6.0);
+    
     return GestureDetector(
       onTap: onTap ?? () {
         Navigator.push(
@@ -21,9 +36,9 @@ class ProductCard extends StatelessWidget {
         );
       },
       child: Container(
-        width: 120,
+        width: cardWidth,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(borderRadius),
           border: Border.all(color: Colors.grey.shade200),
           color: Colors.white,
           boxShadow: [
@@ -38,16 +53,16 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-              child: _buildProductImage(),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
+              child: _buildProductImage(context, imageHeight),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: isDesktop ? 10 : 6),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               child: Text(
                 product.name,
-                style: const TextStyle(
-                  fontSize: 12,
+                style: TextStyle(
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
@@ -56,13 +71,13 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 4),
               child: Row(
                 children: [
                   Text(
                     '${product.originalPrice.toStringAsFixed(0)} DT',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: priceFontSize,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey,
                     ),
@@ -72,8 +87,8 @@ class ProductCard extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 4),
                       child: Text(
                         '${(product.originalPrice + product.discountValue).toStringAsFixed(0)} DT',
-                        style: const TextStyle(
-                          fontSize: 10,
+                        style: TextStyle(
+                          fontSize: discountFontSize,
                           decoration: TextDecoration.lineThrough,
                           color: Colors.grey,
                         ),
@@ -88,10 +103,10 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProductImage() {
+  Widget _buildProductImage(BuildContext context, double imageHeight) {
     // Check if the images array exists and has elements
     if (product.images.isEmpty || product.images[0].isEmpty) {
-      return _buildPlaceholderImage();
+      return _buildPlaceholderImage(context, imageHeight);
     }
 
     // Original image URL
@@ -99,10 +114,9 @@ class ProductCard extends StatelessWidget {
     debugPrint('Original image URL: $originalUrl');
 
     // For Flutter Web: Use a CORS proxy service
-    bool isWeb = identical(0, 0.0);
     String imageUrl = originalUrl;
 
-    if (isWeb) {
+    if (kIsWeb) {
       // Use a CORS proxy service
       imageUrl = 'https://corsproxy.io/?' + Uri.encodeComponent(originalUrl);
       debugPrint('Using proxied URL for web: $imageUrl');
@@ -111,11 +125,11 @@ class ProductCard extends StatelessWidget {
     // Using CachedNetworkImage for better performance and error handling
     return CachedNetworkImage(
       imageUrl: imageUrl,
-      height: 100,
+      height: imageHeight,
       width: double.infinity,
       fit: BoxFit.cover,
       placeholder: (context, url) => Container(
-        height: 100,
+        height: imageHeight,
         width: double.infinity,
         color: Colors.grey[100],
         child: const Center(
@@ -125,21 +139,28 @@ class ProductCard extends StatelessWidget {
       errorWidget: (context, url, error) {
         debugPrint('Error loading image: $error');
         // When error, try with a different proxy as fallback
-        if (isWeb && !url.contains('cors-anywhere')) {
-          return _buildWebImageWithFallback(originalUrl);
+        if (kIsWeb && !url.contains('cors-anywhere')) {
+          return _buildWebImageWithFallback(context, originalUrl, imageHeight);
         }
         return Container(
-          height: 100,
+          height: imageHeight,
           width: double.infinity,
           color: Colors.grey[200],
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 24),
+              Icon(
+                Icons.error_outline, 
+                color: Colors.red, 
+                size: ResponsiveLayout.isDesktop(context) ? 32 : 24
+              ),
               const SizedBox(height: 4),
               Text(
                 'Image Error',
-                style: TextStyle(fontSize: 10, color: Colors.red[700]),
+                style: TextStyle(
+                  fontSize: ResponsiveLayout.isDesktop(context) ? 12 : 10, 
+                  color: Colors.red[700]
+                ),
               ),
             ],
           ),
@@ -148,18 +169,18 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildWebImageWithFallback(String originalUrl) {
+  Widget _buildWebImageWithFallback(BuildContext context, String originalUrl, double imageHeight) {
     // Try a different CORS proxy as fallback
     String fallbackUrl = 'https://api.allorigins.win/raw?url=' + Uri.encodeComponent(originalUrl);
     debugPrint('Trying fallback URL: $fallbackUrl');
 
     return CachedNetworkImage(
       imageUrl: fallbackUrl,
-      height: 100,
+      height: imageHeight,
       width: double.infinity,
       fit: BoxFit.cover,
       placeholder: (context, url) => Container(
-        height: 100,
+        height: imageHeight,
         width: double.infinity,
         color: Colors.grey[100],
         child: const Center(
@@ -168,24 +189,33 @@ class ProductCard extends StatelessWidget {
       ),
       errorWidget: (context, url, error) {
         debugPrint('Fallback image also failed: $error');
-        return _buildPlaceholderImage();
+        return _buildPlaceholderImage(context, imageHeight);
       },
     );
   }
 
-  Widget _buildPlaceholderImage() {
+  Widget _buildPlaceholderImage(BuildContext context, double imageHeight) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    
     return Container(
-      height: 100,
+      height: imageHeight,
       width: double.infinity,
       color: Colors.grey[200],
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.image, color: Colors.grey, size: 24),
-          SizedBox(height: 4),
+        children: [
+          Icon(
+            Icons.image, 
+            color: Colors.grey, 
+            size: isDesktop ? 32 : 24
+          ),
+          const SizedBox(height: 4),
           Text(
             'No Image',
-            style: TextStyle(fontSize: 10, color: Colors.grey),
+            style: TextStyle(
+              fontSize: isDesktop ? 12 : 10, 
+              color: Colors.grey
+            ),
           ),
         ],
       ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
+import 'package:hanouty/Presentation/product/presentation/widgets/market_details_desctop_layout.dart';
+import 'package:hanouty/Presentation/product/presentation/widgets/market_details_mobile_tablet_layout.dart';
 import 'package:hanouty/app_colors.dart';
+import 'package:hanouty/responsive/responsive_layout.dart';
 
 class MarketDetailsScreen extends StatelessWidget {
   final String heroTag;
@@ -10,7 +13,7 @@ class MarketDetailsScreen extends StatelessWidget {
   final String deliveryTime;
   final String description;
   final String imageUrl;
-  final List<Product> products; // Receive products list
+  final List<Product> products;
 
   const MarketDetailsScreen({
     super.key,
@@ -26,8 +29,19 @@ class MarketDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final isTablet = ResponsiveLayout.isTablet(context);
+    
     return Scaffold(
       appBar: AppBar(
+        title: Text(
+          marketName,
+          style: TextStyle(
+            color: AppColors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: isDesktop ? 22 : (isTablet ? 20 : 18),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.black),
           onPressed: () => Navigator.pop(context),
@@ -37,154 +51,33 @@ class MarketDetailsScreen extends StatelessWidget {
             icon: const Icon(Icons.share, color: AppColors.black),
             onPressed: () {},
           ),
+          IconButton(
+            icon: const Icon(Icons.favorite_border, color: AppColors.black),
+            onPressed: () {},
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Hero(
-              tag: heroTag,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                child: Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
-                ),
-              ),
+      body: isDesktop 
+          ? MarketDetailsDesktopLayout(
+              heroTag: heroTag,
+              marketName: marketName,
+              rating: rating,
+              deliveryCost: deliveryCost,
+              deliveryTime: deliveryTime,
+              description: description,
+              imageUrl: imageUrl,
+              products: products,
+            )
+          : MarketDetailsMobileTabletLayout(
+              heroTag: heroTag,
+              marketName: marketName,
+              rating: rating,
+              deliveryCost: deliveryCost,
+              deliveryTime: deliveryTime,
+              description: description,
+              imageUrl: imageUrl,
+              products: products,
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    marketName,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.star, color: Colors.amber.shade600, size: 20),
-                      Text(
-                        rating.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.amber.shade600,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        deliveryCost,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        deliveryTime,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                "Available Products",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.black,
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 200, // Limit the height for horizontal scrolling
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                            child: Image.network(
-                              product.images.first,
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.name,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  "\$${product.originalPrice.toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -1,11 +1,8 @@
-  import 'package:flutter/material.dart';
-  import 'package:hanouty/Core/Enums/role_enum.dart';
+import 'package:flutter/material.dart';
+import 'package:hanouty/Core/Enums/role_enum.dart';
 import 'package:hanouty/Presentation/Farm_Crop/Presentation_Layer/pages/farm_main_screen.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/dashboard_page.dart';
-  import 'package:hanouty/responsive/Homepage.dart';
 
-  import '../pages/farmerscreen.dart';
-  import '../pages/wholesalerscrren.dart';
 
   class RoleBasedRouter {
     // Navigate based on user role

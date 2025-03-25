@@ -59,6 +59,7 @@ dependencies:
   qr_flutter: ^4.1.0
   google_sign_in: ^6.1.4
   google_sign_in_web: ^0.12.0
+  flutter_svg: ^2.0.10
 
 
 

@@ -34,7 +34,7 @@ class OrderModel extends Order {
             'productId': p.id,
             // If your ProductModel has a quantity field, use it.
             // Otherwise, default to 1.
-            'stock': (p.stock ?? 1),
+            'stock': p.stock,
           }).toList(),
       'user': user,
       'dateOrder': dateOrder.toIso8601String(),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/market_details_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
@@ -7,6 +6,7 @@ import 'package:hanouty/Presentation/product/presentation/widgets/header.dart';
 import 'package:hanouty/Presentation/product/presentation/widgets/product_card.dart';
 import 'package:hanouty/Presentation/product/presentation/widgets/shop_card.dart';
 import 'package:hanouty/app_colors.dart';
+import 'package:hanouty/responsive/responsive_layout.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,220 +23,581 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const AnimatedHeader(),
-            const SizedBox(height: 20),
-
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: const TextStyle(color: AppColors.black),
-                  prefixIcon: const Icon(Icons.search, color: AppColors.white),
-                  filled: true,
-                  fillColor: AppColors.grey,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 20,
-                  ),
-                ),
-                onChanged: (value) {
-                  // Handle search logic here
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-            CategoriesSection(),
-            const SizedBox(height: 25),
-
-            // Title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: const Text(
-                  'Products of the Month',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.black,
-                  ),
+      backgroundColor: Colors.grey[50],
+      // Only show app bar on desktop if we're using the side navigation
+      appBar: isDesktop
+          ? AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              title: const Text(
+                'El Hanout',
+                style: TextStyle(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
                 ),
               ),
-            ),
+              actions: [
+                Container(
+                  width: 240,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search products...',
+                      hintStyle:
+                          TextStyle(color: Colors.grey[600], fontSize: 14),
+                      prefixIcon:
+                          Icon(Icons.search, color: Colors.grey[600], size: 20),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(Icons.notifications_none_outlined,
+                      color: AppColors.black),
+                  onPressed: () {},
+                ),
+                const SizedBox(width: 16),
+              ],
+            )
+          : null,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontalPadding = isDesktop ? 64.0 : 16.0;
 
-            // Your product list (no Expanded)
-            _buildBody(context),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 16,
-              ),
-              child: Column(
-                children: [
-                  Row(
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Only show animated header on mobile/tablet
+                if (!isDesktop) ...[
+                  const AnimatedHeader(),
+                  const SizedBox(height: 24),
+                ],
+
+                // Search bar - only show on mobile/tablet (desktop has it in app bar)
+                if (!isDesktop)
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search products...',
+                          hintStyle:
+                              TextStyle(color: Colors.grey[600], fontSize: 14),
+                          prefixIcon: Icon(Icons.search,
+                              color: Colors.grey[600], size: 20),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 15,
+                            horizontal: 20,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          // Handle search logic here
+                        },
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 24),
+
+                // Categories section with title
+
+                const SizedBox(height: 12),
+                const CategoriesSection(),
+
+                // Featured banner
+
+                // Products section with title and see all button
+                Padding(
+                  padding: EdgeInsets.only(left: 24.0, top: 16.0, bottom: 8.0),
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Open Stores',
+                        'Products of the Month',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.black,
                         ),
                       ),
                       TextButton(
                         onPressed: () {
-                          // Handle see all restaurants
+                          // Handle see all products
                         },
-                        child: Row(
-                          children: const [
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                        ),
+                        child: const Row(
+                          children: [
                             Text(
-                              'See All ',
+                              'See All',
                               style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
+                            SizedBox(width: 4),
                             Icon(
                               Icons.arrow_forward_ios,
-                              size: 14,
-                              color: AppColors.primary,
+                              size: 12,
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(
-                    height: 160,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ShopCard(
-                          heroTag: 'aziza_market_1',
-                          name: 'AZIZA Market',
-                          categories: 'Vegetable - Chicken - Sweets',
-                          rating: 4.7,
-                          deliveryCost: 'Free',
-                          deliveryTime: '20 min',
-                          imageUrl: 'https://play-lh.googleusercontent.com/Z40dsT2XLSLnC-hMZB1CYXiHVy2eWBJnibc_k0bbzpQJ5EDY1abD-SEUUSHnmg6Zk3o',
-                          onTap: () {
-                            final productProvider = Provider.of<ProductProvider>(context, listen: false);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => MarketDetailsScreen(
-                                      heroTag: 'aziza_market_1',
-                                      marketName: 'AZIZA Market',
-                                      rating: 4.7,
-                                      deliveryCost: 'Free',
-                                      deliveryTime: '20 min',
-                                      description:
-                                          'Premium market with fresh products...',
-                                      imageUrl:
-                                          'https://play-lh.googleusercontent.com/Z40dsT2XLSLnC-hMZB1CYXiHVy2eWBJnibc_k0bbzpQJ5EDY1abD-SEUUSHnmg6Zk3o',
-                                      products: productProvider.products,
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
-                        ShopCard(
-                          heroTag: 'Carrefour',
-                          name: 'Carrefour Market',
-                          categories: 'Vegetable - Chicken - Sweets',
-                          rating: 4.7,
-                          deliveryCost: 'fees',
-                          deliveryTime: '20 min',
-                          imageUrl: 'https://play-lh.googleusercontent.com/Z40dsT2XLSLnC-hMZB1CYXiHVy2eWBJnibc_k0bbzpQJ5EDY1abD-SEUUSHnmg6Zk3o',
-                          onTap: () {
-                            final productProvider = Provider.of<ProductProvider>(context, listen: false);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => MarketDetailsScreen(
-                                      heroTag: 'Carrefour',
-                                      marketName: 'AZIZA Market',
-                                      rating: 4.7,
-                                      deliveryCost: 'fees',
-                                      deliveryTime: '20 min',
-                                      description:
-                                          'Premium market with fresh products...',
-                                      imageUrl:
-                                          'https://play-lh.googleusercontent.com/Z40dsT2XLSLnC-hMZB1CYXiHVy2eWBJnibc_k0bbzpQJ5EDY1abD-SEUUSHnmg6Zk3o',
-                                    products: productProvider.products,
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                ),
+                const SizedBox(height: 16),
+
+                // Products section
+                _buildProductsSection(context),
+                const SizedBox(height: 32),
+
+                // Stores section
+                _buildStoresSection(context),
+
+                // Extra space at bottom for navigation bar
+                const SizedBox(height: 80),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  
+
+  Widget _buildProductsSection(BuildContext context) {
+    return Consumer<ProductProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 3,
+              ),
+            ),
+          );
+        }
+
+        if (provider.errorMessage.isNotEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red[400], size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    provider.errorMessage,
+                    style: TextStyle(color: Colors.red[400], fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => provider.fetchProducts(),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (provider.products.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  Icon(Icons.shopping_basket_outlined,
+                      color: Colors.grey[400], size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No products available at the moment.',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Use ResponsiveLayout builder for different layouts
+        return ResponsiveLayout.builder(
+          context: context,
+          // Mobile layout - horizontal scrolling list with improved cards
+          mobile: SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: provider.products.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: _buildEnhancedProductCard(provider.products[index]),
+                );
+              },
+            ),
+          ),
+          // Tablet layout - 2 column grid with larger cards
+          tablet: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount:
+                  provider.products.length > 6 ? 6 : provider.products.length,
+              itemBuilder: (context, index) {
+                return _buildEnhancedProductCard(provider.products[index]);
+              },
+            ),
+          ),
+          // Desktop layout - 4 column grid with animation effects
+          desktop: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 64.0),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 24,
+                mainAxisSpacing: 24,
+              ),
+              itemCount:
+                  provider.products.length > 8 ? 8 : provider.products.length,
+              itemBuilder: (context, index) {
+                // Add a subtle animation delay based on index
+                return AnimatedOpacity(
+                  duration: const Duration(milliseconds: 500),
+                  opacity: 1.0,
+                  curve: Curves.easeInOut,
+                  child: _buildEnhancedProductCard(provider.products[index]),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // This is a placeholder - you would need to modify your ProductCard or create a new enhanced version
+  Widget _buildEnhancedProductCard(dynamic product) {
+    // For now, we'll just use the existing ProductCard
+    return ProductCard(product: product);
+  }
+
+      Widget _buildStoresSection(BuildContext context) {
+    final horizontalPadding = ResponsiveLayout.isDesktop(context) ? 64.0 : 16.0;
+    final storeHeight = ResponsiveLayout.isDesktop(context) ? 200.0 : 180.0;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(left: 8.0),
+                child: Text(
+                  'Popular Stores',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.black,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Navigate to all stores page
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                ),
+                child: const Row(
+                  children: [
+                    Text(
+                      'See All',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 12,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          
+          ResponsiveLayout.builder(
+            context: context,
+            // Mobile layout - horizontal scrolling list
+            mobile: SizedBox(
+              height: storeHeight,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 3,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: _buildStoreCard(index),
+                  );
+                },
+              ),
+            ),
+            // Tablet layout - 2 column grid
+            tablet: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.5,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: 4,
+              itemBuilder: (context, index) {
+                return _buildStoreCard(index);
+              },
+            ),
+            // Desktop layout - 3 column grid
+            desktop: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 1.5,
+                crossAxisSpacing: 24,
+                mainAxisSpacing: 24,
+              ),
+              itemCount: 6,
+              itemBuilder: (context, index) {
+                return _buildStoreCard(index);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoreCard(int index) {
+    // Sample store data
+    final stores = [
+      {
+        'name': 'Fresh Market',
+        'rating': 4.8,
+        'deliveryCost': 'Free',
+        'deliveryTime': '15-20 min',
+        'imageUrl':
+            'https://images.unsplash.com/photo-1578916171728-46686eac8d58?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80',
+      },
+      // ... other store data remains unchanged
+    ];
+
+    // Use modulo to cycle through the stores if index is out of bounds
+    final storeIndex = index % stores.length;
+    final store = stores[storeIndex];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MarketDetailsScreen(
+              heroTag: 'market_${storeIndex}',
+              marketName: store['name'] as String,
+              rating: store['rating'] as double,
+              deliveryCost: store['deliveryCost'] as String,
+              deliveryTime: store['deliveryTime'] as String,
+              description: 'A great local market offering fresh products',
+              imageUrl: store['imageUrl'] as String,
+              products: const [], // Pass empty list or actual products if available
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Added this to prevent overflow
+          children: [
+            // Store image - reduced height from 120 to 110
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+              child: Image.network(
+                store['imageUrl'] as String,
+                height: 110,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+
+            // Store details - reduced padding
+            Padding(
+              padding: const EdgeInsets.all(10), // Reduced from 12 to 10
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize:
+                    MainAxisSize.min, // Added this to prevent overflow
+                children: [
+                  // Store name and rating
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          store['name'] as String,
+                          style: const TextStyle(
+                            fontSize: 15, // Reduced from 16
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                            size: 14, // Reduced from 16
+                          ),
+                          const SizedBox(width: 2), // Reduced from 4
+                          Text(
+                            store['rating'].toString(),
+                            style: const TextStyle(
+                              fontSize: 13, // Reduced from 14
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6), // Reduced from 8
+
+                  // Delivery info
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3), // Reduced padding
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Delivery: ${store['deliveryCost']}',
+                          style: const TextStyle(
+                            fontSize: 11, // Reduced from 12
+                            color: Colors.green,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6), // Reduced from 8
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3), // Reduced padding
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          store['deliveryTime'] as String,
+                          style: const TextStyle(
+                            fontSize: 11, // Reduced from 12
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBody(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Consumer<ProductProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.errorMessage.isNotEmpty) {
-            return Center(
-              child: Text(
-                provider.errorMessage,
-                style: const TextStyle(color: Colors.red, fontSize: 16),
-              ),
-            );
-          }
-
-          if (provider.products.isEmpty) {
-            return const Center(
-              child: Text(
-                'No products available.',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-            );
-          }
-
-          return SizedBox(
-            height: 160,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemCount: provider.products.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: ProductCard(product: provider.products[index]),
-                );
-              },
-            ),
-          );
-        },
       ),
     );
   }

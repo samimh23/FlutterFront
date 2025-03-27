@@ -10,6 +10,9 @@ class MarketDetailsScreen extends StatelessWidget {
   final String marketName;
   final double rating;
   final String deliveryCost;
+  final String marketLocation;
+  final String marketPhone;
+  final String marketEmail;
   final String deliveryTime;
   final String description;
   final String imageUrl;
@@ -21,6 +24,9 @@ class MarketDetailsScreen extends StatelessWidget {
     required this.marketName,
     required this.rating,
     required this.deliveryCost,
+    required this.marketLocation,
+    required this.marketPhone,
+    required this.marketEmail,
     required this.deliveryTime,
     required this.description,
     required this.imageUrl,
@@ -59,6 +65,9 @@ class MarketDetailsScreen extends StatelessWidget {
       ),
       body: isDesktop 
           ? MarketDetailsDesktopLayout(
+              marketEmail: marketEmail,
+              marketPhone: marketPhone, // Add appropriate phone
+              marketLocation: marketLocation, // Add appropriate location
               heroTag: heroTag,
               marketName: marketName,
               rating: rating,
@@ -69,6 +78,9 @@ class MarketDetailsScreen extends StatelessWidget {
               products: products,
             )
           : MarketDetailsMobileTabletLayout(
+              marketEmail: marketEmail, // Add appropriate email
+              marketPhone: marketPhone, // Add appropriate phone
+              marketLocation: marketLocation, // Add appropriate location
               heroTag: heroTag,
               marketName: marketName,
               rating: rating,

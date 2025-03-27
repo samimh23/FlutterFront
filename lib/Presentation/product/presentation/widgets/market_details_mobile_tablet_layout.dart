@@ -14,6 +14,9 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
   final String marketName;
   final double rating;
   final String deliveryCost;
+  final String marketEmail;
+  final String marketPhone;
+  final String marketLocation;
   final String deliveryTime;
   final String description;
   final String imageUrl;
@@ -24,6 +27,9 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
     required this.heroTag,
     required this.marketName,
     required this.rating,
+    required this.marketEmail,
+    required this.marketPhone,
+    required this.marketLocation,
     required this.deliveryCost,
     required this.deliveryTime,
     required this.description,
@@ -131,7 +137,7 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
                 const SizedBox(height: 24),
                 
                 // Contact information
-                SimplifiedContactInfo(marketName: marketName),
+                SimplifiedContactInfo(marketName: marketName, marketEmail: marketEmail, marketPhone: marketPhone, marketLocation: marketLocation,),
                 
                 const SizedBox(height: 24),
                 

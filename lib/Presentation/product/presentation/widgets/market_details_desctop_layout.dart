@@ -11,7 +11,10 @@ class MarketDetailsDesktopLayout extends StatelessWidget {
   final String marketName;
   final double rating;
   final String deliveryCost;
+  final String marketEmail;
   final String deliveryTime;
+  final String marketPhone;
+  final String marketLocation;
   final String description;
   final String imageUrl;
   final List<Product> products;
@@ -23,7 +26,10 @@ class MarketDetailsDesktopLayout extends StatelessWidget {
     required this.rating,
     required this.deliveryCost,
     required this.deliveryTime,
+    required this.marketEmail,
     required this.description,
+    required this.marketPhone,
+    required this.marketLocation,
     required this.imageUrl,
     required this.products,
   });
@@ -58,6 +64,9 @@ class MarketDetailsDesktopLayout extends StatelessWidget {
                 const SizedBox(height: 24),
                 SimplifiedContactInfo(
                   marketName: marketName,
+                  marketEmail: marketEmail,
+                  marketPhone: marketPhone,
+                  marketLocation: marketLocation,
                 ),
               ],
             ),

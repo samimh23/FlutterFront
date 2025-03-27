@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/market_details_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/widgets/categories_section.dart';
@@ -16,9 +17,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late NormalMarketProvider _normalMarketProvider;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _normalMarketProvider =
+          Provider.of<NormalMarketProvider>(context, listen: false);
+      _normalMarketProvider.loadMarkets();
+    });
   }
 
   @override
@@ -190,8 +197,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  
-
   Widget _buildProductsSection(BuildContext context) {
     return Consumer<ProductProvider>(
       builder: (context, provider, child) {
@@ -337,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return ProductCard(product: product);
   }
 
-      Widget _buildStoresSection(BuildContext context) {
+  Widget _buildStoresSection(BuildContext context) {
     final horizontalPadding = ResponsiveLayout.isDesktop(context) ? 64.0 : 16.0;
     final storeHeight = ResponsiveLayout.isDesktop(context) ? 200.0 : 180.0;
 
@@ -390,76 +395,151 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
 
-          
-          ResponsiveLayout.builder(
-            context: context,
-            // Mobile layout - horizontal scrolling list
-            mobile: SizedBox(
-              height: storeHeight,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: 3,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: _buildStoreCard(index),
-                  );
-                },
-              ),
-            ),
-            // Tablet layout - 2 column grid
-            tablet: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: 4,
-              itemBuilder: (context, index) {
-                return _buildStoreCard(index);
-              },
-            ),
-            // Desktop layout - 3 column grid
-            desktop: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
-              ),
-              itemCount: 6,
-              itemBuilder: (context, index) {
-                return _buildStoreCard(index);
-              },
-            ),
+          // Replace static store list with Consumer for ShopProvider
+          Consumer<NormalMarketProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                );
+              }
+
+              if (provider.errorMessage.isNotEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        Icon(Icons.error_outline,
+                            color: Colors.red[400], size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          provider.errorMessage,
+                          style:
+                              TextStyle(color: Colors.red[400], fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => provider.loadMarkets(),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try Again'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              if (provider.markets.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        Icon(Icons.storefront_outlined,
+                            color: Colors.grey[400], size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No stores available at the moment.',
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Use ResponsiveLayout builder for different layouts
+              return ResponsiveLayout.builder(
+                context: context,
+                // Mobile layout - horizontal scrolling list
+                mobile: SizedBox(
+                  height: storeHeight,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: provider.markets.length > 3
+                        ? 3
+                        : provider.markets.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: _buildStoreCard(provider.markets[index]),
+                      );
+                    },
+                  ),
+                ),
+                // Tablet layout - 2 column grid
+                tablet: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.5,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount:
+                      provider.markets.length > 4 ? 4 : provider.markets.length,
+                  itemBuilder: (context, index) {
+                    return _buildStoreCard(provider.markets[index]);
+                  },
+                ),
+                // Desktop layout - 3 column grid
+                desktop: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1.5,
+                    crossAxisSpacing: 24,
+                    mainAxisSpacing: 24,
+                  ),
+                  itemCount:
+                      provider.markets.length > 6 ? 6 : provider.markets.length,
+                  itemBuilder: (context, index) {
+                    return _buildStoreCard(provider.markets[index]);
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStoreCard(int index) {
-    // Sample store data
-    final stores = [
-      {
-        'name': 'Fresh Market',
-        'rating': 4.8,
-        'deliveryCost': 'Free',
-        'deliveryTime': '15-20 min',
-        'imageUrl':
-            'https://images.unsplash.com/photo-1578916171728-46686eac8d58?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80',
-      },
-      // ... other store data remains unchanged
-    ];
+  Widget _buildStoreCard(dynamic market) {
+    // Extract shop data from the shop object
+    final String name = market.marketName ?? 'Unknown Shop';
+    final double rating = market.rating ?? 4.5;
+    final String marketLocation = market.marketLocation?? 'Unknown Location';
+    final String marketPhone = market.marketPhone?? 'Unknown Phone';
+    final String marketEmail = market.marketEmail?? 'Unknown Email';
+    final String deliveryCost = market.deliveryCost ?? 'Free';
+    final String deliveryTime = market.deliveryTime ?? '15-20 min';
+    final String? imagePath = market.marketImage;
+    final String imageUrl = 'http://localhost:3000/$imagePath';
 
-    // Use modulo to cycle through the stores if index is out of bounds
-    final storeIndex = index % stores.length;
-    final store = stores[storeIndex];
 
     return GestureDetector(
       onTap: () {
@@ -467,13 +547,17 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => MarketDetailsScreen(
-              heroTag: 'market_${storeIndex}',
-              marketName: store['name'] as String,
-              rating: store['rating'] as double,
-              deliveryCost: store['deliveryCost'] as String,
-              deliveryTime: store['deliveryTime'] as String,
-              description: 'A great local market offering fresh products',
-              imageUrl: store['imageUrl'] as String,
+              heroTag: 'market_${market.id}',
+              marketName: name,
+              rating: rating,
+              deliveryCost: deliveryCost,
+              marketLocation: marketLocation,
+              marketPhone: marketPhone,
+              marketEmail: marketEmail,
+              deliveryTime: deliveryTime,
+              description: market.description ??
+                  'A great local market offering fresh products',
+              imageUrl: imageUrl,
               products: const [], // Pass empty list or actual products if available
             ),
           ),
@@ -494,29 +578,36 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, // Added this to prevent overflow
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Store image - reduced height from 120 to 110
+            // Store image
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
               ),
               child: Image.network(
-                store['imageUrl'] as String,
+                imageUrl,
                 height: 110,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 110,
+                    width: double.infinity,
+                    color: Colors.grey[300],
+                    child: Icon(Icons.store, size: 40, color: Colors.grey[500]),
+                  );
+                },
               ),
             ),
 
-            // Store details - reduced padding
+            // Store details
             Padding(
-              padding: const EdgeInsets.all(10), // Reduced from 12 to 10
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize:
-                    MainAxisSize.min, // Added this to prevent overflow
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Store name and rating
                   Row(
@@ -524,27 +615,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          store['name'] as String,
+                          name,
                           style: const TextStyle(
-                            fontSize: 15, // Reduced from 16
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: AppColors.black,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Row(
+                      const Row(
                         children: [
                           const Icon(
                             Icons.star,
                             color: Colors.amber,
-                            size: 14, // Reduced from 16
+                            size: 14,
                           ),
-                          const SizedBox(width: 2), // Reduced from 4
+                          const SizedBox(width: 2),
                           Text(
-                            store['rating'].toString(),
+                            'rating',
                             style: const TextStyle(
-                              fontSize: 13, // Reduced from 14
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
                               color: AppColors.black,
                             ),
@@ -553,39 +644,39 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6), // Reduced from 8
+                  const SizedBox(height: 6),
 
                   // Delivery info
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3), // Reduced padding
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Delivery: ${store['deliveryCost']}',
+                          'Delivery: $deliveryCost',
                           style: const TextStyle(
-                            fontSize: 11, // Reduced from 12
+                            fontSize: 11,
                             color: Colors.green,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6), // Reduced from 8
+                      const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3), // Reduced padding
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          store['deliveryTime'] as String,
+                          deliveryTime,
                           style: const TextStyle(
-                            fontSize: 11, // Reduced from 12
+                            fontSize: 11,
                             color: Colors.blue,
                             fontWeight: FontWeight.w500,
                           ),

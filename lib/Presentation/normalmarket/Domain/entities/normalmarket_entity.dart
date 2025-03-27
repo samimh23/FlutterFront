@@ -1,4 +1,3 @@
-
 import 'package:hanouty/Core/heritables/Markets.dart';
 
 class NormalMarket extends Markets {
@@ -6,6 +5,10 @@ class NormalMarket extends Markets {
   final String marketLocation;
   final String? marketPhone;
   final String? marketEmail;
+  final String? deliveryTime;
+  final String? deliveryCost;
+  final String? description;
+  final double? rating;
   final String? marketImage;
   final String marketWalletPublicKey;
   final String marketWalletSecretKey;
@@ -13,11 +16,15 @@ class NormalMarket extends Markets {
   final String? fractionalNFTAddress;
 
   const NormalMarket({
+    this.deliveryCost,
+    this.deliveryTime,
+    this.description,
     required super.id,
     required super.owner,
     required super.products,
     required this.marketName,
     required this.marketLocation,
+    required this.rating,
     this.marketPhone,
     this.marketEmail,
     this.marketImage,
@@ -34,6 +41,7 @@ class NormalMarket extends Markets {
         marketLocation,
         marketPhone,
         marketEmail,
+        rating,
         marketImage,
         marketWalletPublicKey,
         marketWalletSecretKey,
@@ -46,6 +54,7 @@ class NormalMarket extends Markets {
     String? owner,
     List<String>? products,
     String? marketName,
+    String? rating,
     String? marketLocation,
     String? marketPhone,
     String? marketEmail,
@@ -62,6 +71,7 @@ class NormalMarket extends Markets {
       marketName: marketName ?? this.marketName,
       marketLocation: marketLocation ?? this.marketLocation,
       marketPhone: marketPhone ?? this.marketPhone,
+      rating: double.tryParse(rating ?? '') ?? this.rating,
       marketEmail: marketEmail ?? this.marketEmail,
       marketImage: marketImage ?? this.marketImage,
       marketWalletPublicKey:

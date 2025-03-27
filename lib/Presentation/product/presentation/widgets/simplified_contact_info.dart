@@ -3,10 +3,16 @@ import 'package:hanouty/app_colors.dart';
 
 class SimplifiedContactInfo extends StatelessWidget {
   final String marketName;
+  final String marketLocation;
+  final String marketPhone;
+  final String marketEmail;
 
   const SimplifiedContactInfo({
     super.key,
     required this.marketName,
+    required this.marketLocation,
+    required this.marketPhone,
+    required this.marketEmail,
   });
 
   @override
@@ -35,7 +41,7 @@ class SimplifiedContactInfo extends StatelessWidget {
                 const Icon(Icons.phone, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  "Phone: +216 71 123 456",
+                  marketPhone,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[700],
@@ -49,7 +55,21 @@ class SimplifiedContactInfo extends StatelessWidget {
                 const Icon(Icons.email, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  "Email: contact@$marketName.com",
+                  marketEmail,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+             Row(
+              children: [
+                const Icon(Icons.location_city, size: 16, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  marketLocation,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[700],

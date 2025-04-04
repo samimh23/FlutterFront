@@ -42,7 +42,7 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> deleteProduct(int id) {
+  Future<Either<Failure, Unit>> deleteProduct(String id) {
     return _getMessage(() => remoteDataSource.deleteProduct(id));
   }
 
@@ -100,4 +100,19 @@ class ProductRepositoryImpl implements ProductRepository {
       return left(OfflineFailure());
     }
   }
+
+  @override
+Future<Either<Failure, Product>> getProductById(String id) async {
+  if (await networkInfo.isConnected) {
+    try {
+      final product = await remoteDataSource.getProductById(id);
+      return right(product);
+    } on ServerException {
+      return left(ServerFailure());
+    }
+  } else {
+    return left(OfflineFailure());
+  }
+}
+
 }

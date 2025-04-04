@@ -16,7 +16,7 @@ class MarketDetailsScreen extends StatelessWidget {
   final String deliveryTime;
   final String description;
   final String imageUrl;
-  final List<Product> products;
+  final List<String> products;
 
   const MarketDetailsScreen({
     super.key,
@@ -53,10 +53,7 @@ class MarketDetailsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.share, color: AppColors.black),
-            onPressed: () {},
-          ),
+          
           IconButton(
             icon: const Icon(Icons.favorite_border, color: AppColors.black),
             onPressed: () {},

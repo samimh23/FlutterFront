@@ -20,7 +20,7 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
   final String deliveryTime;
   final String description;
   final String imageUrl;
-  final List<Product> products;
+  final List<String> products;
 
   const MarketDetailsMobileTabletLayout({
     super.key,

@@ -5,12 +5,13 @@ import 'package:hanouty/Core/errors/exceptions.dart';
 import 'package:hanouty/Core/errors/failuresconection.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_all_product.dart';
+import 'package:hanouty/Presentation/product/domain/usecases/get_product_by_id.dart';
 
 
 class ProductProvider extends ChangeNotifier {
   final GetAllProductUseCase getAllProductUseCase;
-
-  ProductProvider({required this.getAllProductUseCase});
+  final GetProductById getProductById;
+  ProductProvider({required this.getAllProductUseCase ,required this.getProductById});
 
   List<Product> _products = [];
   bool _isLoading = false;
@@ -44,6 +45,29 @@ class ProductProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<Product?> fetchProductById(String id) async {
+    _isLoading = true;
+    _errorMessage = ''; // Clear previous errors
+    notifyListeners();
+
+    final Either<Failure, Product> result = await getProductById(id);
+
+    Product? product;
+    result.fold(
+      (failure) {
+        _errorMessage = _mapFailureToMessage(failure);
+        product = null;
+      },
+      (fetchedProduct) {
+        product = fetchedProduct;
+      },
+    );
+
+    _isLoading = false;
+    notifyListeners();
+    return product;
   }
 
   /// Maps specific failure types to error messages.

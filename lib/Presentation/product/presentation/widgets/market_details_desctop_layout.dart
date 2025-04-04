@@ -17,7 +17,7 @@ class MarketDetailsDesktopLayout extends StatelessWidget {
   final String marketLocation;
   final String description;
   final String imageUrl;
-  final List<Product> products;
+  final List<String> products;
 
   const MarketDetailsDesktopLayout({
     super.key,

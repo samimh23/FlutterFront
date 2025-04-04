@@ -16,7 +16,7 @@ class ProductCard extends StatelessWidget {
     // Get responsive dimensions based on device type
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final isTablet = ResponsiveLayout.isTablet(context);
-    
+
     // Adjust card width based on device type
     final cardWidth = isDesktop ? 220.0 : (isTablet ? 180.0 : 120.0);
     final borderRadius = isDesktop ? 12.0 : 8.0;
@@ -25,16 +25,17 @@ class ProductCard extends StatelessWidget {
     final discountFontSize = isDesktop ? 12.0 : (isTablet ? 11.0 : 10.0);
     final imageHeight = isDesktop ? 140.0 : (isTablet ? 120.0 : 100.0);
     final horizontalPadding = isDesktop ? 10.0 : (isTablet ? 8.0 : 6.0);
-    
+
     return GestureDetector(
-      onTap: onTap ?? () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductDetailsScreen(product: product),
-          ),
-        );
-      },
+      onTap: onTap ??
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProductDetailsScreen(product: product),
+              ),
+            );
+          },
       child: Container(
         width: cardWidth,
         decoration: BoxDecoration(
@@ -53,7 +54,8 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(borderRadius)),
               child: _buildProductImage(context, imageHeight),
             ),
             SizedBox(height: isDesktop ? 10 : 6),
@@ -71,11 +73,12 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding, vertical: 4),
               child: Row(
                 children: [
                   Text(
-                    '${product.originalPrice.toStringAsFixed(0)} DT',
+                    '${product.originalPrice} DT',
                     style: TextStyle(
                       fontSize: priceFontSize,
                       fontWeight: FontWeight.bold,
@@ -108,7 +111,7 @@ class ProductCard extends StatelessWidget {
     if (product.images.isEmpty || product.images[0].isEmpty) {
       return _buildPlaceholderImage(context, imageHeight);
     }
-
+    print('fdsfdsfsd*************fdsfsdfdsfds $product');
     // Original image URL
     String originalUrl = product.images[0];
     debugPrint('Original image URL: $originalUrl');
@@ -149,18 +152,15 @@ class ProductCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline, 
-                color: Colors.red, 
-                size: ResponsiveLayout.isDesktop(context) ? 32 : 24
-              ),
+              Icon(Icons.error_outline,
+                  color: Colors.red,
+                  size: ResponsiveLayout.isDesktop(context) ? 32 : 24),
               const SizedBox(height: 4),
               Text(
                 'Image Error',
                 style: TextStyle(
-                  fontSize: ResponsiveLayout.isDesktop(context) ? 12 : 10, 
-                  color: Colors.red[700]
-                ),
+                    fontSize: ResponsiveLayout.isDesktop(context) ? 12 : 10,
+                    color: Colors.red[700]),
               ),
             ],
           ),
@@ -169,9 +169,11 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildWebImageWithFallback(BuildContext context, String originalUrl, double imageHeight) {
+  Widget _buildWebImageWithFallback(
+      BuildContext context, String originalUrl, double imageHeight) {
     // Try a different CORS proxy as fallback
-    String fallbackUrl = 'https://api.allorigins.win/raw?url=' + Uri.encodeComponent(originalUrl);
+    String fallbackUrl = 'https://api.allorigins.win/raw?url=' +
+        Uri.encodeComponent(originalUrl);
     debugPrint('Trying fallback URL: $fallbackUrl');
 
     return CachedNetworkImage(
@@ -196,7 +198,7 @@ class ProductCard extends StatelessWidget {
 
   Widget _buildPlaceholderImage(BuildContext context, double imageHeight) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
-    
+
     return Container(
       height: imageHeight,
       width: double.infinity,
@@ -204,18 +206,11 @@ class ProductCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.image, 
-            color: Colors.grey, 
-            size: isDesktop ? 32 : 24
-          ),
+          Icon(Icons.image, color: Colors.grey, size: isDesktop ? 32 : 24),
           const SizedBox(height: 4),
           Text(
             'No Image',
-            style: TextStyle(
-              fontSize: isDesktop ? 12 : 10, 
-              color: Colors.grey
-            ),
+            style: TextStyle(fontSize: isDesktop ? 12 : 10, color: Colors.grey),
           ),
         ],
       ),

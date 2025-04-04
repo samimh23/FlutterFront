@@ -7,7 +7,8 @@ import 'package:http/http.dart' as http;
 abstract class ProductRemoteDataSource {
   Future<List<ProductModel>> getAllProducts();
 
-  Future<Unit> deleteProduct(int id);
+  Future<Unit> deleteProduct(String id);
+  Future<ProductModel> getProductById(String id);
 
   Future<Unit> updateProduct(ProductModel productModel);
 
@@ -46,7 +47,7 @@ class ProductRemoteDataSourceImpl extends ProductRemoteDataSource {
   }
 
   @override
-  Future<Unit> deleteProduct(int id) async {
+  Future<Unit> deleteProduct(String id) async {
     final response = await client.delete(
       Uri.parse(BASE_URL + "/${id.toString()}"),
       headers: {"Content-Type": "application/json"},
@@ -104,6 +105,22 @@ class ProductRemoteDataSourceImpl extends ProductRemoteDataSource {
     );
     if (response.statusCode == 200) {
       return Future.value(unit);
+    } else {
+      throw ServerException();
+    }
+  }
+  
+  @override
+  Future<ProductModel> getProductById(String id) async{
+    final response = await client.get(
+      Uri.parse('$BASE_URL/${id.toString()}'),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      final decodedJson = json.decode(response.body);
+      final ProductModel productModel = ProductModel.fromJson(decodedJson);
+      return productModel;
     } else {
       throw ServerException();
     }

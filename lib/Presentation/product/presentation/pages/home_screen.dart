@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
+import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/market_details_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/widgets/categories_section.dart';
@@ -532,15 +533,16 @@ class _HomeScreenState extends State<HomeScreen> {
     // Extract shop data from the shop object
     final String name = market.marketName ?? 'Unknown Shop';
     final double rating = market.rating ?? 4.5;
-    final String marketLocation = market.marketLocation?? 'Unknown Location';
-    final String marketPhone = market.marketPhone?? 'Unknown Phone';
-    final String marketEmail = market.marketEmail?? 'Unknown Email';
+    final String marketLocation = market.marketLocation ?? 'Unknown Location';
+    final String marketPhone = market.marketPhone ?? 'Unknown Phone';
+    final String marketEmail = market.marketEmail ?? 'Unknown Email';
     final String deliveryCost = market.deliveryCost ?? 'Free';
     final String deliveryTime = market.deliveryTime ?? '15-20 min';
     final String? imagePath = market.marketImage;
     final String imageUrl = 'http://localhost:3000/$imagePath';
-
-
+    final List<String> products =
+        market.products; // Assuming products is a list
+    print(products);
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -558,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
               description: market.description ??
                   'A great local market offering fresh products',
               imageUrl: imageUrl,
-              products: const [], // Pass empty list or actual products if available
+              products: products, // Pass the actual products list
             ),
           ),
         );
@@ -624,7 +626,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Row(
+                      Row(
                         children: [
                           const Icon(
                             Icons.star,
@@ -633,8 +635,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            'rating',
+                            rating.toString(),
                             style: const TextStyle(
+                              // Removed 'const' keyword
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                               color: AppColors.black,

@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
 import 'package:hanouty/Core/errors/failuresconection.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
+import 'package:hanouty/Presentation/product/domain/usecases/add_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_all_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_product_by_id.dart';
 
@@ -11,7 +12,8 @@ import 'package:hanouty/Presentation/product/domain/usecases/get_product_by_id.d
 class ProductProvider extends ChangeNotifier {
   final GetAllProductUseCase getAllProductUseCase;
   final GetProductById getProductById;
-  ProductProvider({required this.getAllProductUseCase ,required this.getProductById});
+  final AddProductUseCase addProductUseCase;
+  ProductProvider({required this.getAllProductUseCase ,required this.getProductById, required this.addProductUseCase});
 
   List<Product> _products = [];
   bool _isLoading = false;
@@ -69,6 +71,29 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
     return product;
   }
+  Future<bool> addProduct(Product product) async {
+  _isLoading = true;
+  _errorMessage = ''; // Clear previous errors
+  notifyListeners();
+
+  final Either<Failure, Unit> result = await addProductUseCase(product);
+
+  bool success = false;
+  result.fold(
+    (failure) {
+      _errorMessage = _mapFailureToMessage(failure);
+      success = false;
+    },
+    (_) {
+      // Unit doesn't contain a value, just indicates success
+      success = true;
+    },
+  );
+
+  _isLoading = false;
+  notifyListeners();
+  return success;
+}
 
   /// Maps specific failure types to error messages.
   String _mapFailureToMessage(Failure failure) {

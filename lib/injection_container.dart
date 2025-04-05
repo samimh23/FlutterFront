@@ -15,6 +15,7 @@ import 'package:hanouty/Presentation/product/data/datasources/product_local_data
 import 'package:hanouty/Presentation/product/data/datasources/product_remote_data_source.dart';
 import 'package:hanouty/Presentation/product/data/repositories/product_repository_impl.dart';
 import 'package:hanouty/Presentation/product/domain/repositories/product_repositry.dart';
+import 'package:hanouty/Presentation/product/domain/usecases/add_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_all_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_product_by_id.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
@@ -57,8 +58,8 @@ Future<void> init() async {
   sl.registerFactory<CartProvider>(() => CartProvider());
 
   //product
-  sl.registerFactory(() => ProductProvider(getAllProductUseCase: sl(), getProductById: sl()));
-
+  sl.registerFactory(() => ProductProvider(getAllProductUseCase: sl(), getProductById: sl(), addProductUseCase: sl()));
+ sl.registerLazySingleton(() => AddProductUseCase(sl()));
   sl.registerLazySingleton(() => GetAllProductUseCase(sl()));
    sl.registerLazySingleton(() => GetProductById(sl()));
 

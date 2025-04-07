@@ -162,17 +162,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: const Row(
                           children: [
-                            Text(
-                              'See All',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            
                             SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                            ),
+                            
                           ],
                         ),
                       ),
@@ -377,19 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   foregroundColor: AppColors.primary,
                 ),
                 child: const Row(
-                  children: [
-                    Text(
-                      'See All',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 12,
-                    ),
-                  ],
+                  
                 ),
               ),
             ],
@@ -532,12 +512,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStoreCard(dynamic market) {
     // Extract shop data from the shop object
     final String name = market.marketName ?? 'Unknown Shop';
-    final double rating = market.rating ?? 4.5;
     final String marketLocation = market.marketLocation ?? 'Unknown Location';
     final String marketPhone = market.marketPhone ?? 'Unknown Phone';
     final String marketEmail = market.marketEmail ?? 'Unknown Email';
-    final String deliveryCost = market.deliveryCost ?? 'Free';
-    final String deliveryTime = market.deliveryTime ?? '15-20 min';
     final String? imagePath = market.marketImage;
     final String imageUrl = 'http://localhost:3000/$imagePath';
     final List<String> products =
@@ -551,14 +528,9 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context) => MarketDetailsScreen(
               heroTag: 'market_${market.id}',
               marketName: name,
-              rating: rating,
-              deliveryCost: deliveryCost,
               marketLocation: marketLocation,
               marketPhone: marketPhone,
               marketEmail: marketEmail,
-              deliveryTime: deliveryTime,
-              description: market.description ??
-                  'A great local market offering fresh products',
               imageUrl: imageUrl,
               products: products, // Pass the actual products list
             ),
@@ -635,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            rating.toString(),
+                            '2.1',
                             style: const TextStyle(
                               // Removed 'const' keyword
                               fontSize: 13,
@@ -660,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Delivery: $deliveryCost',
+                          '2.5',
                           style: const TextStyle(
                             fontSize: 11,
                             color: Colors.green,
@@ -677,7 +649,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          deliveryTime,
+                          '20 min',
                           style: const TextStyle(
                             fontSize: 11,
                             color: Colors.blue,

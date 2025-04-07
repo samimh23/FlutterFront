@@ -8,13 +8,9 @@ import 'package:hanouty/responsive/responsive_layout.dart';
 class MarketDetailsScreen extends StatelessWidget {
   final String heroTag;
   final String marketName;
-  final double rating;
-  final String deliveryCost;
   final String marketLocation;
   final String marketPhone;
   final String marketEmail;
-  final String deliveryTime;
-  final String description;
   final String imageUrl;
   final List<String> products;
 
@@ -22,13 +18,9 @@ class MarketDetailsScreen extends StatelessWidget {
     super.key,
     required this.heroTag,
     required this.marketName,
-    required this.rating,
-    required this.deliveryCost,
     required this.marketLocation,
     required this.marketPhone,
     required this.marketEmail,
-    required this.deliveryTime,
-    required this.description,
     required this.imageUrl,
     required this.products,
   });
@@ -67,10 +59,6 @@ class MarketDetailsScreen extends StatelessWidget {
               marketLocation: marketLocation, // Add appropriate location
               heroTag: heroTag,
               marketName: marketName,
-              rating: rating,
-              deliveryCost: deliveryCost,
-              deliveryTime: deliveryTime,
-              description: description,
               imageUrl: imageUrl,
               products: products,
             )
@@ -80,10 +68,6 @@ class MarketDetailsScreen extends StatelessWidget {
               marketLocation: marketLocation, // Add appropriate location
               heroTag: heroTag,
               marketName: marketName,
-              rating: rating,
-              deliveryCost: deliveryCost,
-              deliveryTime: deliveryTime,
-              description: description,
               imageUrl: imageUrl,
               products: products,
             ),

@@ -11,6 +11,7 @@ class OrderModel extends Order {
     required super.user,
     required super.dateOrder,
     required super.isConfirmed,
+    required super.totalPrice
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +24,7 @@ class OrderModel extends Order {
       user: json['user'] as String? ?? '',
       dateOrder: DateTime.parse(json['dateOrder'] as String),
       isConfirmed: json['isConfirmed'] as bool? ?? false,
+      totalPrice: json['totalPrice'] as int
     );
   }
 
@@ -39,6 +41,7 @@ class OrderModel extends Order {
       'user': user,
       'dateOrder': dateOrder.toIso8601String(),
       'isConfirmed': isConfirmed,
+      'totalPrice': totalPrice,
     };
   }
 }

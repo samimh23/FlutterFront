@@ -22,18 +22,19 @@ class AuthProvider extends ChangeNotifier {
   final SecureStorageService _secureStorageService;
   late final GoogleAuthService _googleAuthService;
 
-
   // Text controllers for form fields
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController twoFactorCodeController = TextEditingController(); // New controller for 2FA code
+  final TextEditingController twoFactorCodeController =
+      TextEditingController(); // New controller for 2FA code
 
   // Remember checkbox state
   bool rememberMe = false;
 
   AuthStatus _status = AuthStatus.initial;
   String? _errorMessage;
-  AuthResponse? _authResponse;  // Store the auth response to access the user data
+  AuthResponse?
+      _authResponse; // Store the auth response to access the user data
   String? _userId; // Store user ID for 2FA verification
 
   // Getters
@@ -45,8 +46,7 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     required LoginUseCase loginUseCase,
     SecureStorageService? secureStorageService,
-  }) :
-        _loginUseCase = loginUseCase,
+  })  : _loginUseCase = loginUseCase,
         _secureStorageService = secureStorageService ?? SecureStorageService() {
     _checkSavedCredentials();
     _googleAuthService = GoogleAuthService();
@@ -82,7 +82,8 @@ class AuthProvider extends ChangeNotifier {
     // Get values from text controllers
     final email = emailController.text.trim();
     final password = passwordController.text;
-
+    
+    
     // Validate input
     if (email.isEmpty || password.isEmpty) {
       _status = AuthStatus.error;
@@ -96,53 +97,54 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _loginUseCase.execute(
-          email: email,
-          password: password
-      );
+        final result = await _loginUseCase.execute(email: email, password: password);
 
-      // Check if 2FA is required
-      if (result.containsKey('requireTwoFactor') && result['requireTwoFactor'] == true) {
-        _userId = result['userId']; // Save user ID for 2FA verification
-        _status = AuthStatus.requiresTwoFactor;
+        // Check if 2FA is required
+        if (result.containsKey('requireTwoFactor') && result['requireTwoFactor'] == true) {
+            _userId = result['userId'];
+            // Save user ID for 2FA verification
+            await _secureStorageService.saveUserId(_userId!); // Save the user ID
+            _status = AuthStatus.requiresTwoFactor;
+            notifyListeners();
+            return true;
+        }
+
+        // Normal authentication flow
+        _authResponse = AuthResponse.fromJson(result);
+        print('User Role: ${_authResponse?.user?.role}');
+
+        await _secureStorageService.saveAccessToken(_authResponse!.accessToken);
+        await _secureStorageService.saveRefreshToken(_authResponse!.refreshToken);
+
+        if (rememberMe) {
+            await _secureStorageService.saveEmail(email);
+            await _secureStorageService.savePassword(password);
+            await _secureStorageService.saveRememberMe('true');
+            final savedEmail = await _secureStorageService.getEmail();
+            final savedRememberMe = await _secureStorageService.getRememberMe();
+            print('Verification - Email: $savedEmail, Remember Me: $savedRememberMe');
+        } else {
+            await _secureStorageService.clearSavedCredentials();
+        }
+
+        // Save user ID after successful login
+        await _secureStorageService.saveUserId(_authResponse!.user!.id ?? '');
+
+        _status = AuthStatus.authenticated;
         notifyListeners();
-        return true; // Return true to indicate successful first step
-      }
-
-      // Normal authentication flow
-      _authResponse = AuthResponse.fromJson(result);
-      print('User Role: ${_authResponse?.user?.role}');
-
-      await _secureStorageService.saveAccessToken(_authResponse!.accessToken);
-      await _secureStorageService.saveRefreshToken(_authResponse!.refreshToken);
-
-      if (rememberMe) {
-        await _secureStorageService.saveEmail(email);
-        await _secureStorageService.savePassword(password);
-        await _secureStorageService.saveRememberMe('true');
-        final savedEmail = await _secureStorageService.getEmail();
-        final savedRememberMe = await _secureStorageService.getRememberMe();
-        print('Verification - Email: $savedEmail, Remember Me: $savedRememberMe');
-
-      } else {
-        await _secureStorageService.clearSavedCredentials();
-      }
-
-      _status = AuthStatus.authenticated;
-      notifyListeners();
-      return true;
-    } on ApiException catch(e) {
-      _status = AuthStatus.error;
-      _errorMessage = e.message;
-      notifyListeners();
-      return false;
+        return true;
+    } on ApiException catch (e) {
+        _status = AuthStatus.error;
+        _errorMessage = e.message;
+        notifyListeners();
+        return false;
     } catch (e) {
-      _status = AuthStatus.error;
-      _errorMessage = 'An unexpected error occurred';
-      notifyListeners();
-      return false;
+        _status = AuthStatus.error;
+        _errorMessage = 'An unexpected error occurred';
+        notifyListeners();
+        return false;
     }
-  }
+}
 
   // New method for 2FA verification
 // New method for 2FA verification with improved logging
@@ -201,7 +203,8 @@ class AuthProvider extends ChangeNotifier {
       print('✅ 2FA verification response: $result');
 
       _authResponse = AuthResponse.fromJson(result);
-      print('✅ Access token received: ${_authResponse!.accessToken.substring(0, min(10, _authResponse!.accessToken.length))}...');
+      print(
+          '✅ Access token received: ${_authResponse!.accessToken.substring(0, min(10, _authResponse!.accessToken.length))}...');
 
       await _secureStorageService.saveAccessToken(_authResponse!.accessToken);
       await _secureStorageService.saveRefreshToken(_authResponse!.refreshToken);
@@ -209,7 +212,7 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
-    } on ApiException catch(e) {
+    } on ApiException catch (e) {
       print('❌ ApiException during 2FA verification: ${e.message}');
       _status = AuthStatus.requiresTwoFactor; // Keep in 2FA state
       _errorMessage = e.message;
@@ -242,6 +245,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
 // Methods for 2FA setup
   Future<Map<String, dynamic>> generateTwoFactorSecret() async {
     try {
@@ -249,7 +253,7 @@ class AuthProvider extends ChangeNotifier {
       final result = await _loginUseCase.generateTwoFactorSecret();
       print('✅ 2FA secret generated successfully: $result');
       return result;
-    } on ApiException catch(e) {
+    } on ApiException catch (e) {
       print('❌ ApiException generating 2FA secret: ${e.message}');
       _errorMessage = e.message;
       notifyListeners();
@@ -267,7 +271,7 @@ class AuthProvider extends ChangeNotifier {
       // Call your API to enable 2FA
       await _loginUseCase.enableTwoFactor(verificationCode);
       return true;
-    } on ApiException catch(e) {
+    } on ApiException catch (e) {
       _errorMessage = e.message;
       notifyListeners();
       return false;
@@ -283,7 +287,7 @@ class AuthProvider extends ChangeNotifier {
       // Call your API to disable 2FA
       await _loginUseCase.disableTwoFactor();
       return true;
-    } on ApiException catch(e) {
+    } on ApiException catch (e) {
       _errorMessage = e.message;
       notifyListeners();
       return false;
@@ -304,8 +308,8 @@ class AuthProvider extends ChangeNotifier {
     }
 
     _status = AuthStatus.initial;
-    _authResponse = null;  // Clear the auth response
-    _userId = null;  // Clear the user ID
+    _authResponse = null; // Clear the auth response
+    _userId = null; // Clear the user ID
     notifyListeners();
   }
 

@@ -7,17 +7,19 @@ class Order extends Equatable{
   final List<ProductModel> products;
   final String user;
   final DateTime dateOrder;
-  final bool isConfirmed;
+   bool? isConfirmed;
+  final int totalPrice;
 
-  Order({
+   Order({
     required this.id,
     required this.normalMarket,
     required this.products,
     required this.user,
     required this.dateOrder,
     required this.isConfirmed,
+    required this.totalPrice
     });
     
       @override
-      List<Object?> get props => [id, normalMarket, products, user, dateOrder, isConfirmed];
+      List<Object?> get props => [id, normalMarket, products, user, dateOrder, isConfirmed, totalPrice];
 }

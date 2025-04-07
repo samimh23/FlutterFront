@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:hanouty/app_colors.dart';
 
 class MarketDescription extends StatelessWidget {
-  final String description;
   final bool isDesktop;
 
   const MarketDescription({
     super.key,
-    required this.description,
     this.isDesktop = false,
   });
 
@@ -28,7 +26,7 @@ class MarketDescription extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          description,
+          'good market',
           style: TextStyle(
             fontSize: isDesktop ? 16 : 14,
             color: Colors.grey[700],

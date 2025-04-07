@@ -41,12 +41,11 @@ class OrderProvider extends ChangeNotifier {
   _setLoading(true);
 
   try {
-    final createdOrder = await createOrderUseCase.execute(order);
+    final createdOrder = await createOrderUseCase.call(order);
     _orders.add(createdOrder);
     print('Order created successfully: ${createdOrder.id}');
   } catch (e) {
     _errorMessage = e.toString();
-    print('Error creating order: $_errorMessage');
     // Optionally, you can notify the UI or show a snackbar via your widget.
   }
 
@@ -60,7 +59,7 @@ class OrderProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      final confirmedOrder = await confirmOrderUseCase.execute(orderId);
+      final confirmedOrder = await confirmOrderUseCase.call(orderId);
       _updateOrderInList(confirmedOrder);
     } catch (e) {
       _errorMessage = e.toString();
@@ -87,20 +86,22 @@ class OrderProvider extends ChangeNotifier {
   
 
   /// Find orders by user ID (optional).
-  Future<void> findOrdersByUserId(String userId) async {
-    if (_isLoading) return;
+Future<List<Order>> findOrdersByUserId(String userId) async {
+    if (_isLoading) return _userOrders;
     _setLoading(true);
 
     try {
-      final orders = await findOrderByUserIdUseCase.execute(userId);
+      final orders = await findOrderByUserIdUseCase.call(userId);
       _userOrders = orders;
+      return _userOrders;
     } catch (e) {
       _errorMessage = e.toString();
       _userOrders = [];
+      return _userOrders;
+    } finally {
+      _setLoading(false);
     }
-
-    _setLoading(false);
-  }
+}
 
   /// Clear the current error message.
   void clearError() {
@@ -121,5 +122,14 @@ class OrderProvider extends ChangeNotifier {
     _isLoading = value;
     if (value) _errorMessage = '';
     notifyListeners();
+  }
+
+  /// Mark an order as pending by ID.
+  Future<void> markOrderAsPending(String orderId) async {
+    final orderIndex = _orders.indexWhere((order) => order.id == orderId);
+    if (orderIndex != -1) {
+      _orders[orderIndex].isConfirmed = false; // Assuming isConfirmed is used to check if an order is pending
+      notifyListeners();
+    }
   }
 }

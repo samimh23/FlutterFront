@@ -19,6 +19,7 @@ class OrderRepositoryImpl implements OrderRepository {
       user: order.user,
       dateOrder: order.dateOrder,
       isConfirmed: order.isConfirmed,
+      totalPrice: order.totalPrice
     );
     return await remoteDataSource.createOrder(orderModel);
   }
@@ -42,6 +43,7 @@ class OrderRepositoryImpl implements OrderRepository {
       user: order.user,
       dateOrder: order.dateOrder,
       isConfirmed: order.isConfirmed,
+      totalPrice: order.totalPrice
     );
     return await remoteDataSource.updateOrder(id, orderModel);
   }
@@ -53,8 +55,7 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  Future<List<Order>> findOrdersByUserId(String idUser) {
-    // TODO: implement findOrdersByUserId
-    throw UnimplementedError();
+  Future<List<Order>> findOrdersByUserId(String idUser) async{
+return await remoteDataSource.findOrdersByUserId(idUser);
   }
 }

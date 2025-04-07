@@ -6,9 +6,10 @@ import 'package:hanouty/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
+import 'package:hanouty/Core/network/apiconastant.dart';
 
 class ProductsGrid extends StatelessWidget {
-  final List<String> products; // Updated to List<String>
+  final List<String> products; // Product IDs
   final int crossAxisCount;
 
   const ProductsGrid({
@@ -28,27 +29,24 @@ class ProductsGrid extends StatelessWidget {
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {
-        final productId = products[index]; // Treat each item as a product ID
+        final productId = products[index];
         return FutureBuilder<Product?>(
           future: Provider.of<ProductProvider>(context, listen: false)
               .fetchProductById(productId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError || !snapshot.hasData) {
-              return Container(
-                child: Text('Failed to load product data'),
-              );
+              return const Center(child: Text('Failed to load product'));
             } else {
               final product = snapshot.data!;
-              final List<String> images =
-                  product.images is List<String> ? product.images : [];
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProductDetailsScreen(product: product),
+                      builder: (context) =>
+                          ProductDetailsScreen(product: product),
                     ),
                   );
                 },
@@ -63,10 +61,9 @@ class ProductsGrid extends StatelessWidget {
                       Expanded(
                         flex: 6,
                         child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: _buildProductImage(context, images),
+                          borderRadius:
+                              const BorderRadius.vertical(top: Radius.circular(12)),
+                          child: _buildProductImage(product.image),
                         ),
                       ),
                       Expanded(
@@ -126,26 +123,15 @@ class ProductsGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildProductImage(BuildContext context, List<String> images) {
-    // Check if the images array exists and has elements
-    if (images.isEmpty || images[0].isEmpty) {
-      return _buildPlaceholderImage(context);
+  Widget _buildProductImage(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) {
+      return _buildPlaceholderImage();
     }
 
-    // Original image URL
-    String originalUrl = images[0];
-    debugPrint('Original image URL: $originalUrl');
+    final String imageUrl = kIsWeb
+        ? ApiConstants.getImageUrlWithCacheBusting(imagePath)
+        : ApiConstants.getFullImageUrl(imagePath);
 
-    // For Flutter Web: Use a CORS proxy service
-    String imageUrl = originalUrl;
-
-    if (kIsWeb) {
-      // Use a CORS proxy service
-      imageUrl = 'https://corsproxy.io/?' + Uri.encodeComponent(originalUrl);
-      debugPrint('Using proxied URL for web: $imageUrl');
-    }
-
-    // Using CachedNetworkImage for better performance and error handling
     return CachedNetworkImage(
       imageUrl: imageUrl,
       width: double.infinity,
@@ -157,60 +143,19 @@ class ProductsGrid extends StatelessWidget {
         ),
       ),
       errorWidget: (context, url, error) {
-        debugPrint('Error loading image: $error');
-        // When error, try with a different proxy as fallback
-        if (kIsWeb && !url.contains('cors-anywhere')) {
-          return _buildWebImageWithFallback(context, originalUrl);
-        }
-        return Container(
-          color: Colors.grey[200],
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, color: Colors.red, size: 30),
-              const SizedBox(height: 4),
-              Text(
-                'Image Error',
-                style: TextStyle(fontSize: 12, color: Colors.red[700]),
-              ),
-            ],
-          ),
-        );
+        return _buildPlaceholderImage();
       },
     );
   }
 
-  Widget _buildWebImageWithFallback(BuildContext context, String originalUrl) {
-    // Try a different CORS proxy as fallback
-    String fallbackUrl = 'https://api.allorigins.win/raw?url=' +
-        Uri.encodeComponent(originalUrl);
-    debugPrint('Trying fallback URL: $fallbackUrl');
-
-    return CachedNetworkImage(
-      imageUrl: fallbackUrl,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(
-        color: Colors.grey[100],
-        child: const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-      errorWidget: (context, url, error) {
-        debugPrint('Fallback image also failed: $error');
-        return _buildPlaceholderImage(context);
-      },
-    );
-  }
-
-  Widget _buildPlaceholderImage(BuildContext context) {
+  Widget _buildPlaceholderImage() {
     return Container(
       color: Colors.grey[200],
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        children: const [
           Icon(Icons.image, color: Colors.grey, size: 30),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(fontSize: 12, color: Colors.grey),

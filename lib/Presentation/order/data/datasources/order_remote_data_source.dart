@@ -77,8 +77,13 @@ Future<OrderModel> createOrder(OrderModel orderModel) async {
   }
   
   @override
-  Future<List<OrderModel>> findOrdersByUserId(String idUser) {
-    // TODO: implement findOrdersByUserId
-    throw UnimplementedError();
+  Future<List<OrderModel>> findOrdersByUserId(String idUser)async {
+    final response = await client.get(Uri.parse('$baseUrl/$idUser'));
+    if (response.statusCode == 200) {
+      List<dynamic> ordersJson = json.decode(response.body);
+      return ordersJson.map((json) => OrderModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to fetch orders for user');
+    }
   }
 }

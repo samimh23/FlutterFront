@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:hanouty/Core/network/apiconastant.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
+import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
+import 'package:hanouty/Presentation/review/data/models/review_model.dart';
 import 'package:hanouty/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:hanouty/responsive/responsive_layout.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
+import 'package:hanouty/Core/Utils/secure_storage.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
@@ -17,14 +23,16 @@ class ProductDetailsScreen extends StatefulWidget {
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  int _currentImageIndex = 0;
+
+  double _userRating = 0.0;// State variable to track review mode
 
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final isTablet = ResponsiveLayout.isTablet(context);
-    
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
           widget.product.name,
@@ -42,7 +50,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       bottomNavigationBar: isDesktop ? null : _buildAddToCartButton(context),
     );
   }
-  
+
   Widget _buildDesktopLayout() {
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -57,7 +65,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               children: [
                 _buildProductImageGallery(),
                 const SizedBox(height: 16),
-                _buildImageSelector(),
+                _buildRatingSection(), // Add rating section here
+                const SizedBox(height: 16),
+                _buildUserRatingSection(), // Add user rating section here
               ],
             ),
           ),
@@ -87,7 +97,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     const SizedBox(height: 24),
                     const Divider(),
                     const SizedBox(height: 16),
-                    
                     // Category and stock info
                     _buildInfoRow(
                       Icons.category,
@@ -97,13 +106,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       iconSize: 20,
                     ),
                     _buildInfoRow(
-                      Icons.inventory, 
-                      "In Stock", 
+                      Icons.inventory,
+                      "In Stock",
                       "${widget.product.stock} units",
                       fontSize: 16,
                       iconSize: 20,
                     ),
-                    
                     const SizedBox(height: 24),
                     Text(
                       "Description",
@@ -133,18 +141,191 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
   }
-  
+
+  Widget _buildUserRatingSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Rate this product",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        const SizedBox(height: 8),
+        RatingBar.builder(
+          initialRating: _userRating,
+          minRating: 1,
+          direction: Axis.horizontal,
+          allowHalfRating: false,
+          itemCount: 5,
+          itemBuilder: (context, _) => const Icon(
+            Icons.star,
+            color: Colors.amber,
+          ),
+          onRatingUpdate: (rating) {
+            setState(() {
+              _userRating = rating;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () async {
+            final reviewProvider =
+                Provider.of<ReviewProvider>(context, listen: false);
+            final secureStorageService = SecureStorageService();
+
+            String? userId = await secureStorageService.getUserId();
+
+            if (userId == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('User ID not found. Please log in.'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+              return;
+            }
+
+            final review = ReviewModel(
+              rating: _userRating.toInt(),
+              user: userId, // Set the user ID in the review model,
+              product: widget.product.id,
+            );
+
+            // Fetch existing reviews by user ID
+            final existingReviews =
+                await reviewProvider.fetchReviewsByUserId(userId);
+            print('********************$existingReviews**********************');
+            // Check if a review for this product already exists
+            final existingReview = existingReviews.firstWhere(
+              (r) => r.product == widget.product.id,
+              orElse: () => ReviewModel(
+                  rating: 0,
+                  product: ''), // Return empty ReviewModel if no review found
+            );
+
+            if (existingReview != null) {
+              // Update existing review
+              reviewProvider
+                  .updateExistingReview(existingReview.id, review)
+                  .then((success) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Review updated successfully!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to update review.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              });
+            } else {
+              // Create new review
+              reviewProvider.createNewReview(review, userId).then((success) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Review submitted successfully!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to submit review.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              });
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text("Submit Review"),
+        ),
+      ],
+    );
+  }
+
+  void _submitReview(BuildContext context) async {
+    final reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
+    final productProvider =
+        Provider.of<ProductProvider>(context, listen: false);
+    final secureStorageService = SecureStorageService();
+
+    // Retrieve the user ID from secure storage
+    String? userId = await secureStorageService.getUserId();
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User ID not found. Please log in.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final review = ReviewModel(
+      rating: _userRating.toInt(),
+      product: widget.product.id,
+    );
+
+    reviewProvider.createNewReview(review, userId).then((success) async {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Review submitted successfully!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Fetch updated product rating
+        final updatedProduct =
+            await productProvider.fetchProductById(widget.product.id);
+        if (updatedProduct != null) {
+          setState(() {
+            widget.product.ratingsAverage = updatedProduct.ratingsAverage;
+            widget.product.ratingsQuantity =
+                updatedProduct.ratingsQuantity; // Update ratingsQuantity
+          });
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to submit review.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    });
+  }
+
   Widget _buildMobileTabletLayout() {
     final isTablet = ResponsiveLayout.isTablet(context);
     final padding = isTablet ? 20.0 : 16.0;
-    
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Product Image with error handling
           _buildProductImage(context),
-          
+          const SizedBox(height: 16),
+          _buildRatingSection(), // Add rating section here
           Padding(
             padding: EdgeInsets.all(padding),
             child: Column(
@@ -160,7 +341,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 const SizedBox(height: 8),
                 _buildPriceSection(),
                 const SizedBox(height: 16),
-                
                 // Category and stock info
                 _buildInfoRow(
                   Icons.category,
@@ -169,13 +349,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   fontSize: isTablet ? 15 : 14,
                 ),
                 _buildInfoRow(
-                  Icons.inventory, 
-                  "In Stock", 
+                  Icons.inventory,
+                  "In Stock",
                   "${widget.product.stock} units",
                   fontSize: isTablet ? 15 : 14,
                 ),
-                
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Text(
                   "Description",
                   style: TextStyle(
@@ -199,19 +378,72 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
   }
-  
+
+  Widget _buildRatingSection() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          RatingBarIndicator(
+            rating: widget.product.ratingsAverage?.toDouble() ?? 0.0,
+            itemBuilder: (context, index) => const Icon(
+              Icons.star,
+              color: Colors.amber,
+            ),
+            itemCount: 5,
+            itemSize: 24.0,
+            direction: Axis.horizontal,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${widget.product.ratingsAverage} / 5',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            widget.product.ratingsQuantity == 1
+                ? 'Rated by 1 client'
+                : 'Rated by ${widget.product.ratingsQuantity} clients',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProductImageGallery() {
-    if (widget.product.images.isEmpty) {
-      return _buildPlaceholderImage(context, height: 350);
+    if (widget.product.image == null || widget.product.image!.isEmpty) {
+      return _buildPlaceholderImage(context);
     }
-    
-    String imageUrl = widget.product.images[_currentImageIndex];
-    
-    // Handle CORS issues for web platform
-    if (kIsWeb) {
-      imageUrl = 'https://corsproxy.io/?${Uri.encodeComponent(imageUrl)}';
-    }
-    
+
+    // Use ApiConstants to get full image URL with proper handling for web
+    final String imageUrl = kIsWeb
+        ? ApiConstants.getImageUrlWithCacheBusting(widget.product.image!)
+        : ApiConstants.getFullImageUrl(widget.product.image!);
+
+    debugPrint('Loading product gallery image: $imageUrl');
+
     return Container(
       height: 350,
       width: double.infinity,
@@ -229,83 +461,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             child: const Center(child: CircularProgressIndicator()),
           ),
           errorWidget: (context, url, error) {
-            if (kIsWeb && !url.contains('allorigins')) {
-              return CachedNetworkImage(
-                imageUrl: 'https://api.allorigins.win/raw?url=${Uri.encodeComponent(widget.product.images[_currentImageIndex])}',
-                fit: BoxFit.contain,
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[200],
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) => _buildPlaceholderImage(context, height: 350),
-              );
-            }
-            return _buildPlaceholderImage(context, height: 350);
+            debugPrint('Error loading gallery image: $error');
+            return _buildPlaceholderImage(context);
           },
         ),
       ),
     );
   }
-  
-  Widget _buildImageSelector() {
-    if (widget.product.images.length <= 1) {
-      return const SizedBox.shrink();
-    }
-    
-    return SizedBox(
-      height: 80,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: widget.product.images.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _currentImageIndex = index;
-              });
-            },
-            child: Container(
-              width: 80,
-              height: 80,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: _currentImageIndex == index 
-                      ? AppColors.primary 
-                      : Colors.grey.shade300,
-                  width: _currentImageIndex == index ? 2 : 1,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(7),
-                child: CachedNetworkImage(
-                  imageUrl: kIsWeb 
-                      ? 'https://corsproxy.io/?${Uri.encodeComponent(widget.product.images[index])}'
-                      : widget.product.images[index],
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.error, size: 20),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+
 
   // Helper method to extract category name from ProductCategory object
   String _getCategoryName(dynamic category) {
@@ -322,78 +485,94 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Widget _buildProductImage(BuildContext context) {
-    final isTablet = ResponsiveLayout.isTablet(context);
-    final height = isTablet ? 300.0 : 250.0;
-    
-    if (widget.product.images.isEmpty) {
-      return _buildPlaceholderImage(context, height: height);
+   Widget _buildProductImage(BuildContext context) {
+    // Check if the product has an image
+    if (widget.product.image == null || widget.product.image!.isEmpty) {
+      return _buildPlaceholderImage(context);
     }
 
-    String imageUrl = widget.product.images.first;
+    // Use ApiConstants to get full image URL, similar to ProductCard implementation
+    final String fullImageUrl = kIsWeb
+        ? ApiConstants.getImageUrlWithCacheBusting(widget.product.image!)
+        : ApiConstants.getFullImageUrl(widget.product.image!);
 
-    // Handle CORS issues for web platform
-    if (kIsWeb) {
-      imageUrl = 'https://corsproxy.io/?${Uri.encodeComponent(imageUrl)}';
-    }
+    debugPrint('Loading product detail image: $fullImageUrl');
 
     return Hero(
       tag: 'product_image_${widget.product.id}',
       child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        height: height,
+        imageUrl: fullImageUrl,
+        height: 250,
         width: double.infinity,
         fit: BoxFit.cover,
         placeholder: (context, url) => Container(
-          height: height,
+          height: 250,
           color: Colors.grey[200],
           child: const Center(
             child: CircularProgressIndicator(),
           ),
         ),
         errorWidget: (context, url, error) {
-          if (kIsWeb && !url.contains('allorigins')) {
-            return CachedNetworkImage(
-              imageUrl: 'https://api.allorigins.win/raw?url=${Uri.encodeComponent(widget.product.images.first)}',
-              height: height,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                height: height,
-                color: Colors.grey[200],
-                               child: const Center(child: CircularProgressIndicator()),
-              ),
-              errorWidget: (context, url, error) => _buildPlaceholderImage(context, height: height),
-            );
-          }
-          return _buildPlaceholderImage(context, height: height);
+          debugPrint('Error loading detail image: $error');
+          return GestureDetector(
+            onTap: () {
+              // Show image URL in dialog for debugging, similar to ProductCard
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Image Error'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Failed to load image:'),
+                        const SizedBox(height: 8),
+                        Text(fullImageUrl, style: const TextStyle(fontSize: 12)),
+                        const SizedBox(height: 8),
+                        Text('Original path: ${widget.product.image}', style: const TextStyle(fontSize: 12)),
+                        const SizedBox(height: 12),
+                        const Text('Check that:'),
+                        const Text('• Backend server is running'),
+                        const Text('• File exists on server'),
+                        const Text('• Path is correct'),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            child: _buildPlaceholderImage(context),
+          );
         },
       ),
     );
   }
 
-  Widget _buildPlaceholderImage(BuildContext context, {required double height}) {
-    final isDesktop = ResponsiveLayout.isDesktop(context);
-    
+ Widget _buildPlaceholderImage(BuildContext context) {
     return Container(
-      height: height,
+      height: 250,
       width: double.infinity,
       color: Colors.grey[200],
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.image_not_supported, 
-            size: isDesktop ? 64 : 50, 
-            color: Colors.grey
-          ),
-          const SizedBox(height: 8),
+        children: const [
+          Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+          SizedBox(height: 8),
           Text(
             "Image not available",
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: isDesktop ? 16 : 14,
-            ),
+            style: TextStyle(color: Colors.grey),
+          ),
+          SizedBox(height: 2),
+          Text(
+            "Tap for details",
+            style: TextStyle(fontSize: 10, color: Colors.grey),
           ),
         ],
       ),
@@ -402,10 +581,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Widget _buildPriceSection({bool isDesktop = false}) {
     final isTablet = !isDesktop && ResponsiveLayout.isTablet(context);
-    
+
     final priceFontSize = isDesktop ? 26.0 : (isTablet ? 24.0 : 22.0);
     final discountFontSize = isDesktop ? 18.0 : (isTablet ? 17.0 : 16.0);
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
@@ -432,7 +611,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {double fontSize = 14, double iconSize = 16}) {
+  Widget _buildInfoRow(IconData icon, String label, String value,
+      {double fontSize = 14, double iconSize = 16}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -464,10 +644,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Widget _buildAddToCartButton(BuildContext context, {bool isDesktop = false}) {
     final buttonHeight = isDesktop ? 56.0 : 50.0;
     final fontSize = isDesktop ? 20.0 : 18.0;
-    
-    final buttonWidth = isDesktop ? double.infinity : MediaQuery.of(context).size.width;
+
+    final buttonWidth =
+        isDesktop ? double.infinity : MediaQuery.of(context).size.width;
     final horizontalPadding = isDesktop ? 0.0 : 16.0;
-    
+
     return Container(
       height: buttonHeight,
       width: buttonWidth,
@@ -475,9 +656,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       margin: isDesktop ? EdgeInsets.zero : const EdgeInsets.only(bottom: 16),
       child: ElevatedButton(
         onPressed: () {
-          final cartProvider = Provider.of<CartProvider>(context, listen: false);
+          final cartProvider =
+              Provider.of<CartProvider>(context, listen: false);
           cartProvider.addToCart(widget.product);
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -530,20 +712,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
   }
-  
+
   // Helper method to format currency
-  String _formatCurrency(double amount) {
+  String formatCurrency(double amount) {
     return '${amount.toStringAsFixed(2)} DT';
   }
-  
+
   // Helper method to calculate discount percentage
-  String _calculateDiscountPercentage() {
+  String calculateDiscountPercentage() {
     if (!widget.product.isDiscounted || widget.product.discountValue <= 0) {
       return '';
     }
-    
-    final originalPrice = widget.product.originalPrice + widget.product.discountValue;
-    final discountPercentage = (widget.product.discountValue / originalPrice) * 100;
+
+    final originalPrice =
+        widget.product.originalPrice + widget.product.discountValue;
+    final discountPercentage =
+        (widget.product.discountValue / originalPrice) * 100;
     return '${discountPercentage.round()}% OFF';
   }
 }

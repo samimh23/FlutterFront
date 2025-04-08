@@ -1,13 +1,15 @@
+import 'dart:html' as html;
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/models/normalmarket_model.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/models/share_fractions_model.dart';
-
 import 'package:http_parser/http_parser.dart';
 
 abstract class NormalMarketRemoteDataSource {
   Future<List<NormalMarketModel>> getNormalMarkets();
   Future<NormalMarketModel> getNormalMarketById(String id);
+  Future<List<NormalMarketModel>> getMyNormalMarkets();
   Future<NormalMarketModel> createNormalMarket(
       NormalMarketModel market, String imagePath);
   Future<NormalMarketModel> updateNormalMarket(
@@ -20,195 +22,291 @@ abstract class NormalMarketRemoteDataSource {
 
 class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   final Dio dio;
-    final SecureStorageService _secureStorageService;
-  NormalMarketRemoteDataSourceImpl(this._secureStorageService, {required this.dio
-  });
+  final SecureStorageService _secureStorageService;
 
+  NormalMarketRemoteDataSourceImpl(this._secureStorageService, {required this.dio});
 
-@override
-Future<List<NormalMarketModel>> getNormalMarkets() async {
-
-  try {
-    print('DataSource: Sending API request to fetch markets');
-    final response = await dio.get('');
-    print('DataSource: API Response received: ${response.statusCode}');
-    
-    if (response.data == null) {
-      throw Exception('API returned null data');
-    }
-    
-    final List<dynamic> marketList = response.data;
-    print('DataSource: Processing ${marketList.length} markets');
-    
-    final markets = <NormalMarketModel>[];
-    
-    for (var marketJson in marketList) {
-      try {
-        final market = NormalMarketModel.fromJson(marketJson);
-        markets.add(market);
-      } catch (e) {
-        // Log error but continue processing other markets
-        print('Error parsing market: $e');
-        print('Problematic market data: $marketJson');
-      }
-    }
-    
-    print('DataSource: Successfully processed ${markets.length} markets');
-    return markets;
-  } on DioException catch (e) {
-    print('DioException: ${e.type} - ${e.message}');
-    if (e.response != null) {
-      print('Response status: ${e.response?.statusCode}');
-      print('Response data: ${e.response?.data}');
-    }
-    throw Exception('Network error: ${e.message}');
-  } catch (e, stackTrace) {
-    print('General error: $e');
-    print('Stack trace: $stackTrace');
-    
-   
-    
-    throw Exception('Failed to fetch markets: ${e.toString()}');
+  // Helper method to get auth headers
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await _secureStorageService.getAccessToken();
+    return {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
   }
-}
 
-
-  @override
-  Future<NormalMarketModel> getNormalMarketById(String id) async {
+  // Helper method for web image processing
+  Future<MultipartFile> _processWebImage(String imagePath) async {
     try {
-      final response = await dio.get('/$id');
-      return NormalMarketModel.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleDioException(e, 'Failed to fetch market');
+      // Handle Data URLs
+      if (imagePath.startsWith('data:')) {
+        // Extract the base64 data from the Data URL
+        final String base64Data = imagePath.split(',')[1];
+        final List<int> bytes = base64Decode(base64Data);
+
+        return MultipartFile.fromBytes(
+          bytes,
+          filename: 'market_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        );
+      }
+      // Handle Blob URLs
+      else if (imagePath.startsWith('blob:')) {
+        // Create an HTML anchor element
+        final html.AnchorElement anchor = html.AnchorElement(href: imagePath);
+
+        // Create an XHR request to get the blob
+        final request = html.HttpRequest();
+        request.open('GET', anchor.href!, async: true);
+        request.responseType = 'blob';
+
+        // Wait for the request to complete
+        await request.onLoad.first;
+
+        if (request.status == 200) {
+          final html.Blob blob = request.response as html.Blob;
+          final reader = html.FileReader();
+          reader.readAsArrayBuffer(blob);
+
+          // Wait for the reader to complete
+          await reader.onLoad.first;
+
+          final List<int> bytes = (reader.result as List<int>).cast<int>();
+
+          return MultipartFile.fromBytes(
+            bytes,
+            filename: 'market_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            contentType: MediaType('image', 'jpeg'),
+          );
+        } else {
+          throw Exception('Failed to load image from Blob URL: Status ${request.status}');
+        }
+      }
+      // Handle File objects (for web file input)
+      else if (imagePath.startsWith('File:')) {
+        final html.File file = html.window.sessionStorage['tempFile'] as html.File;
+        final reader = html.FileReader();
+        reader.readAsArrayBuffer(file);
+
+        await reader.onLoad.first;
+        final List<int> bytes = (reader.result as List<int>).cast<int>();
+
+        return MultipartFile.fromBytes(
+          bytes,
+          filename: file.name,
+          contentType: MediaType('image', file.type.split('/')[1]),
+        );
+      }
+      else {
+        throw Exception('Unsupported image path format for web. Path must start with "data:", "blob:", or "File:"');
+      }
     } catch (e) {
-      throw Exception('Failed to fetch market: ${e.toString()}');
+      print('❌ Error processing web image: $e');
+      throw Exception('Failed to process image: $e');
     }
   }
 
   @override
   Future<NormalMarketModel> createNormalMarket(
       NormalMarketModel market, String imagePath) async {
-    final token = await _secureStorageService.getAccessToken();
-    print(token);
     try {
+      print('📸 Image path: $imagePath');
+
       // Create form data for multipart request
+      // REMOVED owner and fractions fields that were causing the error
       FormData formData = FormData.fromMap({
-        'owner':    '67ce1c9c76a9aab8d26df7dd',
+        // Removed 'owner': userId, field - backend will set this
         'products': market.products,
         'marketName': market.marketName,
         'marketType': 'normal',
         'marketLocation': market.marketLocation,
-        'marketWalletPublicKey': market.marketWalletPublicKey,
-        'marketWalletSecretKey': market.marketWalletSecretKey,
-        'fractions': market.fractions,
+        if (market.marketWalletPublicKey?.isNotEmpty == true)
+          'marketWalletPublicKey': market.marketWalletPublicKey,
+        if (market.marketWalletSecretKey?.isNotEmpty == true)
+          'marketWalletSecretKey': market.marketWalletSecretKey,
+        // Removed 'fractions' field - backend will set this
+        if (market.marketPhone != null && market.marketPhone!.isNotEmpty)
+          'marketPhone': market.marketPhone,
+        if (market.marketEmail != null && market.marketEmail!.isNotEmpty)
+          'marketEmail': market.marketEmail,
       });
 
-      // Add optional fields
-      if (market.marketPhone != null)
-        formData.fields.add(MapEntry('marketPhone', market.marketPhone!));
-      if (market.marketEmail != null)
-        formData.fields.add(MapEntry('marketEmail', market.marketEmail!));
+      // Process and add image
+      final imageFile = await _processWebImage(imagePath);
+      formData.files.add(MapEntry('marketImage', imageFile));
 
-      // Add image file
-      formData.files.add(MapEntry(
-        'marketImage',
-        await MultipartFile.fromFile(
-          imagePath,
-          filename: 'market_image.jpg',
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      ));
+      // Get auth headers
+      final headers = await _getAuthHeaders();
+      print('🔐 Adding auth headers: ${headers.toString()}');
 
       final response = await dio.post(
         '',
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
-          headers: {
-
-            'Accept': 'application/json',
-          },
+          headers: headers,
         ),
       );
 
-      // Log the response data
-      print('Market creation response: ${response.data}');
-      print('Response status code: ${response.statusCode}');
+      print('✅ Market creation response status: ${response.statusCode}');
+      print('📄 Response data: ${response.data}');
+
+      if (response.data == null) {
+        throw Exception('Server returned null response after market creation');
+      }
 
       return NormalMarketModel.fromJson(response.data);
     } on DioException catch (e) {
-      // Log error response if available
-      if (e.response != null) {
-        print('Error response: ${e.response?.data}');
-        print('Error status code: ${e.response?.statusCode}');
-      }
       throw _handleDioException(e, 'Failed to create market');
     } catch (e) {
-      print('Unexpected error: $e');
-      throw Exception('Failed to create market: ${e.toString()}');
+      print('❌ Error creating market: $e');
+      throw Exception('Failed to create market: $e');
     }
   }
 
   @override
   Future<NormalMarketModel> updateNormalMarket(
-
       String id, NormalMarketModel market, String? imagePath) async {
-    final token = await _secureStorageService.getAccessToken();
     try {
-      Map<String, dynamic> formMap = {
+      print('🔄 Updating market with ID: $id');
+
+      // Create form data for multipart request with only the updatable fields
+      Map<String, dynamic> formDataMap = {
         'marketName': market.marketName,
         'marketLocation': market.marketLocation,
       };
 
-      // Add optional fields
-      if (market.marketPhone != null)
-        formMap['marketPhone'] = market.marketPhone;
-      if (market.marketEmail != null)
-        formMap['marketEmail'] = market.marketEmail;
-
-      // Only add image if provided
-      FormData formData;
-      if (imagePath != null) {
-        formData = FormData.fromMap({
-          ...formMap,
-          'marketImage': await MultipartFile.fromFile(
-            imagePath,
-            filename: 'market_image.jpg',
-            contentType: MediaType('image', 'jpeg'),
-          ),
-        });
-      } else {
-        formData = FormData.fromMap(formMap);
+      if (market.marketPhone != null && market.marketPhone!.isNotEmpty) {
+        formDataMap['marketPhone'] = market.marketPhone;
+      }
+      if (market.marketEmail != null && market.marketEmail!.isNotEmpty) {
+        formDataMap['marketEmail'] = market.marketEmail;
       }
 
+      // Create FormData object
+      FormData formData = FormData.fromMap(formDataMap);
+
+      // Add image if provided
+      if (imagePath != null) {
+        final imageFile = await _processWebImage(imagePath);
+        formData.files.add(MapEntry('marketImage', imageFile));
+      }
+
+      final headers = await _getAuthHeaders();
       final response = await dio.patch(
         '/$id',
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
+          headers: headers,
         ),
       );
+
+      if (response.data == null) {
+        throw Exception('Server returned null response after market update');
+      }
 
       return NormalMarketModel.fromJson(response.data);
     } on DioException catch (e) {
       throw _handleDioException(e, 'Failed to update market');
     } catch (e) {
-      throw Exception('Failed to update market: ${e.toString()}');
+      print('❌ Error updating market: $e');
+      throw Exception('Failed to update market: $e');
+    }
+  }
+
+
+  // Keep other methods as they are since they don't involve file operations
+  @override
+  Future<List<NormalMarketModel>> getNormalMarkets() async {
+    try {
+      print('🔍 DataSource: Fetching all markets');
+      final response = await dio.get('');
+      print('✅ DataSource: API Response received: ${response.statusCode}');
+
+      if (response.data == null) {
+        print('❌ DataSource: API returned null data');
+        return [];
+      }
+
+      final List<dynamic> marketList = response.data;
+      print('📊 DataSource: Processing ${marketList.length} markets');
+
+      final markets = <NormalMarketModel>[];
+
+      for (var marketJson in marketList) {
+        try {
+          final market = NormalMarketModel.fromJson(marketJson);
+          markets.add(market);
+        } catch (e) {
+          print('❌ Error parsing market: $e');
+          print('🧩 Problematic market data: $marketJson');
+        }
+      }
+
+      print('✅ DataSource: Successfully processed ${markets.length} markets');
+      return markets;
+    } on DioException catch (e) {
+      _logDioError('getNormalMarkets', e);
+      throw Exception('Network error: ${e.message}');
+    } catch (e, stackTrace) {
+      print('❌ General error: $e');
+      print('📚 Stack trace: $stackTrace');
+      throw Exception('Failed to fetch markets: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<NormalMarketModel> getNormalMarketById(String id) async {
+    try {
+      print('🔍 DataSource: Fetching market with ID: $id');
+      final headers = await _getAuthHeaders();
+
+      final response = await dio.get(
+        '/$id',
+        options: Options(headers: headers),
+      );
+
+      print('✅ DataSource: Market fetched successfully');
+
+      if (response.data == null) {
+        throw Exception('Server returned null response');
+      }
+
+      return NormalMarketModel.fromJson(response.data);
+    } on DioException catch (e) {
+      _logDioError('getNormalMarketById', e);
+      throw _handleDioException(e, 'Failed to fetch market');
+    } catch (e) {
+      print('❌ Error fetching market by ID: $e');
+      throw Exception('Failed to fetch market: ${e.toString()}');
     }
   }
 
   @override
   Future<NormalMarketModel> deleteNormalMarket(String id) async {
     try {
-      final response = await dio.delete('/$id');
+      print('🗑️ Deleting market with ID: $id');
+      final headers = await _getAuthHeaders();
+
+      final response = await dio.delete(
+        '/$id',
+        options: Options(headers: headers),
+      );
+
+      print('✅ Market deletion successful');
+      print('📊 Response data: ${response.data}');
+
+      if (response.data == null) {
+        throw Exception('Server returned null response after market deletion');
+      }
+
       return NormalMarketModel.fromJson(response.data);
     } on DioException catch (e) {
+      _logDioError('deleteNormalMarket', e);
       throw _handleDioException(e, 'Failed to delete market');
     } catch (e) {
+      print('❌ Error deleting market: $e');
       throw Exception('Failed to delete market: ${e.toString()}');
     }
   }
@@ -216,34 +314,128 @@ Future<List<NormalMarketModel>> getNormalMarkets() async {
   @override
   Future<NormalMarketModel> createNFTForMarket(String id) async {
     try {
-      final response = await dio.post('/$id/create-nft');
+      print('🖼️ Creating NFT for market with ID: $id');
+      final headers = await _getAuthHeaders();
+
+      final response = await dio.post(
+        '/$id/create-nft',
+        options: Options(headers: headers),
+      );
+
+      print('✅ NFT creation successful');
+      print('📊 Response data: ${response.data}');
+
+      if (response.data == null) {
+        throw Exception('Server returned null response after NFT creation');
+      }
+
       return NormalMarketModel.fromJson(response.data);
     } on DioException catch (e) {
+      _logDioError('createNFTForMarket', e);
       throw _handleDioException(e, 'Failed to create NFT');
     } catch (e) {
+      print('❌ Error creating NFT: $e');
       throw Exception('Failed to create NFT: ${e.toString()}');
     }
   }
+  @override
+  Future<List<NormalMarketModel>> getMyNormalMarkets() async {
+    try {
+      print('🔍 DataSource: Fetching markets for authenticated user');
+      final headers = await _getAuthHeaders();
 
+      final response = await dio.get(
+        '/my-markets', // Endpoint for user's own markets
+        options: Options(headers: headers),
+      );
+
+      print('✅ DataSource: API Response received: ${response.statusCode}');
+
+      if (response.data == null) {
+        print('❌ DataSource: API returned null data');
+        return [];
+      }
+
+      final List<dynamic> marketList = response.data;
+      print('📊 DataSource: Processing ${marketList.length} markets owned by user');
+
+      final markets = <NormalMarketModel>[];
+
+      for (var marketJson in marketList) {
+        try {
+          final market = NormalMarketModel.fromJson(marketJson);
+          markets.add(market);
+        } catch (e) {
+          print('❌ Error parsing market: $e');
+          print('🧩 Problematic market data: $marketJson');
+        }
+      }
+
+      print('✅ DataSource: Successfully processed ${markets.length} markets owned by user');
+      return markets;
+    } on DioException catch (e) {
+      _logDioError('getMyNormalMarkets', e);
+      throw _handleDioException(e, 'Failed to fetch your markets');
+    } catch (e, stackTrace) {
+      print('❌ General error in getMyNormalMarkets: $e');
+      print('📚 Stack trace: $stackTrace');
+      throw Exception('Failed to fetch your markets: ${e.toString()}');
+    }
+  }
   @override
   Future<Map<String, dynamic>> shareFractionalNFT(
       String id, ShareFractionRequestModel requestModel) async {
     try {
+      print('🔄 Sharing fractional NFT for market with ID: $id');
+      print('📦 Share data: ${requestModel.toJson()}');
+
+      final headers = await _getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+
       final response = await dio.post(
         '/$id/share',
         data: requestModel.toJson(),
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        ),
+        options: Options(headers: headers),
       );
 
-      return response.data;
+      print('✅ NFT sharing API call completed');
+      print('📊 Response data: ${response.data}');
+
+      if (response.data == null) {
+        throw Exception('Server returned null response after sharing NFT');
+      }
+
+      return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
+      _logDioError('shareFractionalNFT', e);
+
+      // Extract error information from response if available
+      if (e.response?.data != null) {
+        var responseData = e.response!.data;
+
+        // Parse the response data if it's a string
+        if (responseData is String && responseData.isNotEmpty) {
+          try {
+            responseData = jsonDecode(responseData);
+          } catch (_) {
+            // If parsing fails, keep it as a string
+          }
+        }
+
+        // Return structured error information
+        if (responseData is Map<String, dynamic>) {
+          return {
+            'success': false,
+            'message': responseData['message'] ?? 'An error occurred',
+            'error': responseData['error'],
+            'data': responseData['data'],
+          };
+        }
+      }
+
       throw _handleDioException(e, 'Failed to share fractional NFT');
     } catch (e) {
+      print('❌ Error sharing fractional NFT: $e');
       throw Exception('Failed to share fractional NFT: ${e.toString()}');
     }
   }
@@ -253,27 +445,91 @@ Future<List<NormalMarketModel>> getNormalMarkets() async {
     String errorMessage = defaultMessage;
 
     if (e.response != null) {
+      // Handle specific status codes
+      switch (e.response?.statusCode) {
+        case 401:
+          return Exception('$defaultMessage: Authentication failed. Please log in again.');
+        case 403:
+          return Exception('$defaultMessage: You do not have permission to perform this action.');
+        case 404:
+          return Exception('$defaultMessage: The requested resource was not found.');
+        case 422:
+          return Exception('$defaultMessage: Validation failed. Please check your data.');
+      }
+
       // Try to extract error message from response
       try {
         final responseData = e.response?.data;
-        if (responseData is Map<String, dynamic> &&
-            responseData.containsKey('message')) {
-          errorMessage = '$defaultMessage: ${responseData['message']}';
+        if (responseData is Map<String, dynamic>) {
+          if (responseData.containsKey('message')) {
+            errorMessage = '$defaultMessage: ${responseData['message']}';
+          } else if (responseData.containsKey('error')) {
+            errorMessage = '$defaultMessage: ${responseData['error']}';
+          }
         } else if (responseData is String) {
           errorMessage = '$defaultMessage: $responseData';
         }
       } catch (_) {
-        // If error extraction fails, use status code
-        errorMessage = '$defaultMessage: Status ${e.response?.statusCode}';
+        errorMessage = '$defaultMessage: Status code ${e.response?.statusCode}';
       }
-    } else if (e.type == DioExceptionType.connectionTimeout) {
-      errorMessage = '$defaultMessage: Connection timeout';
-    } else if (e.type == DioExceptionType.receiveTimeout) {
-      errorMessage = '$defaultMessage: Server is taking too long to respond';
-    } else if (e.type == DioExceptionType.connectionError) {
-      errorMessage = '$defaultMessage: No internet connection';
+    } else {
+      // Handle different error types
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          errorMessage = '$defaultMessage: Connection timeout. Check your internet connection.';
+          break;
+        case DioExceptionType.receiveTimeout:
+          errorMessage = '$defaultMessage: Server is taking too long to respond. Please try again later.';
+          break;
+        case DioExceptionType.sendTimeout:
+          errorMessage = '$defaultMessage: Sending request timeout. Check your internet connection.';
+          break;
+        case DioExceptionType.connectionError:
+          errorMessage = '$defaultMessage: No internet connection. Please check your network.';
+          break;
+        case DioExceptionType.badCertificate:
+          errorMessage = '$defaultMessage: SSL certificate validation failed.';
+          break;
+        case DioExceptionType.badResponse:
+          errorMessage = '$defaultMessage: Server returned invalid response.';
+          break;
+        case DioExceptionType.cancel:
+          errorMessage = '$defaultMessage: Request was canceled.';
+          break;
+        case DioExceptionType.unknown:
+        default:
+          errorMessage = '$defaultMessage: An unknown error occurred.';
+          break;
+      }
     }
 
+    print('🚫 Error: $errorMessage');
     return Exception(errorMessage);
   }
+  // Helper method to log Dio errors in a structured way
+  void _logDioError(String method, DioException e) {
+    print('❌ DIO ERROR in $method:');
+    print('  Type: ${e.type}');
+    print('  Message: ${e.message}');
+
+    if (e.response != null) {
+      print('  Status: ${e.response?.statusCode}');
+      print('  Response data: ${e.response?.data}');
+      print('  Headers: ${e.response?.headers}');
+    }
+
+    if (e.requestOptions != null) {
+      print('  Request path: ${e.requestOptions.path}');
+      print('  Request method: ${e.requestOptions.method}');
+      print('  Request headers: ${e.requestOptions.headers}');
+      print('  Request data: ${e.requestOptions.data}');
+    }
+
+    // Log stack trace if available
+    if (e.stackTrace != null) {
+      print('  Stack trace: ${e.stackTrace}');
+    }
+  }
+
+
 }

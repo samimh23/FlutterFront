@@ -14,7 +14,7 @@ class CategoryProductsScreen extends StatefulWidget {
   final String category;
 
   const CategoryProductsScreen({Key? key, required this.category})
-    : super(key: key);
+      : super(key: key);
 
   @override
   State<CategoryProductsScreen> createState() => _CategoryProductsScreenState();
@@ -31,29 +31,33 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       appBar: AppBar(
         title: _showSearch
             ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  border: InputBorder.none,
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => setState(() {
-                      _showSearch = false;
-                      _searchQuery = '';
-                    }),
-                  ),
-                ),
-                onChanged: (value) => setState(() => _searchQuery = value),
-              )
+          controller: _searchController,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Search products...',
+            border: InputBorder.none,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => setState(() {
+                _showSearch = false;
+                _searchQuery = '';
+                _searchController.clear();
+              }),
+            ),
+          ),
+          onChanged: (value) => setState(() => _searchQuery = value),
+        )
             : Text(widget.category),
         backgroundColor: AppColors.primary,
         actions: [
-          if (!_showSearch) IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => setState(() => _showSearch = true),
-          ),
-          
+          if (!_showSearch)
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => setState(() => _showSearch = true),
+            ),
         ],
       ),
       body: Consumer<ProductProvider>(
@@ -61,10 +65,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           var filteredProducts = widget.category.toLowerCase() == 'all'
               ? provider.products
               : provider.products
-                  .where((product) =>
-                      product.category.name.toLowerCase() ==
-                      widget.category.toLowerCase())
-                  .toList();
+              .where((product) =>
+          product.category.name.toLowerCase() ==
+              widget.category.toLowerCase())
+              .toList();
 
           if (_searchQuery.isNotEmpty) {
             filteredProducts = filteredProducts
@@ -88,22 +92,62 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             );
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: filteredProducts.length,
-            itemBuilder: (context, index) => GestureDetector(
-              onTap: () => _navigateToProductDetails(filteredProducts[index]),
-              child: ProductGridCard(
-                product: filteredProducts[index],
-                onAddPressed: () => _addToCart(filteredProducts[index]),
-              ),
-            ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Determine the number of columns based on screen width
+              int crossAxisCount = constraints.maxWidth < 600 ? 2 : 4;
+
+              return GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.6, // Adjusted for smaller cards
+                ),
+                itemCount: filteredProducts.length,
+                itemBuilder: (context, index) => GestureDetector(
+                  onTap: () => _navigateToProductDetails(filteredProducts[index]),
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ProductGridCard(
+                            product: filteredProducts[index],
+                            onAddPressed: () => _addToCart(filteredProducts[index]),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Rating: ${filteredProducts[index].ratingsAverage}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -113,10 +157,11 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   void _addToCart(Product product) {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     cartProvider.addItem(
-      product.id.toString(),
-      product.name,
-      product.originalPrice,
-      product.images[0]
+        product.id.toString(),
+        product.name,
+        product.originalPrice.toInt(),
+        product.image!,
+        product.shop
     );
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -145,5 +190,5 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     );
   }
 
-  
+
 }

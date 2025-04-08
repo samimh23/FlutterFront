@@ -34,8 +34,8 @@ class ProductsList extends StatelessWidget {
               );
             } else {
               final product = snapshot.data!;
-              final List<String> images =
-                  product.images is List<String> ? product.images : [];
+              final String? images =
+                  product.image is String ? product.image : '';
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -62,7 +62,7 @@ class ProductsList extends StatelessWidget {
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(12),
                               ),
-                              child: _buildProductImage(context, images),
+                              child: _buildProductImage(context, images!),
                             ),
                             // Info button overlay
                             Positioned(
@@ -124,7 +124,7 @@ class ProductsList extends StatelessWidget {
     );
   }
 
-  Widget _buildProductImage(BuildContext context, List<String> images) {
+  Widget _buildProductImage(BuildContext context, String images) {
     // Check if the images array exists and has elements
     if (images.isEmpty || images[0].isEmpty) {
       return _buildPlaceholderImage(context);

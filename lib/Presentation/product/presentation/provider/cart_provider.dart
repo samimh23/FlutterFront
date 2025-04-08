@@ -4,8 +4,9 @@ import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 class CartItem {
   final String id;
   final String title;
-  final double price;
+  final int price;
   final String imageUrl;
+  final String shop;
   int quantity;
 
   CartItem({
@@ -14,6 +15,7 @@ class CartItem {
     required this.price,
     required this.imageUrl,
     this.quantity = 1,
+    required this.shop 
   });
 }
 
@@ -34,17 +36,18 @@ class CartProvider with ChangeNotifier {
 
   void addToCart(Product product) {
     final productId = product.id.toString();
-    final imageUrl = product.images.isNotEmpty ? product.images.first : '';
-    
+    final imageUrl = product.image;
+
     addItem(
       productId,
       product.name,
-      product.originalPrice,
-      imageUrl,
+      product.originalPrice.toInt(),
+      imageUrl!,
+      product.shop
     );
   }
 
-  void addItem(String productId, String title, double price, String imageUrl) {
+  void addItem(String productId, String title, int price, String imageUrl , String shop) {
     if (_items.containsKey(productId)) {
       _items.update(
         productId,
@@ -54,12 +57,14 @@ class CartProvider with ChangeNotifier {
           price: existingItem.price,
           quantity: existingItem.quantity + 1,
           imageUrl: existingItem.imageUrl,
+          shop: existingItem.shop,
         ),
       );
     } else {
       _items.putIfAbsent(
         productId,
-        () => CartItem(id: productId, title: title, price: price, imageUrl: imageUrl),
+        () => CartItem(
+            id: productId, title: title, price: price, imageUrl: imageUrl, shop: shop),
       );
     }
     _newItemCount++; // Increment badge count each time an item is added
@@ -78,6 +83,7 @@ class CartProvider with ChangeNotifier {
           price: existingItem.price,
           quantity: existingItem.quantity - 1,
           imageUrl: existingItem.imageUrl,
+          shop: existingItem.shop,
         ),
       );
     } else {

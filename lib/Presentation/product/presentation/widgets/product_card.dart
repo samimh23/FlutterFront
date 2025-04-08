@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Core/network/apiconastant.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/product_details_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -56,7 +57,7 @@ class ProductCard extends StatelessWidget {
             ClipRRect(
               borderRadius:
                   BorderRadius.vertical(top: Radius.circular(borderRadius)),
-              child: _buildProductImage(context, imageHeight),
+              child: _buildProductImage(),
             ),
             SizedBox(height: isDesktop ? 10 : 6),
             Padding(
@@ -106,33 +107,25 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProductImage(BuildContext context, double imageHeight) {
-    // Check if the images array exists and has elements
-    if (product.images.isEmpty || product.images[0].isEmpty) {
-      return _buildPlaceholderImage(context, imageHeight);
+  Widget _buildProductImage() {
+    // Check if the image exists and is not empty
+    if (product.image == null || product.image!.isEmpty) {
+      return _buildPlaceholderImage();
     }
-    print('fdsfdsfsd*************fdsfsdfdsfds $product');
-    // Original image URL
-    String originalUrl = product.images[0];
-    debugPrint('Original image URL: $originalUrl');
+    final String fullImageUrl = kIsWeb
+        ? ApiConstants.getImageUrlWithCacheBusting(product.image!)
+        : ApiConstants.getFullImageUrl(product.image!);
+
+    debugPrint('Loading product image: $fullImageUrl');
 
     // For Flutter Web: Use a CORS proxy service
-    String imageUrl = originalUrl;
-
-    if (kIsWeb) {
-      // Use a CORS proxy service
-      imageUrl = 'https://corsproxy.io/?' + Uri.encodeComponent(originalUrl);
-      debugPrint('Using proxied URL for web: $imageUrl');
-    }
-
-    // Using CachedNetworkImage for better performance and error handling
     return CachedNetworkImage(
-      imageUrl: imageUrl,
-      height: imageHeight,
+      imageUrl: fullImageUrl,
+      height: 100,
       width: double.infinity,
       fit: BoxFit.cover,
       placeholder: (context, url) => Container(
-        height: imageHeight,
+        height: 100,
         width: double.infinity,
         color: Colors.grey[100],
         child: const Center(
@@ -141,79 +134,84 @@ class ProductCard extends StatelessWidget {
       ),
       errorWidget: (context, url, error) {
         debugPrint('Error loading image: $error');
-        // When error, try with a different proxy as fallback
-        if (kIsWeb && !url.contains('cors-anywhere')) {
-          return _buildWebImageWithFallback(context, originalUrl, imageHeight);
-        }
-        return Container(
-          height: imageHeight,
-          width: double.infinity,
-          color: Colors.grey[200],
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline,
-                  color: Colors.red,
-                  size: ResponsiveLayout.isDesktop(context) ? 32 : 24),
-              const SizedBox(height: 4),
-              Text(
-                'Image Error',
-                style: TextStyle(
-                    fontSize: ResponsiveLayout.isDesktop(context) ? 12 : 10,
-                    color: Colors.red[700]),
+        return GestureDetector(
+          onTap: () {
+            // Show image URL in dialog for debugging
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Image Error'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Failed to load image:'),
+                      const SizedBox(height: 8),
+                      Text(fullImageUrl, style: const TextStyle(fontSize: 12)),
+                      const SizedBox(height: 8),
+                      Text('Original path: ${product.image}', style: const TextStyle(fontSize: 12)),
+                      const SizedBox(height: 12),
+                      const Text('Check that:'),
+                      const Text('• Backend server is running'),
+                      const Text('• File exists on server'),
+                      const Text('• Path is correct'),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
               ),
-            ],
+            );
+          },
+          child: Container(
+            height: 100,
+            width: double.infinity,
+            color: Colors.grey[200],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, color: Colors.grey[400], size: 24),
+                const SizedBox(height: 4),
+                const Text(
+                  'Image not found',
+                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Tap for details',
+                  style: TextStyle(fontSize: 8, color: Colors.grey),
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildWebImageWithFallback(
-      BuildContext context, String originalUrl, double imageHeight) {
-    // Try a different CORS proxy as fallback
-    String fallbackUrl = 'https://api.allorigins.win/raw?url=' +
-        Uri.encodeComponent(originalUrl);
-    debugPrint('Trying fallback URL: $fallbackUrl');
-
-    return CachedNetworkImage(
-      imageUrl: fallbackUrl,
-      height: imageHeight,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(
-        height: imageHeight,
-        width: double.infinity,
-        color: Colors.grey[100],
-        child: const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-      errorWidget: (context, url, error) {
-        debugPrint('Fallback image also failed: $error');
-        return _buildPlaceholderImage(context, imageHeight);
-      },
-    );
-  }
-
-  Widget _buildPlaceholderImage(BuildContext context, double imageHeight) {
-    final isDesktop = ResponsiveLayout.isDesktop(context);
-
+   Widget _buildPlaceholderImage() {
     return Container(
-      height: imageHeight,
+      height: 100,
       width: double.infinity,
       color: Colors.grey[200],
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.image, color: Colors.grey, size: isDesktop ? 32 : 24),
-          const SizedBox(height: 4),
+        children: const [
+          Icon(Icons.image, color: Colors.grey, size: 24),
+          SizedBox(height: 4),
           Text(
             'No Image',
-            style: TextStyle(fontSize: isDesktop ? 12 : 10, color: Colors.grey),
+            style: TextStyle(fontSize: 10, color: Colors.grey),
           ),
         ],
       ),
     );
   }
+
+  
 }

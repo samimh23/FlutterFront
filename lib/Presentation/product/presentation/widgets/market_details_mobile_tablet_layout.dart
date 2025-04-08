@@ -12,13 +12,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 class MarketDetailsMobileTabletLayout extends StatelessWidget {
   final String heroTag;
   final String marketName;
-  final double rating;
-  final String deliveryCost;
   final String marketEmail;
   final String marketPhone;
   final String marketLocation;
-  final String deliveryTime;
-  final String description;
+
   final String imageUrl;
   final List<String> products;
 
@@ -26,13 +23,10 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
     super.key,
     required this.heroTag,
     required this.marketName,
-    required this.rating,
     required this.marketEmail,
     required this.marketPhone,
     required this.marketLocation,
-    required this.deliveryCost,
-    required this.deliveryTime,
-    required this.description,
+
     required this.imageUrl,
     required this.products,
   });
@@ -95,7 +89,7 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
                     Icon(Icons.star, color: Colors.amber.shade600, size: 20),
                     const SizedBox(width: 4),
                     Text(
-                      rating.toStringAsFixed(1),
+                     '3',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.amber.shade600,
@@ -106,7 +100,7 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
                     Icon(Icons.delivery_dining, color: AppColors.primary, size: 20),
                     const SizedBox(width: 4),
                     Text(
-                      deliveryCost,
+                      '3',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -117,7 +111,7 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
                     const Icon(Icons.access_time, color: Colors.grey, size: 20),
                     const SizedBox(width: 4),
                     Text(
-                      deliveryTime,
+                      '20min',
                       style: const TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
@@ -130,7 +124,7 @@ class MarketDetailsMobileTabletLayout extends StatelessWidget {
                 
                 // About section
                 MarketDescription(
-                  description: description,
+                  description: 'description',
                   isDesktop: false,
                 ),
                 

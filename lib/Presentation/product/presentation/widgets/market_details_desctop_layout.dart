@@ -9,13 +9,12 @@ import 'package:hanouty/app_colors.dart';
 class MarketDetailsDesktopLayout extends StatelessWidget {
   final String heroTag;
   final String marketName;
-  final double rating;
-  final String deliveryCost;
+
   final String marketEmail;
-  final String deliveryTime;
+
   final String marketPhone;
   final String marketLocation;
-  final String description;
+
   final String imageUrl;
   final List<String> products;
 
@@ -23,11 +22,7 @@ class MarketDetailsDesktopLayout extends StatelessWidget {
     super.key,
     required this.heroTag,
     required this.marketName,
-    required this.rating,
-    required this.deliveryCost,
-    required this.deliveryTime,
     required this.marketEmail,
-    required this.description,
     required this.marketPhone,
     required this.marketLocation,
     required this.imageUrl,
@@ -50,15 +45,13 @@ class MarketDetailsDesktopLayout extends StatelessWidget {
                 MarketHeader(
                   heroTag: heroTag,
                   marketName: marketName,
-                  rating: rating,
-                  deliveryCost: deliveryCost,
-                  deliveryTime: deliveryTime,
+
                   imageUrl: imageUrl,
                   isDesktop: true,
                 ),
                 const SizedBox(height: 24),
                 MarketDescription(
-                  description: description,
+                  description: 'description',
                   isDesktop: true,
                 ),
                 const SizedBox(height: 24),

@@ -8,7 +8,7 @@ class CreateOrder {
 
   CreateOrder(this.repository);
 
-  Future<Order> execute(Order order) async {
+  Future<Order> call(Order order) async {
     return await repository.createOrder(order);
   }
 }

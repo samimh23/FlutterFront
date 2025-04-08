@@ -5,9 +5,7 @@ import 'package:hanouty/app_colors.dart';
 class MarketHeader extends StatelessWidget {
   final String heroTag;
   final String marketName;
-  final double rating;
-  final String deliveryCost;
-  final String deliveryTime;
+
   final String imageUrl;
   final bool isDesktop;
 
@@ -15,9 +13,7 @@ class MarketHeader extends StatelessWidget {
     super.key,
     required this.heroTag,
     required this.marketName,
-    required this.rating,
-    required this.deliveryCost,
-    required this.deliveryTime,
+
     required this.imageUrl,
     this.isDesktop = false,
   });
@@ -69,7 +65,7 @@ class MarketHeader extends StatelessWidget {
             Icon(Icons.star, color: Colors.amber.shade600, size: isDesktop ? 24 : 20),
             const SizedBox(width: 4),
             Text(
-              rating.toStringAsFixed(1),
+             '2',
               style: TextStyle(
                 fontSize: isDesktop ? 18 : 16,
                 color: Colors.amber.shade600,
@@ -80,7 +76,7 @@ class MarketHeader extends StatelessWidget {
             Icon(Icons.delivery_dining, color: AppColors.primary, size: isDesktop ? 24 : 20),
             const SizedBox(width: 4),
             Text(
-              deliveryCost,
+              'deliveryCost',
               style: TextStyle(
                 fontSize: isDesktop ? 18 : 16,
                 color: AppColors.primary,
@@ -91,7 +87,7 @@ class MarketHeader extends StatelessWidget {
             Icon(Icons.access_time, color: Colors.grey, size: isDesktop ? 24 : 20),
             const SizedBox(width: 4),
                         Text(
-              deliveryTime,
+              '20',
               style: TextStyle(
                 fontSize: isDesktop ? 18 : 16,
                 color: Colors.grey[700],

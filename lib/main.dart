@@ -18,6 +18,7 @@ import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote
 import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/repositories/normamarket_domain_repository.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/create_fractional_nft.dart';
+import 'package:hanouty/Presentation/normalmarket/Domain/usecases/get_my_market.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/give_shares.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_add.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_delete.dart';
@@ -30,6 +31,7 @@ import 'package:hanouty/Presentation/order/presentation/provider/order_provider.
 import 'package:hanouty/Presentation/product/presentation/pages/home_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
+import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
 import 'package:hanouty/nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'Core/api/Api_Serice.dart';
@@ -151,6 +153,10 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               GetNormalMarkets(context.read<NormalMarketRepository>()),
         ),
+        Provider<GetMyNormalMarkets>(
+          create: (context) =>
+              GetMyNormalMarkets(context.read<NormalMarketRepository>()),
+        ),
         Provider<GetNormalMarketById>(
           create: (context) =>
               GetNormalMarketById(context.read<NormalMarketRepository>()),
@@ -181,11 +187,12 @@ class MyApp extends StatelessWidget {
           create: (context) => NormalMarketProvider(
             getNormalMarkets: context.read<GetNormalMarkets>(),
             getNormalMarketById: context.read<GetNormalMarketById>(),
+            getMyNormalMarkets: context.read<GetMyNormalMarkets>(),
             createNormalMarket: context.read<CreateNormalMarket>(),
             updateNormalMarket: context.read<UpdateNormalMarket>(),
             deleteNormalMarket: context.read<DeleteNormalMarket>(),
             shareFractionalNFT: context.read<ShareFractionalNFT>(),
-            createFractionalNFT: context.read<CreateFractionalNFT>(),
+            createFractionalNFT: context.read<CreateFractionalNFT>(), secureStorageService: secureStorageService,
           ),
           lazy: false,
         ),
@@ -205,6 +212,10 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => di.sl<OrderProvider>(),
+
+        ),
+        ChangeNotifierProvider(
+          create: (_) => di.sl<ReviewProvider>(),
 
         ),
 

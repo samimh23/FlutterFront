@@ -12,10 +12,12 @@ class ProductModel extends Product {
     required super.stock,
     required super.createdAt,
     required super.updatedAt,
-    required super.images,
-    required super.ratings,
+    super.image,
+    super.ratingsAverage,
+    super.ratingsQuantity,
     required super.isDiscounted,
     required super.discountValue,
+    required super.shop
   });
 
   static ProductCategory productCategoryFromString(String value) =>
@@ -38,10 +40,12 @@ class ProductModel extends Product {
       stock: (json['stock'] ?? 0).toInt(),
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? DateTime.now(),
-      images: List<String>.from(json['images'] ?? []),
-      ratings: (json['ratings'] ?? 0).toDouble(),
+      image: json['image'] as String?, // Keep using the singular "image" field
+      ratingsQuantity: (json['ratingsQuantity']?? 0).toInt(),
+      ratingsAverage: (json['ratingsAverage'] ?? 0).toInt(),
       isDiscounted: json['isDiscounted'] ?? false,
       discountValue: (json['DiscountValue'] ?? 0).toDouble(),
+      shop: json['shop']?? '',
     );
   }
 
@@ -56,10 +60,12 @@ class ProductModel extends Product {
       'stock': stock,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'images': images,
-      'ratings': ratings,
+      'image': image, // Keep using the singular "image" field
+      'ratingsAverage': ratingsAverage,
+      'ratingsQuantity': ratingsQuantity,
       'isDiscounted': isDiscounted,
       'DiscountValue': discountValue,
+      'shop': shop,
     };
   }
   

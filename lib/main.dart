@@ -28,6 +28,7 @@ import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_update.
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/dashboard_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
+import 'package:hanouty/Presentation/product/presentation/pages/cart_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/home_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
@@ -385,7 +386,7 @@ class MyApp extends StatelessWidget {
               '/farmer': (context) => const FarmMainScreen(),
               '/merchant': (context) => const DashboardPage(),
               '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
-              '/cart': (context) => const cartScreen(),
+              '/cart': (context) => const CartScreen(),
             },
           );
         });

@@ -83,9 +83,8 @@ void main() async {
   print('Access Token: $accessToken');
 
   // Determine initial route based on saved credentials
-  final String initialRoute = (rememberMe == 'true' && accessToken != null)
-      ? '/home'
-      : '/login';
+  final String initialRoute =
+      (rememberMe == 'true' && accessToken != null) ? '/home' : '/login';
 
   runApp(MyApp(
     initialRoute: initialRoute,
@@ -107,22 +106,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Create instances of dependencies
     final ApiClient apiClient = ApiClient();
-    final AuthRepository authRepository = AuthRepositoryImpl(
-        apiClient: apiClient);
+    final AuthRepository authRepository =
+        AuthRepositoryImpl(apiClient: apiClient);
     final LoginUseCase loginUseCase = LoginUseCase(
         authRepository: authRepository,
         secureStorageService: secureStorageService);
     final RegisterUseCase registerUseCase = RegisterUseCase(authRepository);
-    final ForgotPasswordUseCase forgotPasswordUseCase = ForgotPasswordUseCase(
-        authRepository);
-    final VerifyResetCodeUseCase verifyResetCodeUseCase = VerifyResetCodeUseCase(
-        authRepository);
-    final ResetPasswordUseCase resetPasswordUseCase = ResetPasswordUseCase(
-        authRepository);
+    final ForgotPasswordUseCase forgotPasswordUseCase =
+        ForgotPasswordUseCase(authRepository);
+    final VerifyResetCodeUseCase verifyResetCodeUseCase =
+        VerifyResetCodeUseCase(authRepository);
+    final ResetPasswordUseCase resetPasswordUseCase =
+        ResetPasswordUseCase(authRepository);
 
     return MultiProvider(
       providers: [
-            //alaaa
+        //alaaa
         Provider<Dio>(
           create: (_) => Dio(BaseOptions(
             // For web deployment, using relative URL to match the hosting domain
@@ -136,9 +135,7 @@ class MyApp extends StatelessWidget {
         // Data sources
         Provider<NormalMarketRemoteDataSource>(
           create: (context) => NormalMarketRemoteDataSourceImpl(
-            dio: context.read<Dio>(),
-              secureStorageService
-          ),
+              dio: context.read<Dio>(), secureStorageService),
         ),
 
         // Repositories
@@ -192,37 +189,32 @@ class MyApp extends StatelessWidget {
             updateNormalMarket: context.read<UpdateNormalMarket>(),
             deleteNormalMarket: context.read<DeleteNormalMarket>(),
             shareFractionalNFT: context.read<ShareFractionalNFT>(),
-            createFractionalNFT: context.read<CreateFractionalNFT>(), secureStorageService: secureStorageService,
+            createFractionalNFT: context.read<CreateFractionalNFT>(),
+            secureStorageService: secureStorageService,
           ),
           lazy: false,
         ),
 
         //alaaaa
 
-
         //ouseema
 
         ChangeNotifierProvider(
           create: (_) => di.sl<ProductProvider>(),
-
         ),
         ChangeNotifierProvider(
           create: (_) => di.sl<CartProvider>(),
-
         ),
         ChangeNotifierProvider(
           create: (_) => di.sl<OrderProvider>(),
-
         ),
         ChangeNotifierProvider(
           create: (_) => di.sl<ReviewProvider>(),
-
         ),
 
         // oussema
 
         //ahmed
-
 
         Provider<FarmMarketRemoteDataSource>(
           create: (_) => FarmMarketRemoteDataSource(),
@@ -233,19 +225,24 @@ class MyApp extends StatelessWidget {
           ),
         ),
         Provider<GetAllFarmMarkets>(
-          create: (context) => GetAllFarmMarkets(context.read<FarmMarketRepositoryImpl>()),
+          create: (context) =>
+              GetAllFarmMarkets(context.read<FarmMarketRepositoryImpl>()),
         ),
         Provider<GetFarmMarketById>(
-          create: (context) => GetFarmMarketById(context.read<FarmMarketRepositoryImpl>()),
+          create: (context) =>
+              GetFarmMarketById(context.read<FarmMarketRepositoryImpl>()),
         ),
         Provider<AddFarmMarket>(
-          create: (context) => AddFarmMarket(context.read<FarmMarketRepositoryImpl>()),
+          create: (context) =>
+              AddFarmMarket(context.read<FarmMarketRepositoryImpl>()),
         ),
         Provider<UpdateFarmMarket>(
-          create: (context) => UpdateFarmMarket(context.read<FarmMarketRepositoryImpl>()),
+          create: (context) =>
+              UpdateFarmMarket(context.read<FarmMarketRepositoryImpl>()),
         ),
         Provider<DeleteFarmMarket>(
-          create: (context) => DeleteFarmMarket(context.read<FarmMarketRepositoryImpl>()),
+          create: (context) =>
+              DeleteFarmMarket(context.read<FarmMarketRepositoryImpl>()),
         ),
         ChangeNotifierProvider<FarmMarketViewModel>(
           create: (context) => FarmMarketViewModel(
@@ -271,19 +268,24 @@ class MyApp extends StatelessWidget {
           ),
         ),
         Provider<GetAllFarmCrops>(
-          create: (context) => GetAllFarmCrops(context.read<FarmCropRepositoryImpl>()),
+          create: (context) =>
+              GetAllFarmCrops(context.read<FarmCropRepositoryImpl>()),
         ),
         Provider<GetFarmCropById>(
-          create: (context) => GetFarmCropById(context.read<FarmCropRepositoryImpl>()),
+          create: (context) =>
+              GetFarmCropById(context.read<FarmCropRepositoryImpl>()),
         ),
         Provider<AddFarmCrop>(
-          create: (context) => AddFarmCrop(context.read<FarmCropRepositoryImpl>()),
+          create: (context) =>
+              AddFarmCrop(context.read<FarmCropRepositoryImpl>()),
         ),
         Provider<UpdateFarmCrop>(
-          create: (context) => UpdateFarmCrop(context.read<FarmCropRepositoryImpl>()),
+          create: (context) =>
+              UpdateFarmCrop(context.read<FarmCropRepositoryImpl>()),
         ),
         Provider<DeleteFarmCrop>(
-          create: (context) => DeleteFarmCrop(context.read<FarmCropRepositoryImpl>()),
+          create: (context) =>
+              DeleteFarmCrop(context.read<FarmCropRepositoryImpl>()),
         ),
         Provider<CalculateTotalExpenses>(
           create: (context) => CalculateTotalExpenses(),
@@ -315,7 +317,8 @@ class MyApp extends StatelessWidget {
           create: (context) => GetSaleById(context.read<SaleRepositoryImpl>()),
         ),
         Provider<GetSalesByCropId>(
-          create: (context) => GetSalesByCropId(context.read<SaleRepositoryImpl>()),
+          create: (context) =>
+              GetSalesByCropId(context.read<SaleRepositoryImpl>()),
         ),
         Provider<AddSale>(
           create: (context) => AddSale(context.read<SaleRepositoryImpl>()),
@@ -342,59 +345,51 @@ class MyApp extends StatelessWidget {
         //ahmedd
 
         ChangeNotifierProvider(
-          create: (context) =>
-              AuthProvider(
-                loginUseCase: loginUseCase,
-                secureStorageService: secureStorageService,
-              ),
+          create: (context) => AuthProvider(
+            loginUseCase: loginUseCase,
+            secureStorageService: secureStorageService,
+          ),
         ),
         ChangeNotifierProvider(
-          create: (context) =>
-              RegisterProvider(
-                registerUseCase: registerUseCase,
-              ),
+          create: (context) => RegisterProvider(
+            registerUseCase: registerUseCase,
+          ),
         ),
         ChangeNotifierProvider(
-          create: (context) =>
-              PasswordResetProvider(
-                forgotPasswordUseCase: forgotPasswordUseCase,
-                verifyResetCodeUseCase: verifyResetCodeUseCase,
-                resetPasswordUseCase: resetPasswordUseCase,
-              ),
+          create: (context) => PasswordResetProvider(
+            forgotPasswordUseCase: forgotPasswordUseCase,
+            verifyResetCodeUseCase: verifyResetCodeUseCase,
+            resetPasswordUseCase: resetPasswordUseCase,
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => ProfileProvider(),
         ),
       ],
-      child: Builder(
-        builder: (context) {
-          return Consumer<ThemeProvider>(
-              builder: (context, themeProvider, _) {
-                print('Building MaterialApp with themeMode: ${themeProvider
-                    .themeMode}');
+      child: Builder(builder: (context) {
+        return Consumer<ThemeProvider>(builder: (context, themeProvider, _) {
+          print(
+              'Building MaterialApp with themeMode: ${themeProvider.themeMode}');
 
-
-                return MaterialApp(
-                  title: 'Hanouty',
-                  theme:   lightTheme,
-                  themeMode: themeProvider.themeMode,
-                  darkTheme: darkTheme,
-                  debugShowCheckedModeBanner: false,
-                  initialRoute: initialRoute,
-                  routes: {
-                    '/login': (context) => const LoginPage(),
-                    '/register': (context) => const RegisterPage(),
-                    '/home': (context) => const MainScreen(),
-                    '/farmer': (context) => const FarmMainScreen(),
-                    '/merchant': (context) => const DashboardPage(),
-                    '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
-                  },
-                );
-              }
+          return MaterialApp(
+            title: 'Hanouty',
+            theme: lightTheme,
+            themeMode: themeProvider.themeMode,
+            darkTheme: darkTheme,
+            debugShowCheckedModeBanner: false,
+            initialRoute: initialRoute,
+            routes: {
+              '/login': (context) => const LoginPage(),
+              '/register': (context) => const RegisterPage(),
+              '/home': (context) => const MainScreen(),
+              '/farmer': (context) => const FarmMainScreen(),
+              '/merchant': (context) => const DashboardPage(),
+              '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
+              '/cart': (context) => const cartScreen(),
+            },
           );
-        }
-        ),
+        });
+      }),
     );
   }
-
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/Auth/presentation/pages/profilepage.dart';
+import 'package:hanouty/Presentation/order/presentation/pages/track_order.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/cart_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/home_screen.dart';
@@ -53,7 +54,7 @@ class _MainScreenState extends State<MainScreen>
   void initState() {
     super.initState();
     _screens = [
-      const HomeScreen(),
+      const OrderTrackingScreen(),
       const CartScreen(),
       const Center(child: Text('Wallet Screen')),
       const ProfilePage(),

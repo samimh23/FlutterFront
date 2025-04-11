@@ -13,7 +13,7 @@ import 'package:hanouty/Presentation/product/domain/usecases/add_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_all_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_product_by_id.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/update_product.dart';
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 import 'package:dio/dio.dart';
 import 'dart:math' as math;
 

@@ -9,6 +9,7 @@ import 'package:hanouty/Presentation/order/domain/repositories/order_repositorie
 import 'package:hanouty/Presentation/order/domain/usecases/cancel_order.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/confirm_order.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/create_order.dart';
+import 'package:hanouty/Presentation/order/domain/usecases/find_order_by_id.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/find_order_by_user_id.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/update_order.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
@@ -73,7 +74,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CancelOrder(sl()));
   sl.registerLazySingleton(() => UpdateOrder(sl()));
   sl.registerLazySingleton(() => FindOrderByUserId(sl()));
-
+sl.registerLazySingleton(() => FindOrderById(sl()));
   // Register OrderProvider
   sl.registerFactory<OrderProvider>(
     () => OrderProvider(
@@ -81,6 +82,7 @@ Future<void> init() async {
       confirmOrderUseCase: sl(),
       cancelOrderUseCase: sl(),
       findOrderByUserIdUseCase: sl(),
+      findOrderByIdUseCase: sl(),
     ),
   );
   // Register your CartProvider

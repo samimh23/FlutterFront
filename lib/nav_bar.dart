@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/Auth/presentation/pages/profilepage.dart';
+import 'package:hanouty/Presentation/order/presentation/pages/order_traking.dart';
+import 'package:hanouty/Presentation/order/presentation/pages/orders_screen.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/cart_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/home_screen.dart';
@@ -43,6 +45,11 @@ class _MainScreenState extends State<MainScreen>
       selectedColor: const Color(0xFFEAB308),
     ),
     NavigationItem(
+      title: 'Orders',
+      icon: Icons.receipt_rounded,
+      selectedColor: const Color.fromARGB(255, 8, 227, 234),
+    ),
+    NavigationItem(
       title: 'Profile',
       icon: Icons.person_rounded,
       selectedColor: const Color(0xFF8B5CF6),
@@ -56,7 +63,9 @@ class _MainScreenState extends State<MainScreen>
       const HomeScreen(),
       const CartScreen(),
       const Center(child: Text('Wallet Screen')),
+      const OrdersScreen(),
       const ProfilePage(),
+      
     ];
 
     _animationController = AnimationController(

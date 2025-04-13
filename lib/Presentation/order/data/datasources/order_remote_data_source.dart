@@ -5,6 +5,7 @@ import '../models/order_model.dart';
 abstract class OrderRemoteDataSource {
   Future<OrderModel> createOrder(OrderModel orderModel);
   Future<OrderModel> confirmOrder(String id);
+  Future<OrderModel> findOrderById(String id);
   Future<OrderModel> cancelOrder(String id);
   Future<OrderModel> updateOrder(String id, OrderModel orderModel);
   Future<List<OrderModel>> findOrdersByUserId(String idUser);
@@ -84,6 +85,16 @@ Future<OrderModel> createOrder(OrderModel orderModel) async {
       return ordersJson.map((json) => OrderModel.fromJson(json)).toList();
     } else {
       throw Exception('Failed to fetch orders for user');
+    }
+  }
+  
+  @override
+  Future<OrderModel> findOrderById(String id) async{
+    final response = await client.get(Uri.parse('$baseUrl/findOrder/$id'));
+    if (response.statusCode == 200) {
+      return OrderModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to find order by ID');
     }
   }
 }

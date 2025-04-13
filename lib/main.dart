@@ -27,6 +27,7 @@ import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_getbyid
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_update.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/dashboard_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
+import 'package:hanouty/Presentation/order/presentation/provider/delivery_tracking_service.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/cart_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/home_screen.dart';
@@ -73,6 +74,7 @@ import 'injection_container.dart' as di;
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
+  final deliveryService = DeliveryTrackingService();
   await di.init();
 
   // Check for saved credentials

@@ -9,7 +9,7 @@ import 'package:hanouty/Presentation/product/presentation/widgets/cart_card.dart
 import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/nav_bar.dart';
 import 'package:provider/provider.dart';
-import 'package:hanouty/Core/Utils/secure_storage.dart'; // Import the secure storage service
+import 'package:hanouty/Core/Utils/secure_storage.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -19,7 +19,6 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  List<Order> userOrders = []; // Store user orders
   bool isDeleteMode = false;
   Set<int> selectedItems = {};
 
@@ -35,7 +34,6 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
     final cartItems = cart.items.values.toList();
-    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,31 +42,6 @@ class _CartScreenState extends State<CartScreen> {
         backgroundColor: AppColors.grey,
         foregroundColor: Colors.black,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'Order History',
-            onPressed: () async {
-              final secureStorageService = SecureStorageService();
-              String? userId = await secureStorageService.getUserId();
-              if (userId == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('User ID not found')),
-                );
-                return;
-              }
-
-              // Use the orderProvider instance to call findOrdersByUserId
-              userOrders = await orderProvider.findOrdersByUserId(userId);
-
-              if (userOrders.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No order history yet')),
-                );
-              } else {
-                _showOrderHistory(userOrders);
-              }
-            },
-          ),
           // Delete mode toggle
           IconButton(
             icon: Icon(isDeleteMode ? Icons.delete : Icons.delete_outline),
@@ -237,7 +210,8 @@ class _CartScreenState extends State<CartScreen> {
       id: orderId,
       normalMarket: normalMarketId, // Use the normalMarket ID from the product
       products: products,
-      user: userId, // Use the retrieved user ID
+      user: userId,
+      orderStatus: OrderStatus.isProcessing, // Set initial status to isReceived
       dateOrder: DateTime.now(),
       isConfirmed: false,
       totalPrice: cart.totalAmount.toInt(),
@@ -246,10 +220,6 @@ class _CartScreenState extends State<CartScreen> {
         'New order created with id: $orderId and ${products.length} products.');
 
     await orderProvider.createNewOrder(newOrder);
-
-    setState(() {
-// Order ID is already saved in the database, no need to maintain a local list
-    });
 
     cart.clearCart();
 
@@ -271,73 +241,6 @@ class _CartScreenState extends State<CartScreen> {
         ],
       ),
     );
-  }
-
-  void _showOrderHistory(List<Order> orders) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Order History'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return ListTile(
-                leading: Icon(
-                  order.isConfirmed == true
-                      ? Icons.check_circle
-                      : Icons.pending,
-                  color:
-                      order.isConfirmed == true ? Colors.green : Colors.orange,
-                ),
-                title: Text('Order #${order.id}'),
-                subtitle: Text(
-                  'Ordered on ${_formatOrderDate(order.dateOrder)}',
-                ),
-                trailing: order.isConfirmed == true
-                    ? null
-                    : TextButton(
-                        onPressed: () async {
-                          await Provider.of<OrderProvider>(context,
-                                  listen: false)
-                              .confirmOrder(order.id);
-
-                          // Refresh the order list after confirmation
-                          final secureStorageService = SecureStorageService();
-                          String? userId =
-                              await secureStorageService.getUserId();
-                          if (userId != null) {
-                            userOrders = await Provider.of<OrderProvider>(
-                                    context,
-                                    listen: false)
-                                .findOrdersByUserId(userId);
-                          }
-
-                          Navigator.of(ctx).pop(); // Close the dialog
-                          _showOrderHistory(
-                              userOrders); // Refresh the order history
-                        },
-                        child: const Text('Confirm'),
-                      ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatOrderDate(DateTime dateOrder) {
-    return '${dateOrder.day}/${dateOrder.month}/${dateOrder.year}';
   }
 
   void _deleteSelectedItems(CartProvider cart) {

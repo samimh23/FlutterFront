@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hanouty/Core/network/apiconastant.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
+import 'package:hanouty/Presentation/product/presentation/pages/reservation_dialog.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
 import 'package:hanouty/Presentation/review/data/models/review_model.dart';
@@ -542,67 +543,125 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         isDesktop ? double.infinity : MediaQuery.of(context).size.width;
     final horizontalPadding = isDesktop ? 0.0 : 16.0;
 
-    return Container(
-      height: buttonHeight,
-      width: buttonWidth,
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      margin: isDesktop ? EdgeInsets.zero : const EdgeInsets.only(bottom: 16),
-      child: ElevatedButton(
-        onPressed: () {
-          final cartProvider =
-              Provider.of<CartProvider>(context, listen: false);
-          cartProvider.addToCart(widget.product);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: buttonHeight,
+          width: buttonWidth,
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          margin: isDesktop ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8),
+          child: ElevatedButton(
+            onPressed: () {
+              final cartProvider =
+                  Provider.of<CartProvider>(context, listen: false);
+              cartProvider.addToCart(widget.product);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${widget.product.name} added to cart',
-                style: TextStyle(
-                  fontSize: isDesktop ? 16 : 14,
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${widget.product.name} added to cart',
+                    style: TextStyle(
+                      fontSize: isDesktop ? 16 : 14,
+                    ),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  action: SnackBarAction(
+                    label: 'VIEW CART',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      // Navigate to cart page
+                      Navigator.pushNamed(context, '/cart');
+                    },
+                  ),
                 ),
-              ),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              action: SnackBarAction(
-                label: 'VIEW CART',
-                textColor: Colors.white,
-                onPressed: () {
-                  // Navigate to cart page
-                  Navigator.pushNamed(context, '/cart');
-                },
+                borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
               ),
             ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
+
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.shopping_cart,
+                  size: isDesktop ? 24 : 20,
+                ),
+                SizedBox(width: isDesktop ? 12 : 8),
+                Text(
+                  'Add to Cart',
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.shopping_cart,
-              size: isDesktop ? 24 : 20,
-            ),
-            SizedBox(width: isDesktop ? 12 : 8),
-            Text(
-              'Add to Cart',
-              style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+        const SizedBox(height: 16),
+       Container(
+  height: buttonHeight,
+  width: buttonWidth,
+  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+  margin: isDesktop ? EdgeInsets.zero : const EdgeInsets.only(bottom: 16),
+  child: ElevatedButton(
+    onPressed: () {
+      // Show the reservation dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return ReservationDialog(
+            productId: widget.product.id, // Pass your product ID here
+            productName: widget.product.name, // Pass your product name here
+            availableStock: widget.product.stock, // Pass available stock
+          );
+        },
+      ).then((reservationData) {
+        if (reservationData != null) {
+          // Handle the reservation data
+          _createReservation(reservationData);
+        }
+      });
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+      foregroundColor: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
       ),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.shopping_bag,
+          size: isDesktop ? 24 : 20,
+        ),
+        SizedBox(width: isDesktop ? 12 : 8),
+        Text(
+          'Reserve for later',
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+      ],
     );
   }
 
@@ -623,4 +682,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         (widget.product.discountValue / originalPrice) * 100;
     return '${discountPercentage.round()}% OFF';
   }
+}
+
+void _createReservation(reservationData) {
 }

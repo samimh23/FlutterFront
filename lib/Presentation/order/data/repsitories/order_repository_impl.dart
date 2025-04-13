@@ -1,4 +1,3 @@
-
 import 'package:hanouty/Presentation/order/domain/repositories/order_repositories.dart';
 
 import '../../domain/entities/order.dart';
@@ -17,8 +16,10 @@ class OrderRepositoryImpl implements OrderRepository {
       normalMarket: order.normalMarket,
       products: order.products,
       user: order.user,
+      orderStatus: order.orderStatus,
       dateOrder: order.dateOrder,
       isConfirmed: order.isConfirmed,
+      totalPrice: order.totalPrice
     );
     return await remoteDataSource.createOrder(orderModel);
   }
@@ -40,8 +41,10 @@ class OrderRepositoryImpl implements OrderRepository {
       normalMarket: order.normalMarket,
       products: order.products,
       user: order.user,
+      orderStatus: order.orderStatus,
       dateOrder: order.dateOrder,
       isConfirmed: order.isConfirmed,
+      totalPrice: order.totalPrice
     );
     return await remoteDataSource.updateOrder(id, orderModel);
   }
@@ -53,8 +56,12 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  Future<List<Order>> findOrdersByUserId(String idUser) {
-    // TODO: implement findOrdersByUserId
-    throw UnimplementedError();
+  Future<List<Order>> findOrdersByUserId(String idUser) async {
+    return await remoteDataSource.findOrdersByUserId(idUser);
+  }
+  
+  @override
+  Future<Order> findOrderById(String id) async{
+return await remoteDataSource.findOrderById(id);
   }
 }

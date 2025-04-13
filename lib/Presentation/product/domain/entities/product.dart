@@ -1,11 +1,11 @@
 import 'package:equatable/equatable.dart';
 
 enum ProductCategory {
-    Vegetables,
-    Drinks,
-    Sweets,
-    Fruits,
-  }
+  Vegetables,
+  Drinks,
+  Sweets,
+  Fruits,
+}
 
 class Product extends Equatable {
   final String id;
@@ -17,10 +17,12 @@ class Product extends Equatable {
   final int stock;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<String> images;
-  final double ratings;
+  final String? image;
+   int? ratingsAverage;
+   int? ratingsQuantity;
   final bool isDiscounted;
   final double discountValue;
+  final String shop;
 
   Product({
     required this.id,
@@ -32,14 +34,16 @@ class Product extends Equatable {
     required this.stock,
     required this.createdAt,
     required this.updatedAt,
-    required this.images,
-    required this.ratings,
+    this.image,
+    required this.ratingsAverage,
+    required this.ratingsQuantity,
     required this.isDiscounted,
     required this.discountValue,
+    required this.shop,
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         id,
         name,
         description,
@@ -49,10 +53,11 @@ class Product extends Equatable {
         stock,
         createdAt,
         updatedAt,
-        images,
-        ratings,
+        image,
+        ratingsAverage,
+        ratingsQuantity,
         isDiscounted,
         discountValue,
+        shop
       ];
-
 }

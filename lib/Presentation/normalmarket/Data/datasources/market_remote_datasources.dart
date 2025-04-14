@@ -145,7 +145,12 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
         options: Options(
           contentType: 'multipart/form-data',
           headers: headers,
+          responseType: ResponseType.json,
+          // Add longer timeout for market creation
+          sendTimeout: Duration(minutes: 2),
+          receiveTimeout: Duration(minutes: 2),
         ),
+
       );
 
       print('✅ Market creation response status: ${response.statusCode}');

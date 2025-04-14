@@ -10,6 +10,7 @@ import 'package:hanouty/Presentation/order/domain/usecases/cancel_order.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/confirm_order.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/create_order.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/find_order_by_user_id.dart';
+import 'package:hanouty/Presentation/order/domain/usecases/send_package.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/update_order.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
 import 'package:hanouty/Presentation/product/data/datasources/product_local_data_source.dart';
@@ -32,28 +33,30 @@ import 'package:hanouty/Presentation/review/presentation/provider/review_provide
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Presentation/order/domain/usecases/FindOrderByShopId.dart';
+
 final sl = GetIt.instance;
 Future<void> init() async {
-//order
+  //order
   // Register Order Remote Data Source
   sl.registerLazySingleton<OrderRemoteDataSource>(
-    () => OrderRemoteDataSourceImpl(client: sl()),
+        () => OrderRemoteDataSourceImpl(client: sl()),
   );
 
   // Register Order Repository
   sl.registerLazySingleton<OrderRepository>(
-    () => OrderRepositoryImpl(
+        () => OrderRepositoryImpl(
       remoteDataSource: sl(),
     ),
   );
 
   sl.registerLazySingleton<ReviewRemoteDataSource>(
-    () => ReviewRemoteDataSourceImpl(client: sl()),
+        () => ReviewRemoteDataSourceImpl(client: sl()),
   );
 
   // Register Order Repository
   sl.registerLazySingleton<ReviewRepository>(
-    () => ReviewRepositoryImpl(
+        () => ReviewRepositoryImpl(
       remoteDataSource: sl(),
       networkInfo: sl(),
     ),
@@ -61,46 +64,53 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateReviewUsecase(sl()));
   sl.registerLazySingleton(() => UpdateReviewUsecase(sl()));
   sl.registerLazySingleton(() => GetReviewsByUserId(sl()));
-   sl.registerFactory<ReviewProvider>(
-    () => ReviewProvider(
+  sl.registerFactory<ReviewProvider>(
+        () => ReviewProvider(
       createReviewUsecase: sl(),
       updateReviewUsecase: sl(),
       getReviewsByUserId: sl(),
-    ),);
+    ),
+  );
+
   // Register Order Use Cases
   sl.registerLazySingleton(() => CreateOrder(sl()));
   sl.registerLazySingleton(() => ConfirmOrder(sl()));
   sl.registerLazySingleton(() => CancelOrder(sl()));
   sl.registerLazySingleton(() => UpdateOrder(sl()));
   sl.registerLazySingleton(() => FindOrderByUserId(sl()));
+  sl.registerLazySingleton(() => FindOrderByShopId(sl())); // Add this line
+  sl.registerLazySingleton(() => SendPackage(sl()));
 
   // Register OrderProvider
   sl.registerFactory<OrderProvider>(
-    () => OrderProvider(
+        () => OrderProvider(
       createOrderUseCase: sl(),
       confirmOrderUseCase: sl(),
       cancelOrderUseCase: sl(),
       findOrderByUserIdUseCase: sl(),
+      findOrderByShopIdUseCase: sl(), sendPackageUseCase: sl(), // Add this parameter
     ),
   );
+
   // Register your CartProvider
   sl.registerFactory<CartProvider>(() => CartProvider());
   sl.registerLazySingleton<SecureStorageService>(() => SecureStorageService());
 
   //product
-sl.registerFactory(() => ProductProvider(
+  sl.registerFactory(() => ProductProvider(
       sl<SecureStorageService>(), // Pass the SecureStorageService
       getAllProductUseCase: sl(),
       getProductById: sl(),
       addProductUseCase: sl(),
       updateProductUseCase: sl()
-  )); sl.registerLazySingleton(() => AddProductUseCase(sl()));
+  ));
+  sl.registerLazySingleton(() => AddProductUseCase(sl()));
   sl.registerLazySingleton(() => GetAllProductUseCase(sl()));
-   sl.registerLazySingleton(() => GetProductById(sl()));
+  sl.registerLazySingleton(() => GetProductById(sl()));
   sl.registerLazySingleton(() => UpdateProductUseCase(sl()));
 
   sl.registerLazySingleton<ProductRepository>(
-    () => ProductRepositoryImpl(
+        () => ProductRepositoryImpl(
       localDataSource: sl(),
       remoteDataSource: sl(),
       networkInfo: sl(),
@@ -108,12 +118,14 @@ sl.registerFactory(() => ProductProvider(
   );
 
   sl.registerLazySingleton<ProductRemoteDataSource>(
-    () => ProductRemoteDataSourceImpl(client: sl(),      authService: sl<SecureStorageService>(), // Use the registered SecureStorageService
-),
+        () => ProductRemoteDataSourceImpl(
+      client: sl(),
+      authService: sl<SecureStorageService>(), // Use the registered SecureStorageService
+    ),
   );
 
   sl.registerLazySingleton<ProductLocalDataSource>(
-    () => ProductLocalDataSourceImpl(sharedPreferences: sl()),
+        () => ProductLocalDataSourceImpl(sharedPreferences: sl()),
   );
 
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));

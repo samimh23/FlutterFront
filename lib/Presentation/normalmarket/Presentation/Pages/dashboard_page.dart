@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/Setting_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_market_page.dart';
 import 'package:provider/provider.dart';
+
+import '../../../order/presentation/Page/orderpage.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
@@ -14,11 +15,11 @@ class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
   final List<Widget> _pages = [
     const NormalMarketsPage(),
-    const SettingsPage(),
+    const OrdersPage(), // Replaced SettingsPage with OrdersPage
   ];
 
-  final List<String> _titles = ['Fresh Markets', 'Settings'];
-  final List<IconData> _pageIcons = [Icons.storefront_outlined, Icons.settings];
+  final List<String> _titles = ['Fresh Markets', 'Market Orders']; // Updated title
+  final List<IconData> _pageIcons = [Icons.storefront_outlined, Icons.receipt_long]; // Updated icon
 
   @override
   Widget build(BuildContext context) {
@@ -59,12 +60,13 @@ class _DashboardPageState extends State<DashboardPage> {
         color: _selectedIndex == 0 ? Colors.white : const Color(0xFF2E7D32),
       ),
       actions: [
-        if (_selectedIndex == 1) // Only show on settings page
+        if (_selectedIndex == 1) // Only show on orders page
           IconButton(
-            icon: const Icon(Icons.account_circle, size: 28),
-            tooltip: 'Profile',
+            icon: const Icon(Icons.bar_chart, size: 24),
+            tooltip: 'Sales Statistics',
             onPressed: () {
-              // Navigate to profile
+              // Navigate to detailed stats view
+              // This could open a modal or navigate to a detailed stats page
             },
             color: const Color(0xFF43A047),
           ),
@@ -84,7 +86,7 @@ class _DashboardPageState extends State<DashboardPage> {
           _buildDrawerHeader(),
           const SizedBox(height: 8),
           _buildNavItem(0, 'Markets', Icons.storefront_outlined, 'Manage your produce markets'),
-          _buildNavItem(1, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
+          _buildNavItem(1, 'Orders', Icons.receipt_long, 'View sales and order history'), // Updated text and description
           const SizedBox(height: 8),
           _buildCategorySection(),
           const SizedBox(height: 8),
@@ -167,7 +169,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '',
+                    'Aladin Ayari', // Added username
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -363,78 +365,6 @@ class _DashboardPageState extends State<DashboardPage> {
           borderRadius: BorderRadius.circular(12),
         ),
         onTap: () => _handleLogout(context),
-      ),
-    );
-  }
-
-
-  Widget _buildNavBarItem(int index, String label, IconData icon) {
-    final isSelected = _selectedIndex == index;
-
-    return GestureDetector(
-      onTap: () => _selectPage(index),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          color: isSelected
-              ? const Color(0xFF43A047).withOpacity(0.1)
-              : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? const Color(0xFF43A047) : Colors.grey[400],
-              size: 26,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? const Color(0xFF2E7D32) : Colors.grey[400],
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddMarketButton() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, '/add-market');
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFF2E7D32),
-              Color(0xFF43A047),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF43A047).withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 28,
-        ),
       ),
     );
   }

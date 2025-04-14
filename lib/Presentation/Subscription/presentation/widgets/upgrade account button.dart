@@ -33,13 +33,13 @@ class UpgradeAccountButton extends StatelessWidget {
             const SizedBox(height: 12),
             _buildSubscriptionOption(
               context: context,
-              title: 'Wholesaler',
+              title: 'Merchant',
               description: 'Access bulk orders and connect with farmers',
               icon: Icons.store,
               color: Colors.blue,
               onTap: () {
                 Navigator.of(context).pop();
-                _initiateSubscription(context, SubscriptionType.wholesaler);
+                _initiateSubscription(context, SubscriptionType.merchant);
               },
             ),
           ],

@@ -574,13 +574,13 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 12),
             _buildSubscriptionOption(
-              title: 'Wholesaler',
+              title: 'Merchant',
               description: 'Access bulk orders and connect with farmers',
               icon: Icons.store,
               color: Colors.blue,
               onTap: () {
                 Navigator.of(context).pop();
-                _initiateSubscription(SubscriptionType.wholesaler);
+                _initiateSubscription(SubscriptionType.merchant);
               },
             ),
           ],

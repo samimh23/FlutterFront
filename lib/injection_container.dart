@@ -1,5 +1,4 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-
 import 'package:get_it/get_it.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/network/network_info.dart';

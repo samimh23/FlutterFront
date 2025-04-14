@@ -38,6 +38,8 @@ import 'package:hanouty/nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'Core/api/Api_Serice.dart';
 import 'Core/theme/theme_data.dart';
+import 'Presentation/AIForBussines/DashboardViewModel.dart';
+import 'Presentation/AIForBussines/apiservice.dart';
 import 'Presentation/Auth/data/repositories/auth_repository_impl.dart';
 import 'Presentation/Auth/domain/repositories/auth_repository.dart';
 import 'Presentation/Auth/domain/use_cases/forget_password_usecase.dart';
@@ -121,7 +123,9 @@ class MyApp extends StatelessWidget {
         VerifyResetCodeUseCase(authRepository);
     final ResetPasswordUseCase resetPasswordUseCase =
         ResetPasswordUseCase(authRepository);
-
+    final ApiService apiService = ApiService(
+      baseUrl: 'https://flask-analytics-api.onrender.com',  // Replace with your Flask server IP
+    );
     return MultiProvider(
       providers: [
         //alaaa
@@ -261,6 +265,7 @@ class MyApp extends StatelessWidget {
           create: (_) => ThemeProvider(),
         ),
 
+
         // Farm crop providers
         Provider<FarmCropRemoteDataSource>(
           create: (_) => FarmCropRemoteDataSource(),
@@ -368,6 +373,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ProfileProvider(),
         ),
+    ChangeNotifierProvider(
+    create: (_) => DashboardViewModel(apiService),)
       ],
       child: Builder(builder: (context) {
         return Consumer<ThemeProvider>(builder: (context, themeProvider, _) {

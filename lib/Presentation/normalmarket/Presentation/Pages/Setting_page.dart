@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
+// Import your Dashboard screen
+import '../../../AIForBussines/DashboardScreen.dart';
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
@@ -92,6 +95,10 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildProfileSection(),
             const SizedBox(height: 24),
 
+            // Analytics Preview Card
+            _buildAnalyticsPreviewCard(),
+            const SizedBox(height: 24),
+
             _buildSectionHeader('Account Settings', Icons.account_circle_outlined),
             _buildSettingsCard([
               _buildNavigationItem(
@@ -111,6 +118,37 @@ class _SettingsPageState extends State<SettingsPage> {
                 Icons.security_outlined,
                 onTap: () => _navigateToSecurity(),
                 showBadge: true,
+              ),
+            ]),
+
+            const SizedBox(height: 24),
+
+            // Add Analytics & Reports Section
+            _buildSectionHeader('Analytics & Reports', Icons.analytics_outlined),
+            _buildSettingsCard([
+              _buildNavigationItem(
+                'AI Sales Dashboard',
+                Icons.dashboard_outlined,
+                onTap: () => _navigateToAIDashboard(),
+                showBadge: true,
+              ),
+              const Divider(height: 1),
+              _buildNavigationItem(
+                'Market Performance',
+                Icons.show_chart,
+                onTap: () => _navigateToMarketPerformance(),
+              ),
+              const Divider(height: 1),
+              _buildNavigationItem(
+                'Customer Insights',
+                Icons.people_outline,
+                onTap: () => _navigateToCustomerInsights(),
+              ),
+              const Divider(height: 1),
+              _buildNavigationItem(
+                'Report Settings',
+                Icons.settings_applications_outlined,
+                onTap: () => _navigateToReportSettings(),
               ),
             ]),
 
@@ -396,6 +434,169 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Analytics Preview Card
+  Widget _buildAnalyticsPreviewCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Sales Analytics',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _navigateToAIDashboard(),
+                child: const Text(
+                  'View Dashboard',
+                  style: TextStyle(
+                    color: Color(0xFF4CAF50),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              _buildAnalyticItem(
+                  'This Month',
+                  '₮3,456',
+                  Icons.trending_up,
+                  const Color(0xFF4CAF50),
+                  '+12%'
+              ),
+              const SizedBox(width: 16),
+              _buildAnalyticItem(
+                  'Orders',
+                  '48',
+                  Icons.shopping_bag_outlined,
+                  const Color(0xFF2196F3),
+                  '+8%'
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.bar_chart,
+                    size: 40,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap to view full analytics',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => _navigateToAIDashboard(),
+            icon: const Icon(Icons.analytics_outlined),
+            label: const Text('Open AI Dashboard'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+              minimumSize: const Size(double.infinity, 48),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticItem(String label, String value, IconData icon, Color color, String trend) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  color: color,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              trend,
+              style: TextStyle(
+                fontSize: 12,
+                color: const Color(0xFF4CAF50),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -906,6 +1107,42 @@ class _SettingsPageState extends State<SettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Navigate to Security Settings'),
+        backgroundColor: Color(0xFF4CAF50),
+      ),
+    );
+  }
+
+  // Analytics navigation methods
+  void _navigateToAIDashboard() {
+    // Navigate to the AI Dashboard screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+    );
+  }
+
+  void _navigateToMarketPerformance() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Navigate to Market Performance'),
+        backgroundColor: Color(0xFF4CAF50),
+      ),
+    );
+  }
+
+  void _navigateToCustomerInsights() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Navigate to Customer Insights'),
+        backgroundColor: Color(0xFF4CAF50),
+      ),
+    );
+  }
+
+  void _navigateToReportSettings() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Navigate to Report Settings'),
         backgroundColor: Color(0xFF4CAF50),
       ),
     );

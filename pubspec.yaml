@@ -68,6 +68,7 @@ dependencies:
   flutter_map_cancellable_tile_provider: ^3.1.0
   geolocator: ^13.0.4
   flutter_polyline_points: ^2.1.0
+  mobile_scanner: ^3.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

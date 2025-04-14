@@ -13,6 +13,7 @@ import 'package:hanouty/Presentation/order/domain/entities/order.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:hanouty/app_colors.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String orderId;
@@ -80,6 +81,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsB
 
   // Client location
   LatLng? clientLocation;
+  
+  // Flag to track if QR code has been shown
+  bool _qrCodeShown = false;
 
   @override
   void initState() {
@@ -204,6 +208,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsB
             currentOrderStatus = deliveryState.currentOrderStatus;
             updateMarkersForStatus();
           });
+          
+          // Check if delivery has reached client location (animation complete)
+          if (deliveryState.animationProgress >= 0.99 && 
+              currentOrderStatus == OrderStatus.Delivering &&
+              !_qrCodeShown) {
+            _showQrCodeDialog();
+          }
         }
       },
       onError: (error) {
@@ -213,6 +224,111 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsB
     
     print("[OrderTrackingScreen] Subscription established");
   }
+  
+  // Show QR Code dialog for delivery confirmation
+  void _showQrCodeDialog() {
+    if (!mounted || _qrCodeShown) return;
+    
+    print("[OrderTrackingScreen] Showing QR code for delivery confirmation");
+    _qrCodeShown = true; // Set flag to avoid showing multiple times
+    
+    // Generate unique confirmation code
+    final confirmationCode = "${widget.orderId}_${DateTime.now().millisecondsSinceEpoch}";
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Must interact with dialog
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delivery Confirmation'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'The delivery person has arrived! Please scan this QR code to confirm package receipt.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 200,
+                width: 200,
+                child: QrImageView(
+                  data: confirmationCode,
+                  version: QrVersions.auto,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Order ID: ${widget.orderId}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Allow showing the QR again if canceled
+                _qrCodeShown = false;
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.yellow,
+              ),
+              child: const Text('Confirm Receipt'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Mark order as received in the system
+                _confirmDelivery();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  // Process delivery confirmation
+  // Process delivery confirmation - updated to use existing confirmOrder method
+void _confirmDelivery() {
+  if (!mounted) return;
+  
+  print("[OrderTrackingScreen] Confirming delivery for order ${widget.orderId}");
+  
+  setState(() {
+    currentOrderStatus = OrderStatus.isReceived;
+    deliveryStatus = "Order received!";
+    deliveryProgress = 1.0;
+  });
+  
+  // Update order status in the tracking service
+  _trackingService.updateOrderStatus(widget.orderId, OrderStatus.isReceived);
+  
+  // Call the existing confirmOrder method from OrderProvider
+  try {
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    orderProvider.confirmOrder(widget.orderId);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Delivery confirmed successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } catch (e) {
+    print("[OrderTrackingScreen] Error confirming delivery: $e");
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error confirming delivery: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   // Refresh order status from the database
   Future<void> refreshOrderStatus() async {
@@ -694,7 +810,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsB
                   initialCenter: marketLocation,
                   initialZoom: 13,
                   interactionOptions: const InteractionOptions(
-                    
                     enableMultiFingerGestureRace: true,
                     flags: InteractiveFlag.all,
                   ),

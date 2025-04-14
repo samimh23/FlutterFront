@@ -5,6 +5,7 @@ import '../models/order_model.dart';
 abstract class OrderRemoteDataSource {
   Future<OrderModel> createOrder(OrderModel orderModel);
   Future<OrderModel> confirmOrder(String id);
+  Future<OrderModel> sendPackage(String id);
   Future<OrderModel> findOrderById(String id);
   Future<OrderModel> cancelOrder(String id);
   Future<OrderModel> updateOrder(String id, OrderModel orderModel);
@@ -95,6 +96,16 @@ Future<OrderModel> createOrder(OrderModel orderModel) async {
       return OrderModel.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to find order by ID');
+    }
+  }
+
+  @override
+  Future<OrderModel> sendPackage(String id) async {
+    final response = await client.patch(Uri.parse('$baseUrl/updateStatus/$id'));
+    if (response.statusCode == 200) {
+      return OrderModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to send package');
     }
   }
 }

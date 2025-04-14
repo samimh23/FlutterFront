@@ -64,4 +64,9 @@ class OrderRepositoryImpl implements OrderRepository {
   Future<Order> findOrderById(String id) async{
 return await remoteDataSource.findOrderById(id);
   }
+
+  @override
+  Future<Order> sendPackage(String id) async {
+    return await remoteDataSource.sendPackage(id);
+  }
 }

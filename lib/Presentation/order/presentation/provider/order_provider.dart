@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/find_order_by_id.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/find_order_by_user_id.dart';
+import 'package:hanouty/Presentation/order/domain/usecases/send_package.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/usecases/cancel_order.dart';
 import '../../domain/usecases/confirm_order.dart';
@@ -12,6 +13,7 @@ class OrderProvider extends ChangeNotifier {
   final CancelOrder cancelOrderUseCase;
   final FindOrderById findOrderByIdUseCase;
   final FindOrderByUserId findOrderByUserIdUseCase;
+  final SendPackage sendPackageUseCase; // Added missing use case
 
   OrderProvider({
     required this.createOrderUseCase,
@@ -19,6 +21,7 @@ class OrderProvider extends ChangeNotifier {
     required this.findOrderByIdUseCase,
     required this.cancelOrderUseCase,
     required this.findOrderByUserIdUseCase,
+    required this.sendPackageUseCase, // Added to constructor
   });
 
   List<Order> _orders = [];
@@ -92,6 +95,31 @@ class OrderProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
       print('Error confirming order: $e');
+    }
+
+    _setLoading(false);
+  }
+
+  /// Send package for an order by ID
+  Future<void> sendPackage(String orderId) async {
+    if (_isLoading) return;
+    _setLoading(true);
+
+    try {
+      final updatedOrder = await sendPackageUseCase.call(orderId);
+      _updateOrderInList(updatedOrder);
+      
+      // Update _selectedOrder if it's the same order
+      if (_selectedOrder != null && _selectedOrder!.id == orderId) {
+        _selectedOrder = updatedOrder;
+      }
+      
+      // Also update in user orders list if present
+      _updateOrderInUserOrdersList(updatedOrder);
+      
+    } catch (e) {
+      _errorMessage = e.toString();
+      print('Error sending package: $e');
     }
 
     _setLoading(false);

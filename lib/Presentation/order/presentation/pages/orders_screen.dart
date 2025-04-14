@@ -20,8 +20,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   void initState() {
-    super.initState();
     _loadOrders();
+    super.initState();
+    
   }
 
   Future<void> _loadOrders() async {

@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:hanouty/Presentation/Auth/presentation/controller/profileservice.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../Core/Utils/secure_storage.dart';
 import '../../../../Core/Utils/uploadservice.dart';
 import '../../../../Core/api/api_exceptions.dart';
 import '../../../Subscription/presentation/manager/subsservice.dart';
@@ -99,6 +102,55 @@ class ProfileProvider extends ChangeNotifier {
       _errorMessage = 'An unexpected error occurred while initiating subscription';
       notifyListeners();
     }
+  }
+
+  // Add this method to your ProfileProvider
+  Future<void> verifySubscriptionPayment(String sessionId) async {
+    try {
+      _status = ProfileStatus.loading;
+      _errorMessage = null;
+      notifyListeners();
+
+      // Call the backend to verify the session status
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/payments/check-session?session_id=$sessionId'),
+        headers: await _getAuthHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData['success'] == true) {
+          // Reload the profile to get updated role and subscription information
+          await loadProfile();
+          return;
+        } else {
+          throw ApiException(responseData['message'] ?? 'Payment verification failed');
+        }
+      } else {
+        throw ApiException('Failed to verify payment: ${response.statusCode}');
+      }
+    } on ApiException catch (e) {
+      _status = ProfileStatus.error;
+      _errorMessage = e.message;
+      notifyListeners();
+    } catch (e) {
+      _status = ProfileStatus.error;
+      _errorMessage = 'Payment verification error: ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+// Helper method to get auth headers
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await SecureStorageService().getAccessToken();
+    if (token == null) {
+      throw ApiException('Authentication required');
+    }
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
   }
 
   // Call this when returning from the payment flow

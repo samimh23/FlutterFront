@@ -5,7 +5,7 @@ enum Role {
   Merchant,
   Shop,
   Farmer,
-  Wholesaler
+
   // Add other roles as needed
 }
 

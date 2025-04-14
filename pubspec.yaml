@@ -73,6 +73,7 @@ dependencies:
   flutter_dotenv: ^5.0.2
   flutter_launcher_icons: ^0.10.0
   flutter_cors: ^1.0.1
+  uni_links: ^0.5.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

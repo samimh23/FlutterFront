@@ -7,8 +7,8 @@ import 'package:hanouty/Presentation/product/presentation/provider/product_provi
 import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/injection_container.dart';
 import 'package:hanouty/Core/network/apiconastant.dart'; // Import ApiConstants
-import 'dart:html' as html;
 import 'package:provider/provider.dart';
+import 'package:universal_html/html.dart' as html;
 
 class AddEditProductPage extends StatefulWidget {
   final Product? product; // Pass product for edit mode, null for add mode

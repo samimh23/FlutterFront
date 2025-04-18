@@ -185,7 +185,7 @@ Future<bool> deleteProduct(String productId) async {
       final objectUrl = html.Url.createObjectUrl(file);
 
       // Load the image to get its dimensions
-      final img = html.ImageElement(src: objectUrl);
+      final img = html.ImageElement();
       await img.onLoad.first;
 
       // Calculate new dimensions while maintaining aspect ratio

@@ -32,6 +32,9 @@ import 'package:hanouty/Presentation/review/presentation/provider/review_provide
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Presentation/order/domain/usecases/FindOrderByShopId.dart';
+import 'Presentation/order/domain/usecases/send_package.dart';
+
 final sl = GetIt.instance;
 Future<void> init() async {
 //order
@@ -74,6 +77,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateOrder(sl()));
   sl.registerLazySingleton(() => FindOrderByUserId(sl()));
 sl.registerLazySingleton(() => FindOrderById(sl()));
+  sl.registerLazySingleton(() => FindOrderByShopId(sl())); // Add this line
+  sl.registerLazySingleton(() => SendPackage(sl()));
   // Register OrderProvider
   sl.registerFactory<OrderProvider>(
     () => OrderProvider(
@@ -82,6 +87,8 @@ sl.registerLazySingleton(() => FindOrderById(sl()));
       cancelOrderUseCase: sl(),
       findOrderByUserIdUseCase: sl(),
       findOrderByIdUseCase: sl(),
+
+        findOrderByShopIdUseCase: sl(), sendPackageUseCase: sl()
     ),
   );
   // Register your CartProvider

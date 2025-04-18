@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/find_order_by_id.dart';
 import 'package:hanouty/Presentation/order/domain/usecases/find_order_by_user_id.dart';
 import '../../domain/entities/order.dart';
+import '../../domain/usecases/FindOrderByShopId.dart';
 import '../../domain/usecases/cancel_order.dart';
 import '../../domain/usecases/confirm_order.dart';
 import '../../domain/usecases/create_order.dart';
+import '../../domain/usecases/send_package.dart';
 
 class OrderProvider extends ChangeNotifier {
   final CreateOrder createOrderUseCase;
@@ -12,6 +14,9 @@ class OrderProvider extends ChangeNotifier {
   final CancelOrder cancelOrderUseCase;
   final FindOrderById findOrderByIdUseCase;
   final FindOrderByUserId findOrderByUserIdUseCase;
+  final FindOrderByShopId findOrderByShopIdUseCase;
+  final SendPackage sendPackageUseCase; // Add this field
+
 
   OrderProvider({
     required this.createOrderUseCase,
@@ -19,6 +24,9 @@ class OrderProvider extends ChangeNotifier {
     required this.findOrderByIdUseCase,
     required this.cancelOrderUseCase,
     required this.findOrderByUserIdUseCase,
+    required this.findOrderByShopIdUseCase,
+    required this.sendPackageUseCase, // Add this parameter
+
   });
 
   List<Order> _orders = [];
@@ -28,9 +36,12 @@ class OrderProvider extends ChangeNotifier {
   /// Optional fields if you need them.
   Order? _selectedOrder;
   List<Order> _userOrders = [];
+  List<Order> _shopOrders = []; // Add shop orders list
+
 
   List<Order> get orders => _orders;
   List<Order> get userOrders => _userOrders;
+  List<Order> get shopOrders => _shopOrders; // Add getter
   Order? get selectedOrder => _selectedOrder;
 
   bool get isLoading => _isLoading;
@@ -92,6 +103,30 @@ class OrderProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
       print('Error confirming order: $e');
+    }
+
+    _setLoading(false);
+  }
+
+  Future<void> sendPackage(String orderId) async {
+    if (_isLoading) return;
+    _setLoading(true);
+
+    try {
+      final updatedOrder = await sendPackageUseCase.call(orderId);
+      _updateOrderInList(updatedOrder);
+
+      // Update _selectedOrder if it's the same order
+      if (_selectedOrder != null && _selectedOrder!.id == orderId) {
+        _selectedOrder = updatedOrder;
+      }
+
+      // Also update in user orders list if present
+      _updateOrderInUserOrdersList(updatedOrder);
+
+    } catch (e) {
+      _errorMessage = e.toString();
+      print('Error sending package: $e');
     }
 
     _setLoading(false);
@@ -187,6 +222,27 @@ class OrderProvider extends ChangeNotifier {
     
     return null;
   }
+
+  Future<List<Order>> findOrdersByShopId(String shopId) async {
+    if (_isLoading) return _shopOrders;
+    _setLoading(true);
+
+    try {
+      print('Fetching orders for shop ID: $shopId');
+      final orders = await findOrderByShopIdUseCase.call(shopId);
+      _shopOrders = orders;
+      print('Found ${orders.length} orders for shop ID: $shopId');
+      return _shopOrders;
+    } catch (e) {
+      _errorMessage = 'Failed to fetch shop orders: ${e.toString()}';
+      print('Error fetching shop orders: $_errorMessage');
+      _shopOrders = [];
+      return _shopOrders;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
 
   /// Clear the current error message.
   void clearError() {

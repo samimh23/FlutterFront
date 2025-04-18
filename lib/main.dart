@@ -36,6 +36,7 @@ import 'package:hanouty/Presentation/product/presentation/provider/product_provi
 import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
 import 'package:hanouty/nav_bar.dart';
 import 'package:provider/provider.dart';
+import 'Core/Utils/Api_EndPoints.dart';
 import 'Core/api/Api_Serice.dart';
 import 'Core/theme/theme_data.dart';
 import 'Presentation/AIForBussines/DashboardViewModel.dart';
@@ -132,7 +133,7 @@ class MyApp extends StatelessWidget {
         Provider<Dio>(
           create: (_) => Dio(BaseOptions(
             // For web deployment, using relative URL to match the hosting domain
-            baseUrl: 'http://localhost:3000/normal',
+            baseUrl: '${ApiEndpoints.baseUrl}/normal',
             connectTimeout: const Duration(seconds: 5),
             receiveTimeout: const Duration(seconds: 10),
             contentType: 'application/json',

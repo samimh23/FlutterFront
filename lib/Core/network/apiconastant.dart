@@ -1,6 +1,21 @@
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+
+import '../Utils/Api_EndPoints.dart';
 class ApiConstants {
   // Base API URL - change this when deploying to production
-  static const String baseUrl = 'http://localhost:3000';
+  static String get baseUrl {
+    if (!kIsWeb && kDebugMode) {
+      try {
+
+        const bool runningOnEmulator = false;
+
+        if (runningOnEmulator) {
+        }
+      } catch (e) {
+      }
+    }
+    return ApiEndpoints.baseUrl;
+  }
 
   // Method to convert image paths to correct URLs
   static String getFullImageUrl(String? imagePath) {

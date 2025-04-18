@@ -3,6 +3,8 @@ import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/Setting_pag
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_market_page.dart';
 import 'package:provider/provider.dart';
 
+import '../../../order/presentation/pages/orderpage.dart';
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
 
@@ -15,10 +17,11 @@ class _DashboardPageState extends State<DashboardPage> {
   final List<Widget> _pages = [
     const NormalMarketsPage(),
     const SettingsPage(),
+    const OrdersPage(),
   ];
 
-  final List<String> _titles = ['Fresh Markets', 'Settings'];
-  final List<IconData> _pageIcons = [Icons.storefront_outlined, Icons.settings];
+  final List<String> _titles = ['Fresh Markets', 'Settings','Market Orders'];
+  final List<IconData> _pageIcons = [Icons.storefront_outlined, Icons.settings, Icons.receipt_long];
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +88,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 8),
           _buildNavItem(0, 'Markets', Icons.storefront_outlined, 'Manage your produce markets'),
           _buildNavItem(1, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
+          _buildNavItem(2, 'Orders', Icons.receipt_long, 'View Current orders'),
           const SizedBox(height: 8),
           _buildCategorySection(),
           const SizedBox(height: 8),

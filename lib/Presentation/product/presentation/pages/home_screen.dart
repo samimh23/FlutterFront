@@ -11,6 +11,8 @@ import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/responsive/responsive_layout.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../Core/Utils/Api_EndPoints.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -516,7 +518,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final String marketPhone = market.marketPhone ?? 'Unknown Phone';
     final String marketEmail = market.marketEmail ?? 'Unknown Email';
     final String? imagePath = market.marketImage;
-    final String imageUrl = 'http://localhost:3000/$imagePath';
+    final String imageUrl = '${ApiEndpoints.baseUrl}/$imagePath';
     final List<String> products =
         market.products; // Assuming products is a list
     print(products);

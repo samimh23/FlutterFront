@@ -6,6 +6,8 @@ import 'package:hanouty/Presentation/product/data/models/product_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math' as Math;
 
+import '../../../../Core/Utils/Api_EndPoints.dart';
+
 abstract class ProductRemoteDataSource {
   Future<List<ProductModel>> getAllProducts();
   Future<Unit> deleteProduct(int id);
@@ -14,7 +16,7 @@ abstract class ProductRemoteDataSource {
   Future<ProductModel> getProductById(String id);
 }
 
-const BASE_URL = "http://127.0.0.1:3000/product";
+const BASE_URL = "${ApiEndpoints.baseUrl}/product";
 
 class ProductRemoteDataSourceImpl extends ProductRemoteDataSource {
   final http.Client client;

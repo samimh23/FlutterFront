@@ -781,7 +781,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-  // Updated image loading function using ApiConstants
+  // Updated image loading function with improved error handling
   Widget _buildProductImage(BuildContext context, String? imageUrl) {
     final placeholderColor = widget.isDarkMode
         ? AppColors.primary.withOpacity(0.2)
@@ -819,6 +819,13 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         CachedNetworkImage(
           imageUrl: fullImageUrl,
           fit: BoxFit.cover,
+          // Add a key based on URL to force refresh when image changes
+          key: ValueKey(fullImageUrl),
+          // Add memory & disk cache settings
+          memCacheHeight: 400, // Optimized size for thumbnail
+          memCacheWidth: 400,
+          maxHeightDiskCache: 800, // Higher quality for disk cache
+          maxWidthDiskCache: 800,
           placeholder: (context, url) => Center(
             child: CircularProgressIndicator(
               strokeWidth: 2,
@@ -826,6 +833,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             ),
           ),
           errorWidget: (context, url, error) {
+            print('Error loading product image: $url - $error');
             return GestureDetector(
               onTap: () {
                 // Show image URL in dialog for debugging
@@ -859,6 +867,13 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                               )
                           ),
                           const SizedBox(height: 12),
+                          Text('Error: ${error.toString()}',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red[widget.isDarkMode ? 400 : 600]
+                              )
+                          ),
+                          const SizedBox(height: 12),
                           Text('Check that:',
                               style: TextStyle(color: widget.isDarkMode ? Colors.white : null)
                           ),
@@ -878,6 +893,18 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
                         child: Text('Close',
+                            style: TextStyle(color: accentColor)
+                        ),
+                      ),
+                      // Add option to retry loading
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          // Force a refresh by clearing the cache for this URL
+                          CachedNetworkImage.evictFromCache(fullImageUrl);
+                          setState(() {});
+                        },
+                        child: Text('Retry',
                             style: TextStyle(color: accentColor)
                         ),
                       ),

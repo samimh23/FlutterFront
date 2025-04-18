@@ -1,38 +1,12 @@
-import 'dart:html' as html;
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Import the platform helper
+import 'package:hanouty/Core/Utils/platform_imports.dart';
 
 class ImagePickerHelper {
+  // Use the platform helper to pick images
   static Future<Map<String, dynamic>> pickImage() async {
-    final completer = Completer<Map<String, dynamic>>();
-
-    final input = html.FileUploadInputElement()
-      ..accept = 'image/*'
-      ..click();
-
-    input.onChange.listen((event) async {
-      final files = input.files;
-      if (files != null && files.isNotEmpty) {
-        final file = files.first;
-        final reader = html.FileReader();
-
-        reader.onLoadEnd.listen((_) {
-          completer.complete({
-            'file': file,
-            'path': 'File:${file.name}',
-            'type': file.type,
-          });
-        });
-
-        reader.onError.listen((error) {
-          completer.completeError('Error reading file: $error');
-        });
-
-        reader.readAsArrayBuffer(file);
-      } else {
-        completer.completeError('No file selected');
-      }
-    });
-
-    return completer.future;
+    return PlatformHelper.pickImage();
   }
 }

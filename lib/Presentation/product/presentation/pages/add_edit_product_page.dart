@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/image_picker.dart';
 import 'package:hanouty/Presentation/product/data/models/product_model.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
@@ -7,7 +9,6 @@ import 'package:hanouty/Presentation/product/presentation/provider/product_provi
 import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/injection_container.dart';
 import 'package:hanouty/Core/network/apiconastant.dart'; // Import ApiConstants
-import 'dart:html' as html;
 import 'package:provider/provider.dart';
 
 class AddEditProductPage extends StatefulWidget {
@@ -501,12 +502,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
-  // UPDATED: Local image display with file info
+  // UPDATED: Local image display with cross-platform support
   Widget _buildLocalImageItem(Map<String, dynamic> imageData) {
-    // For preview, create an object URL
-    final objectUrl = html.Url.createObjectUrl(imageData['file'] as html.Blob);
-    final fileName = (imageData['file'] as html.File).name;
-    final fileSize = ((imageData['file'] as html.File).size / 1024).toStringAsFixed(1) + ' KB';
+    // Get common properties from imageData that work on both platforms
+    final String fileName = imageData['name'] as String;
+    final String fileSize = ((imageData['size'] as num) / 1024).toStringAsFixed(1) + ' KB';
 
     return Stack(
       children: [
@@ -522,15 +522,8 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: Image.network(
-                    objectUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey[200],
-                      child: Icon(Icons.broken_image, color: Colors.grey[400]),
-                    ),
-                  ),
+                  // Use the appropriate image widget based on platform
+                  child: _buildCrossplatformImage(imageData),
                 ),
                 // File info at the bottom
                 Container(
@@ -561,11 +554,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           top: 4,
           right: 4,
           child: GestureDetector(
-            onTap: () {
-              _removeImage();
-              // Release the object URL to avoid memory leaks
-              html.Url.revokeObjectUrl(objectUrl);
-            },
+            onTap: _removeImage,
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -579,7 +568,6 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ],
     );
   }
-
   Widget _buildUploadingIndicator() {
     return Container(
       width: 200,
@@ -614,6 +602,76 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+  Widget _buildCrossplatformImage(Map<String, dynamic> imageData) {
+    try {
+      if (kIsWeb) {
+        // For web, use the data URL approach which works well
+        final String dataUrl = imageData['dataUrl'] as String;
+        return Image.network(
+          dataUrl,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            print('Web image error: $error');
+            return _buildErrorImagePlaceholder();
+          },
+        );
+      } else {
+        // For mobile platforms, prioritize using bytes directly if available
+        if (imageData.containsKey('bytes') && imageData['bytes'] != null) {
+          // Use Memory image which works best for mobile with bytes
+          final bytes = imageData['bytes'];
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              print('Memory image error: $error');
+              return _buildErrorImagePlaceholder();
+            },
+          );
+        }
+        // Fallback to file path if bytes aren't available
+        else if (imageData.containsKey('path') && imageData['path'] != null) {
+          final String path = imageData['path'];
+          // Import dart:io at the top of your file for File class
+          return Image.file(
+            File(path),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              print('File image error: $error');
+              return _buildErrorImagePlaceholder();
+            },
+          );
+        }
+        // Last resort fallback
+        else {
+          print('No valid image source found in imageData');
+          return _buildErrorImagePlaceholder();
+        }
+      }
+    } catch (e) {
+      print('Error displaying image: $e');
+      return _buildErrorImagePlaceholder();
+    }
+  }
+  Widget _buildErrorImagePlaceholder() {
+    return Container(
+      color: Colors.grey[200],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.broken_image, color: Colors.grey[400], size: 40),
+          const SizedBox(height: 8),
+          Text(
+            'Image could not be loaded',
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildAddImageButton() {
     return GestureDetector(
       onTap: _pickImage,

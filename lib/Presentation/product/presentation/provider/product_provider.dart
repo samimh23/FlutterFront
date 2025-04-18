@@ -1,7 +1,7 @@
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dartz/dartz.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
@@ -13,9 +13,11 @@ import 'package:hanouty/Presentation/product/domain/usecases/add_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_all_product.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/get_product_by_id.dart';
 import 'package:hanouty/Presentation/product/domain/usecases/update_product.dart';
-import 'dart:html' as html;
 import 'package:dio/dio.dart';
 import 'dart:math' as math;
+
+// Import our platform helper that handles conditional imports
+import 'package:hanouty/Core/Utils/platform_imports.dart';
 
 class ProductProvider extends ChangeNotifier {
   final GetAllProductUseCase getAllProductUseCase;
@@ -31,7 +33,7 @@ class ProductProvider extends ChangeNotifier {
   }) {
     print('[ProductProvider] Initialized');
   }
-final String apiUrl = ApiConstants.baseUrl;
+  final String apiUrl = ApiConstants.baseUrl;
   List<Product> _products = [];
   bool _isLoading = false;
   String _errorMessage = '';
@@ -40,11 +42,11 @@ final String apiUrl = ApiConstants.baseUrl;
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
-bool get isSubmitting => _isSubmitting;
-List<Product> _filteredProducts = [];
+  bool get isSubmitting => _isSubmitting;
+  List<Product> _filteredProducts = [];
 
   List<Product> get filteredProducts => _filteredProducts;
-Future<String?> getToken() async {
+  Future<String?> getToken() async {
     try {
       print('[ProductProvider] getToken: Retrieving token from secure storage');
       final token = await _secureStorage.getAccessToken();
@@ -71,7 +73,7 @@ Future<String?> getToken() async {
     }
     notifyListeners();
   }
-Future<bool> deleteProduct(String productId) async {
+  Future<bool> deleteProduct(String productId) async {
     print('[ProductProvider] Deleting product with ID: $productId');
     _isLoading = true;
     _errorMessage = '';
@@ -141,12 +143,12 @@ Future<bool> deleteProduct(String productId) async {
     final Either<Failure, List<Product>> result = await getAllProductUseCase();
 
     result.fold(
-      (failure) {
+          (failure) {
         _errorMessage = _mapFailureToMessage(failure);
         // Optionally keep old data: comment next line to preserve previous products
         _products = [];
       },
-      (products) {
+          (products) {
         _products = products;
       },
     );
@@ -164,11 +166,11 @@ Future<bool> deleteProduct(String productId) async {
 
     Product? product;
     result.fold(
-      (failure) {
+          (failure) {
         _errorMessage = _mapFailureToMessage(failure);
         product = null;
       },
-      (fetchedProduct) {
+          (fetchedProduct) {
         product = fetchedProduct;
       },
     );
@@ -177,49 +179,20 @@ Future<bool> deleteProduct(String productId) async {
     notifyListeners();
     return product;
   }
-  Future<String> _processImageFile(html.File file, {double quality = 0.7, int maxWidth = 800, int maxHeight = 800}) async {
+
+  // Replace the platform-specific method with a cross-platform version
+  Future<String> _processImageFile(dynamic file, {double quality = 0.7, int maxWidth = 800, int maxHeight = 800}) async {
     try {
-      print('[ProductProvider] Processing image file: ${file.name} (${file.size ~/ 1024} KB)');
-
-      // Create a Blob URL for the file
-      final objectUrl = html.Url.createObjectUrl(file);
-
-      // Load the image to get its dimensions
-      final img = html.ImageElement(src: objectUrl);
-      await img.onLoad.first;
-
-      // Calculate new dimensions while maintaining aspect ratio
-      int targetWidth = img.width ?? 800;
-      int targetHeight = img.height ?? 800;
-
-      if (targetWidth > maxWidth || targetHeight > maxHeight) {
-        if (targetWidth > targetHeight) {
-          targetHeight = (maxWidth * targetHeight / targetWidth).round();
-          targetWidth = maxWidth;
-        } else {
-          targetWidth = (maxHeight * targetWidth / targetHeight).round();
-          targetHeight = maxHeight;
-        }
+      if (kIsWeb) {
+        return PlatformHelper.processImageForWeb(
+            file,
+            quality: quality,
+            maxWidth: maxWidth,
+            maxHeight: maxHeight
+        );
+      } else {
+        throw UnsupportedError('File processing on this platform is not implemented');
       }
-
-      // Create canvas and draw resized image
-      final canvas = html.CanvasElement(width: targetWidth, height: targetHeight);
-      final ctx = canvas.context2D;
-      ctx.drawImageScaled(img, 0, 0, targetWidth, targetHeight);
-
-      // Convert to compressed JPEG data URL
-      final mimeType = 'image/jpeg';
-      final dataUrl = canvas.toDataUrl(mimeType, quality);
-
-      // Clean up
-      html.Url.revokeObjectUrl(objectUrl);
-
-      // Calculate size reduction
-      final base64String = dataUrl.split(',')[1];
-      final compressedSize = base64String.length * 0.75 ~/ 1024;
-      print('[ProductProvider] Image processed: ${targetWidth}x${targetHeight}, ~$compressedSize KB');
-
-      return dataUrl;
     } catch (e) {
       print('[ProductProvider] ERROR processing image: $e');
       throw Exception('Failed to process image: $e');
@@ -264,15 +237,15 @@ Future<bool> deleteProduct(String productId) async {
         print('[ProductProvider] Processing image for upload');
 
         try {
-          final htmlFile = imageData['file'] as html.File;
-
-          // Process and optimize the image
-          final dataUrl = await _processImageFile(
-              htmlFile,
-              quality: 0.7,  // 70% quality for good balance of size/quality
-              maxWidth: 800,
-              maxHeight: 800
-          );
+          // Instead of direct HTML manipulation, use our platform helper
+          String dataUrl;
+          if (kIsWeb) {
+            // For web platform
+            dataUrl = await PlatformHelper.processWebFileToDataUrl(imageData['file']);
+          } else {
+            // For mobile platform
+            dataUrl = await PlatformHelper.processMobileFileToDataUrl(imageData['path']);
+          }
 
           // Add the image data to the product JSON
           productJson['image'] = dataUrl;
@@ -338,7 +311,6 @@ Future<bool> deleteProduct(String productId) async {
   }
 
   /// Updates an existing product with image
-  /// Updates an existing product with image
   Future<bool> updateProductWithImageData(String productId, Map<String, dynamic> productData, Map<String, dynamic>? imageData, String? existingImageUrl) async {
     print('\n[ProductProvider] ===== UPDATE PRODUCT WITH IMAGE DATA OPERATION STARTED =====');
     print('[ProductProvider] updateProductWithImageData for ID: $productId');
@@ -370,28 +342,17 @@ Future<bool> deleteProduct(String productId) async {
       });
 
       // Process image if provided
-      if (imageData != null && imageData['file'] != null) {
+      if (imageData != null) {
         try {
-          final htmlFile = imageData['file'] as html.File;
-
-          // Convert the file to base64 using FileReader instead of arrayBuffer
-          final completer = Completer<String>();
-          final reader = html.FileReader();
-
-          reader.onLoad.listen((_) {
-            final result = reader.result as String;
-            completer.complete(result);
-          });
-
-          reader.onError.listen((error) {
-            completer.completeError('Error reading file: $error');
-          });
-
-          // Read as data URL (this automatically gives us a base64 image)
-          reader.readAsDataUrl(htmlFile);
-
-          // Wait for the file to be read
-          final dataUrl = await completer.future;
+          // Instead of direct HTML manipulation, use our platform helper
+          String dataUrl;
+          if (kIsWeb) {
+            // For web platform
+            dataUrl = await PlatformHelper.processWebFileToDataUrl(imageData['file']);
+          } else {
+            // For mobile platform
+            dataUrl = await PlatformHelper.processMobileFileToDataUrl(imageData['path']);
+          }
 
           // Add the image data to the update data
           updateData['image'] = dataUrl;
@@ -484,11 +445,7 @@ Future<bool> deleteProduct(String productId) async {
       return 'Failed to fetch products. Please try again.';
     }
   }
- 
 
-
-
- 
   /// Clears the current error message.
   void clearError() {
     _errorMessage = '';

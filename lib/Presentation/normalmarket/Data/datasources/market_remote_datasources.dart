@@ -1,10 +1,16 @@
-import 'dart:html' as html;
 import 'dart:convert';
+import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/models/normalmarket_model.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/models/share_fractions_model.dart';
 import 'package:http_parser/http_parser.dart';
+import 'dart:typed_data';
+
+// We need to use different import strategies for web vs mobile
+// For conditional imports, we'll use different prefixes
+import 'package:hanouty/Core/Utils/platform_imports.dart';
 
 abstract class NormalMarketRemoteDataSource {
   Future<List<NormalMarketModel>> getNormalMarkets();
@@ -35,10 +41,12 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
     };
   }
 
-  // Helper method for web image processing
-  Future<MultipartFile> _processWebImage(String imagePath) async {
+  // Platform-agnostic image processing method
+  Future<MultipartFile> _processImage(String imagePath) async {
     try {
-      // Handle Data URLs
+      print('📸 Processing image path: $imagePath');
+
+      // Handle Data URLs (works on both platforms)
       if (imagePath.startsWith('data:')) {
         // Extract the base64 data from the Data URL
         final String base64Data = imagePath.split(',')[1];
@@ -50,62 +58,61 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
           contentType: MediaType('image', 'jpeg'),
         );
       }
-      // Handle Blob URLs
-      else if (imagePath.startsWith('blob:')) {
-        // Create an HTML anchor element
-        final html.AnchorElement anchor = html.AnchorElement(href: imagePath);
 
-        // Create an XHR request to get the blob
-        final request = html.HttpRequest();
-        request.open('GET', anchor.href!, async: true);
-        request.responseType = 'blob';
-
-        // Wait for the request to complete
-        await request.onLoad.first;
-
-        if (request.status == 200) {
-          final html.Blob blob = request.response as html.Blob;
-          final reader = html.FileReader();
-          reader.readAsArrayBuffer(blob);
-
-          // Wait for the reader to complete
-          await reader.onLoad.first;
-
-          final List<int> bytes = (reader.result as List<int>).cast<int>();
-
-          return MultipartFile.fromBytes(
-            bytes,
-            filename: 'market_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            contentType: MediaType('image', 'jpeg'),
-          );
-        } else {
-          throw Exception('Failed to load image from Blob URL: Status ${request.status}');
-        }
-      }
-      // Handle File objects (for web file input)
-      else if (imagePath.startsWith('File:')) {
-        final html.File file = html.window.sessionStorage['tempFile'] as html.File;
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
-
-        await reader.onLoad.first;
-        final List<int> bytes = (reader.result as List<int>).cast<int>();
-
-        return MultipartFile.fromBytes(
-          bytes,
-          filename: file.name,
-          contentType: MediaType('image', file.type.split('/')[1]),
-        );
-      }
-      else {
-        throw Exception('Unsupported image path format for web. Path must start with "data:", "blob:", or "File:"');
+      // Platform-specific handling
+      if (kIsWeb) {
+        return _processWebImage(imagePath);
+      } else {
+        return _processMobileImage(imagePath);
       }
     } catch (e) {
-      print('❌ Error processing web image: $e');
+      print('❌ Error processing image: $e');
       throw Exception('Failed to process image: $e');
     }
   }
 
+  // Web-specific image processing
+  Future<MultipartFile> _processWebImage(String imagePath) async {
+    // Handle Blob URLs
+    if (imagePath.startsWith('blob:')) {
+      try {
+        return PlatformHelper.processBlobUrl(
+          imagePath,
+          'market_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+      } catch (e) {
+        throw Exception('Error processing blob URL: $e');
+      }
+    }
+    // Handle File objects (for web file input)
+    else if (imagePath.startsWith('File:')) {
+      try {
+        return PlatformHelper.processFileObject(imagePath);
+      } catch (e) {
+        throw Exception('Error processing File object: $e');
+      }
+    }
+    else {
+      throw Exception('Unsupported image path format for web. Path must start with "data:", "blob:", or "File:"');
+    }
+  }
+
+  // Mobile-specific image processing
+  Future<MultipartFile> _processMobileImage(String imagePath) async {
+    // Handle file paths
+    if (imagePath.startsWith('/') || imagePath.contains('://')) {
+      try {
+        return PlatformHelper.processFilePath(imagePath);
+      } catch (e) {
+        throw Exception('Error processing local file path: $e');
+      }
+    }
+    else {
+      throw Exception('Unsupported image path format for mobile: $imagePath');
+    }
+  }
+
+  // The rest of your implementation remains the same
   @override
   Future<NormalMarketModel> createNormalMarket(
       NormalMarketModel market, String imagePath) async {
@@ -113,9 +120,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       print('📸 Image path: $imagePath');
 
       // Create form data for multipart request
-      // REMOVED owner and fractions fields that were causing the error
       FormData formData = FormData.fromMap({
-        // Removed 'owner': userId, field - backend will set this
         'products': market.products,
         'marketName': market.marketName,
         'marketType': 'normal',
@@ -124,15 +129,14 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
           'marketWalletPublicKey': market.marketWalletPublicKey,
         if (market.marketWalletSecretKey?.isNotEmpty == true)
           'marketWalletSecretKey': market.marketWalletSecretKey,
-        // Removed 'fractions' field - backend will set this
         if (market.marketPhone != null && market.marketPhone!.isNotEmpty)
           'marketPhone': market.marketPhone,
         if (market.marketEmail != null && market.marketEmail!.isNotEmpty)
           'marketEmail': market.marketEmail,
       });
 
-      // Process and add image
-      final imageFile = await _processWebImage(imagePath);
+      // Process and add image using platform-agnostic method
+      final imageFile = await _processImage(imagePath);
       formData.files.add(MapEntry('marketImage', imageFile));
 
       // Get auth headers
@@ -147,10 +151,9 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
           headers: headers,
           responseType: ResponseType.json,
           // Add longer timeout for market creation
-          sendTimeout: Duration(minutes: 2),
-          receiveTimeout: Duration(minutes: 2),
+          sendTimeout: const Duration(minutes: 2),
+          receiveTimeout: const Duration(minutes: 2),
         ),
-
       );
 
       print('✅ Market creation response status: ${response.statusCode}');
@@ -193,7 +196,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
 
       // Add image if provided
       if (imagePath != null) {
-        final imageFile = await _processWebImage(imagePath);
+        final imageFile = await _processImage(imagePath);
         formData.files.add(MapEntry('marketImage', imageFile));
       }
 
@@ -220,8 +223,9 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
     }
   }
 
+  // Rest of your methods remain unchanged
+  // ...
 
-  // Keep other methods as they are since they don't involve file operations
   @override
   Future<List<NormalMarketModel>> getNormalMarkets() async {
     try {
@@ -343,6 +347,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       throw Exception('Failed to create NFT: ${e.toString()}');
     }
   }
+
   @override
   Future<List<NormalMarketModel>> getMyNormalMarkets() async {
     try {
@@ -387,6 +392,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       throw Exception('Failed to fetch your markets: ${e.toString()}');
     }
   }
+
   @override
   Future<Map<String, dynamic>> shareFractionalNFT(
       String id, ShareFractionRequestModel requestModel) async {
@@ -400,7 +406,13 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       final response = await dio.post(
         '/$id/share',
         data: requestModel.toJson(),
-        options: Options(headers: headers),
+        options: Options(headers: headers,
+          sendTimeout: const Duration(minutes: 2),
+          receiveTimeout: const Duration(minutes: 2),
+
+        ),
+
+
       );
 
       print('✅ NFT sharing API call completed');
@@ -511,6 +523,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
     print('🚫 Error: $errorMessage');
     return Exception(errorMessage);
   }
+
   // Helper method to log Dio errors in a structured way
   void _logDioError(String method, DioException e) {
     print('❌ DIO ERROR in $method:');
@@ -535,6 +548,4 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       print('  Stack trace: ${e.stackTrace}');
     }
   }
-
-
 }

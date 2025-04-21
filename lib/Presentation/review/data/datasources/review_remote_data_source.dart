@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
+import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
 import 'package:hanouty/Presentation/review/data/models/review_model.dart';
 import 'package:http/http.dart' as http;
@@ -57,9 +58,9 @@ class ReviewRemoteDataSourceImpl extends ReviewRemoteDataSource {
 
   @override
   Future<ReviewModel> updateReview(String reviewId, ReviewModel review) async {
-    print('updateReview method called'); // Initial log to confirm method call
 
-
+final storage = SecureStorageService();
+String? token = await storage.getAccessToken();
     final body = json.encode({
       ...review.toJson(), // Include user ID in the request body
     });
@@ -68,8 +69,11 @@ class ReviewRemoteDataSourceImpl extends ReviewRemoteDataSource {
     
     // Ensure reviewId is appended to the URL
     final response = await client.patch(
-      Uri.parse('$BASE_URL/$reviewId'), // Corrected endpoint
-      headers: {"Content-Type": "application/json"},
+      Uri.parse('$BASE_URL/update/$reviewId'), // Corrected endpoint
+      headers: {
+  "Content-Type": "application/json",
+  "Authorization": "Bearer $token"
+},
       body: body,
     );
     print('Response:${response.body}');

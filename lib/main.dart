@@ -52,6 +52,7 @@ import 'Presentation/Auth/presentation/controller/profilep^rovider.dart';
 import 'Presentation/Auth/presentation/controller/register_controler.dart';
 import 'Presentation/Auth/presentation/pages/farmerscreen.dart';
 import 'Presentation/Auth/presentation/pages/login_page.dart';
+import 'Presentation/Auth/presentation/pages/profilepage.dart';
 import 'Presentation/Auth/presentation/pages/signup_page.dart';
 import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
@@ -397,6 +398,7 @@ class MyApp extends StatelessWidget {
               '/merchant': (context) => const DashboardPage(),
               '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
               '/cart': (context) => const CartScreen(),
+              '/profile':(context)=> const ProfilePage(),
             },
           );
         });

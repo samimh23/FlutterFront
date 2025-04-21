@@ -9,6 +9,7 @@ import 'package:hanouty/Presentation/product/presentation/provider/cart_provider
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
 import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/responsive/responsive_layout.dart';
+import 'package:hanouty/wallet_screen.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
 import 'injection_container.dart' as di;
@@ -62,7 +63,7 @@ class _MainScreenState extends State<MainScreen>
     _screens = [
       const HomeScreen(),
       const CartScreen(),
-      const Center(child: Text('Wallet Screen')),
+      WalletHomePage(),
       const OrdersScreen(),
       const ProfilePage(),
       

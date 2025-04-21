@@ -14,7 +14,7 @@ abstract class ProductRemoteDataSource {
   Future<ProductModel> getProductById(String id);
 }
 
-const BASE_URL = "http://192.168.0.223:3000/product";
+const BASE_URL = "http://192.168.0.235:3000/product";
 
 class ProductRemoteDataSourceImpl extends ProductRemoteDataSource {
   final http.Client client;

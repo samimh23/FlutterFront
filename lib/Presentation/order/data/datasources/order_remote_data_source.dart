@@ -17,7 +17,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
 
   OrderRemoteDataSourceImpl({required this.client});
 
-  final String baseUrl = 'http://192.168.57.4:3000/order';
+  final String baseUrl = '192.168.0.235:3000/order';
 
   @override
   Future<OrderModel> createOrder(OrderModel orderModel) async {

@@ -12,7 +12,7 @@ class ApiConstants {
       } catch (e) {
       }
     }
-    return 'http://192.168.57.4:3000';
+    return 'http://192.168.0.235:3000';
   }
 
   static String getFullImageUrl(String? imagePath) {

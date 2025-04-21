@@ -16,7 +16,7 @@ class UploadService {
     String? baseUrl,
     SecureStorageService? secureStorageService,
   }) :
-        _baseUrl = baseUrl ?? 'http://192.168.0.223:3000',
+        _baseUrl = baseUrl ?? 'http://192.168.0.235:3000',
         _secureStorageService = secureStorageService ?? SecureStorageService();
 
   // Upload for mobile platforms using File

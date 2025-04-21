@@ -126,7 +126,7 @@ class MyApp extends StatelessWidget {
         Provider<Dio>(
           create: (_) => Dio(BaseOptions(
             // For web deployment, using relative URL to match the hosting domain
-            baseUrl: 'http://192.168.0.223:3000/normal',
+            baseUrl: 'http://192.168.0.235:3000/normal',
             connectTimeout: const Duration(seconds: 5),
             receiveTimeout: const Duration(seconds: 10),
             contentType: 'application/json',

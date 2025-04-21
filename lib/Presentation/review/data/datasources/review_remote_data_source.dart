@@ -5,6 +5,8 @@ import 'package:hanouty/Core/errors/exceptions.dart';
 import 'package:hanouty/Presentation/review/data/models/review_model.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../Core/Utils/Api_EndPoints.dart';
+
 abstract class ReviewRemoteDataSource {
   Future<ReviewModel> getReviewById(String id);
   Future<ReviewModel> createReview(ReviewModel review, String idUser);
@@ -15,7 +17,7 @@ abstract class ReviewRemoteDataSource {
   Future<List<ReviewModel>> getReviewsByUserId(String userId);
 }
 
-const BASE_URL = "http://127.0.0.1:3000/review";
+const BASE_URL = "${ApiEndpoints.baseUrl}/review";
 
 class ReviewRemoteDataSourceImpl extends ReviewRemoteDataSource {
   final http.Client client;

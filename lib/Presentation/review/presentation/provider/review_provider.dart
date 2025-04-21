@@ -10,21 +10,30 @@ import 'package:hanouty/Presentation/review/domain/usecases/update_review_usecas
 class ReviewProvider extends ChangeNotifier {
   final CreateReviewUsecase createReviewUsecase;
   final UpdateReviewUsecase updateReviewUsecase;
-  final GetReviewsByUserId getReviewsByUserId; // Add this line
-  ReviewProvider(
-      {required this.createReviewUsecase,
-      required this.updateReviewUsecase,
-      required this.getReviewsByUserId});
+  final GetReviewsByUserId getReviewsByUserId;
+
+  ReviewProvider({
+    required this.createReviewUsecase,
+    required this.updateReviewUsecase,
+    required this.getReviewsByUserId,
+  });
 
   bool _isLoading = false;
   String _errorMessage = '';
+  List<Review> _userReviews = [];
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
+  List<Review> get userReviews => _userReviews;
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
 
   /// Create a new review and update state.
   Future<bool> createNewReview(Review review, String idProduct) async {
-    if (_isLoading) return false; // Return false if already loading
+    if (_isLoading) return false;
     _setLoading(true);
 
     bool success = false;
@@ -36,16 +45,17 @@ class ReviewProvider extends ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = e.toString();
-      // Optionally, you can notify the UI or show a snackbar via your widget.
     }
 
     _setLoading(false);
     return success;
   }
 
+  /// Update an existing review by its ID.
   Future<bool> updateExistingReview(String idReview, Review review) async {
     if (_isLoading) return false;
     _setLoading(true);
+    _errorMessage = '';
 
     bool success = false;
     try {
@@ -55,17 +65,37 @@ class ReviewProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
     }
-
     _setLoading(false);
     return success;
   }
 
-  void _setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
+  /// Fetch reviews by user ID, updates local state and notifies listeners.
+  Future<List<Review>> fetchReviewsByUserId(String userId) async {
+    _setLoading(true);
+    try {
+      final reviews = await getReviewsByUserId(userId);
+      _userReviews = reviews;
+      _setLoading(false);
+      print('Fetched user reviews successfully');
+      return reviews;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _userReviews = [];
+      _setLoading(false);
+      print('Failed to fetch user reviews');
+      return [];
+    }
   }
 
-  /// Maps specific failure types to error messages.
+  /// Helper: get user's review for a particular product (if exists)
+  Review? getUserReviewForProduct(String productId) {
+    try {
+      return _userReviews.firstWhere((review) => review.product == productId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   String _mapFailureToMessage(Failure failure) {
     if (failure is ServerFailure) {
       return 'Server Error';
@@ -76,25 +106,8 @@ class ReviewProvider extends ChangeNotifier {
     }
   }
 
-  /// Clears the current error message.
   void clearError() {
     _errorMessage = '';
     notifyListeners();
-  }
-
-  Future<List<Review>> fetchReviewsByUserId(String userId) async {
-    _setLoading(true);
-    try {
-      final reviews = await getReviewsByUserId(userId);
-      _setLoading(false);
-      print('yessssssssssss');
-      return reviews;
-    } catch (e) {
-      _errorMessage = e.toString();
-      _setLoading(false);
-      print('nooooooooooooooooo');
-
-      return [];
-    }
   }
 }

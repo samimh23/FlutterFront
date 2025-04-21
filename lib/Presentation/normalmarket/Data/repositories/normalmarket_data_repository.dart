@@ -26,7 +26,7 @@ class NormalMarketRepositoryImpl implements NormalMarketRepository {
   }
 
   @override
-  Future<Markets> getNormalMarketById(String id) async {
+  Future<NormalMarket> getNormalMarketById(String id) async {
     try {
       return await remoteDataSource.getNormalMarketById(id);
     } catch (e) {

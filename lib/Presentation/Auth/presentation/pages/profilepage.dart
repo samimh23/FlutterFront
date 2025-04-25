@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../Subscription/presentation/manager/subsservice.dart';
 import '../../data/models/user.dart';
-
+import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -49,27 +49,19 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
     }
   }
 
-  // ... rest of your existing methods
-
   Future<void> _pickAndUploadImage() async {
     try {
-      // Select image from gallery
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 800, // Resize to reasonable dimensions
+        maxWidth: 800,
         maxHeight: 800,
-        imageQuality: 85, // Adjust quality to balance size and quality
+        imageQuality: 85,
       );
-
       if (pickedFile == null) return;
-
-      // Handle image based on platform
       if (kIsWeb) {
-        // For web
         final bytes = await pickedFile.readAsBytes();
         await context.read<ProfileProvider>().uploadProfileImage(bytes);
       } else {
-        // For mobile
         final file = File(pickedFile.path);
         await context.read<ProfileProvider>().uploadProfileImage(file);
       }
@@ -80,7 +72,6 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
     }
   }
 
-  // Navigate to 2FA setup screen
   void _navigateToTwoFactorSetup() {
     Navigator.push(
       context,
@@ -117,22 +108,15 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (user.role == "Client")
-                        _buildUpgradeCard(),
-
+                      if (user.role == "Client") _buildUpgradeCard(),
                       const SizedBox(height: 24),
-
                       _buildSecuritySection(user, theme),
-
                       const SizedBox(height: 24),
-
                       _buildUserInfoSection(user, theme),
-
                       const SizedBox(height: 24),
-
                       _buildContactSection(user, theme),
-
                       const SizedBox(height: 32),
+                      _buildDisconnectButton(context),
                     ],
                   ),
                 ),
@@ -422,7 +406,6 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
             itemCount: user.phonenumbers.length - 1,
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              // Skip the first number as it's shown in the info section
               final phoneNumber = user.phonenumbers[index + 1];
               return ListTile(
                 leading: Container(
@@ -507,7 +490,6 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
       ),
     );
   }
-
 
   Widget _buildErrorState(ProfileProvider provider) {
     return Center(
@@ -595,7 +577,6 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
     );
   }
 
-  // Add this method to build each subscription option in the dialog
   Widget _buildSubscriptionOption({
     required String title,
     required String description,
@@ -638,7 +619,6 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
     );
   }
 
-  // Add this method to handle subscription initiation
   void _initiateSubscription(SubscriptionType type) async {
     setState(() {
       _isCheckingPayment = true;
@@ -661,9 +641,7 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
       return CircleAvatar(
         radius: 50,
         backgroundImage: NetworkImage(user.profilepicture),
-        // Fallback for network image errors
         onBackgroundImageError: (exception, stackTrace) {},
-        // Instead, use a fallback child that will show if the image fails to load
         child: user.name.isNotEmpty
             ? Text(
           user.name[0].toUpperCase(),
@@ -673,7 +651,6 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
         backgroundColor: Colors.grey,
       );
     } else {
-      // Fallback placeholder with first letter of name
       return CircleAvatar(
         radius: 50,
         backgroundColor: Theme.of(context).primaryColor,
@@ -743,6 +720,66 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
             );
           }),
         ],
+      ),
+    );
+  }
+
+  /// Disconnect Button
+  Widget _buildDisconnectButton(BuildContext context) {
+    return Center(
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.logout, color: Colors.white),
+        label: const Text(
+          "Disconnect",
+          style: TextStyle(color: Colors.white),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        onPressed: () async {
+          // You may want to show a confirmation dialog
+          final shouldLogout = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Log out"),
+              content: const Text("Are you sure you want to disconnect?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text(
+                    "Disconnect",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldLogout == true) {
+            try {
+              // Call your logout logic here
+              await context.read<ProfileProvider>().logout();
+
+              // Use MaterialPageRoute directly instead of named route
+              Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                      (route) => false
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error logging out: $e')),
+              );
+            }
+          }
+        },
       ),
     );
   }

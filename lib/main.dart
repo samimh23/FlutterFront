@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/theme/theme_provider.dart';
 import 'package:hanouty/Presentation/Auth/domain/use_cases/verify_reset_code_usecase.dart';
@@ -78,6 +79,8 @@ import 'injection_container.dart' as di;
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
+  Stripe.publishableKey = 'pk_test_51Oo6gMEbvcankNU3AIwY77tk7CIMEuCFcEIxv4GKfG9EgPzoNDtBkrmUV5CStzaEINbRDuQBD3RsMwyEwULgbl7n00T58lrP75';
+  await Stripe.instance.applySettings();
   final deliveryService = DeliveryTrackingService();
   await di.init();
 
@@ -390,6 +393,7 @@ class MyApp extends StatelessWidget {
             darkTheme: darkTheme,
             debugShowCheckedModeBanner: false,
             initialRoute: initialRoute,
+
             routes: {
               '/login': (context) => const LoginPage(),
               '/register': (context) => const RegisterPage(),

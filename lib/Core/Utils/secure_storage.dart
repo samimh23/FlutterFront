@@ -51,7 +51,7 @@ class SecureStorageService {
 
   }
 
-  // Remember Me functionality methods
+  // Remember Me functionality method^)s
   Future<void> saveEmail(String email) async {
     await _storage.write(key: emailKey, value: email);
   }

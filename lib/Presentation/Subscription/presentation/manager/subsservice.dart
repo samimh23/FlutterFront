@@ -22,8 +22,8 @@ class SubscriptionService {
     switch (type) {
       case SubscriptionType.farmer:
         return 'Farmer';
-      case SubscriptionType.wholesaler:
-        return 'Wholesaler';
+      case SubscriptionType.merchant:
+        return 'Merchant';
       default:
         throw ApiException('Invalid subscription type');
     }
@@ -77,7 +77,7 @@ class SubscriptionService {
 // Subscription types
 enum SubscriptionType {
   farmer,
-  wholesaler,
+  merchant,
 }
 
 // Response model for checkout session

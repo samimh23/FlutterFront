@@ -1,38 +1,30 @@
-
-import 'package:hanouty/Presentation/normalmarket/Domain/entities/normalmarket_entity.dart';
+import '../../Domain/entities/normalmarket_entity.dart';
 
 class NormalMarketModel extends NormalMarket {
   const NormalMarketModel({
-    required super.id,
-    required super.owner,
-    required super.products,
+    super.id = '',  // Default to empty string for new markets
     required super.marketName,
     required super.marketLocation,
     super.marketPhone,
     super.marketEmail,
     super.marketImage,
-    required super.marketWalletPublicKey,
-    required super.marketWalletSecretKey,
-    required super.fractions,
+    super.products = const [],  // Default to empty list
+    super.marketWalletPublicKey = '',  // Default to empty for new markets
+    super.marketWalletSecretKey = '',  // Default to empty for new markets
+    super.fractions = 100,  // Default to 100
     super.fractionalNFTAddress,
   });
+
   factory NormalMarketModel.fromJson(Map<String, dynamic> json) {
-    // Print the problematic JSON to help debug the specific field
-    print(
-        'Processing JSON: ${json['marketName']} (id: ${json['_id'] ?? json['id']})');
+    print('Processing JSON: ${json['marketName']} (id: ${json['_id'] ?? json['id']})');
 
     try {
       return NormalMarketModel(
-        id: json['_id']?.toString() ??
-            json['id']?.toString() ??
-            '', // Handle both _id and id formats
-        owner: json['owner']?.toString() ??
-            '', // Make nullable fields have fallbacks
+        id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
         products: List<String>.from(json['products'] ?? []),
         marketName: json['marketName']?.toString() ?? '',
         marketLocation: json['marketLocation']?.toString() ?? '',
-        marketPhone:
-            json['marketPhone']?.toString(), // Optional fields remain nullable
+        marketPhone: json['marketPhone']?.toString(),
         marketEmail: json['marketEmail']?.toString(),
         marketImage: json['marketImage']?.toString(),
         marketWalletPublicKey: json['marketWalletPublicKey']?.toString() ?? '',
@@ -40,47 +32,51 @@ class NormalMarketModel extends NormalMarket {
         fractions: json['fractions'] is int
             ? json['fractions']
             : (json['fractions'] != null
-                ? int.tryParse(json['fractions'].toString()) ?? 100
-                : 100),
+            ? int.tryParse(json['fractions'].toString()) ?? 100
+            : 100),
         fractionalNFTAddress: json['fractionalNFTAddress']?.toString(),
       );
     } catch (e, stackTrace) {
-      // Add better error handling to identify the problematic field
       print('Error creating NormalMarketModel from JSON: $e');
       print('JSON data: $json');
       print('Stack trace: $stackTrace');
-      // Return a fallback model or rethrow based on your error handling strategy
       throw Exception('Failed to parse market: $e');
     }
   }
+
   Map<String, dynamic> toJson() {
     return {
-      '_id': id,
-      'owner': owner,
+      if (id.isNotEmpty) '_id': id,
       'products': products,
       'marketType': 'normal',
       'marketName': marketName,
       'marketLocation': marketLocation,
-      'marketPhone': marketPhone,
-      'marketEmail': marketEmail,
-      'marketImage': marketImage,
-      'marketWalletPublicKey': marketWalletPublicKey,
-      'marketWalletSecretKey': marketWalletSecretKey,
+      if (marketPhone != null) 'marketPhone': marketPhone,
+      if (marketEmail != null) 'marketEmail': marketEmail,
+      if (marketImage != null) 'marketImage': marketImage,
+      if (marketWalletPublicKey.isNotEmpty) 'marketWalletPublicKey': marketWalletPublicKey,
+      if (marketWalletSecretKey.isNotEmpty) 'marketWalletSecretKey': marketWalletSecretKey,
       'fractions': fractions,
-      'fractionalNFTAddress': fractionalNFTAddress,
+      if (fractionalNFTAddress != null) 'fractionalNFTAddress': fractionalNFTAddress,
     };
   }
 
-  factory NormalMarketModel.fromEntity(NormalMarket entity, String imagePath) {
+  factory NormalMarketModel.fromEntity(NormalMarket entity, String? imagePath) {
+    // Add debug logs
+    print("🔍 Creating model from entity:");
+    print("📦 Entity ID: ${entity.id}");
+    print("📦 Entity Name: ${entity.marketName}");
+    print("📦 Entity Location: ${entity.marketLocation}");
+    print("📦 Image Path: $imagePath");
+
     return NormalMarketModel(
       id: entity.id,
-      owner: entity.owner,
       products: entity.products,
       marketName: entity.marketName,
       marketLocation: entity.marketLocation,
       marketPhone: entity.marketPhone,
       marketEmail: entity.marketEmail,
-      marketImage: entity.marketImage,
+      marketImage: imagePath ?? entity.marketImage, // Use the provided imagePath
       marketWalletPublicKey: entity.marketWalletPublicKey,
       marketWalletSecretKey: entity.marketWalletSecretKey,
       fractions: entity.fractions,

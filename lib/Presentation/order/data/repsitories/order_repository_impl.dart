@@ -1,4 +1,3 @@
-
 import 'package:hanouty/Presentation/order/domain/repositories/order_repositories.dart';
 
 import '../../domain/entities/order.dart';
@@ -17,8 +16,10 @@ class OrderRepositoryImpl implements OrderRepository {
       normalMarket: order.normalMarket,
       products: order.products,
       user: order.user,
+      orderStatus: order.orderStatus,
       dateOrder: order.dateOrder,
       isConfirmed: order.isConfirmed,
+      totalPrice: order.totalPrice
     );
     return await remoteDataSource.createOrder(orderModel);
   }
@@ -40,21 +41,42 @@ class OrderRepositoryImpl implements OrderRepository {
       normalMarket: order.normalMarket,
       products: order.products,
       user: order.user,
+      orderStatus: order.orderStatus,
       dateOrder: order.dateOrder,
       isConfirmed: order.isConfirmed,
+      totalPrice: order.totalPrice
     );
     return await remoteDataSource.updateOrder(id, orderModel);
   }
 
   @override
-  Future<List<Order>> findOrdersByShopId(String idShopId) {
-    // TODO: implement findOrdersByShopId
-    throw UnimplementedError();
+  Future<List<Order>> findOrdersByShopId(String idShopId) async {
+    try {
+      // Call the data source implementation
+      final orderModels = await remoteDataSource.findOrdersByShopId(idShopId);
+
+      // The returned orderModels are already Order objects since OrderModel extends Order,
+      // so we can directly return them
+      return orderModels;
+    } catch (e) {
+      // Log the error or handle it as needed
+      print('Error in OrderRepositoryImpl.findOrdersByShopId: $e');
+      rethrow; // Rethrow to let the caller handle the error
+    }
+  }
+  @override
+  Future<List<Order>> findOrdersByUserId(String idUser) async{
+    return await remoteDataSource.findOrdersByUserId(idUser);
+  }
+  @override
+  Future<Order> sendPackage(String id) async {
+    return await remoteDataSource.sendPackage(id);
   }
 
+
+  
   @override
-  Future<List<Order>> findOrdersByUserId(String idUser) {
-    // TODO: implement findOrdersByUserId
-    throw UnimplementedError();
+  Future<Order> findOrderById(String id) async{
+return await remoteDataSource.findOrderById(id);
   }
 }

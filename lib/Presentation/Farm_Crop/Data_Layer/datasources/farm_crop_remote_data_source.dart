@@ -1,10 +1,11 @@
 //Data_Layer/datasources/farm_crop_remote_data_source.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../../Core/Utils/Api_EndPoints.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
 
 class FarmCropRemoteDataSource {
-  final String baseUrl = 'http://localhost:3000/farm-crops'; 
+  final String baseUrl = '${ApiEndpoints.baseUrl}/farm-crops';
   final http.Client client;
 
   FarmCropRemoteDataSource({http.Client? client}) : client = client ?? http.Client();

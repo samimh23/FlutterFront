@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/app_colors.dart';
@@ -7,7 +6,8 @@ class ProductGridCard extends StatelessWidget {
   final Product product;
   final VoidCallback onAddPressed;
 
-  const ProductGridCard({super.key, 
+  const ProductGridCard({
+    super.key,
     required this.product,
     required this.onAddPressed,
   });
@@ -25,19 +25,17 @@ class ProductGridCard extends StatelessWidget {
           // Image Section
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-            child: Image.network(
-              product.images.first,
+            child: product.image != null && product.image!.isNotEmpty
+                ? Image.network(
+              product.image!, // Use the single image property
               height: 130,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 130,
-                color: Colors.grey[200],
-                child: const Center(child: Icon(Icons.fastfood, size: 40)),
-              ),
-            ),
+              errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+            )
+                : _buildPlaceholderImage(),
           ),
-          
+
           // Text Content
           Padding(
             padding: const EdgeInsets.all(12),
@@ -54,12 +52,14 @@ class ProductGridCard extends StatelessWidget {
                         children: [
                           Text(
                             product.name,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.black,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               height: 1.2,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -86,7 +86,7 @@ class ProductGridCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   '${product.originalPrice.toStringAsFixed(0)} DT',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -97,6 +97,15 @@ class ProductGridCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // Helper method to create a placeholder image
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 130,
+      color: Colors.grey[200],
+      child: const Center(child: Icon(Icons.fastfood, size: 40)),
     );
   }
 }

@@ -1,23 +1,22 @@
-
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/cart_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/product_details_screen.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
 import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
-import 'package:hanouty/Presentation/product/presentation/widgets/categories_card.dart';
+import 'package:hanouty/Presentation/product/presentation/widgets/product_card.dart'; // ✅ NEW
 import 'package:hanouty/app_colors.dart';
 import 'package:provider/provider.dart';
-
 
 class CategoryProductsScreen extends StatefulWidget {
   final String category;
 
   const CategoryProductsScreen({Key? key, required this.category})
-    : super(key: key);
+      : super(key: key);
 
   @override
-  State<CategoryProductsScreen> createState() => _CategoryProductsScreenState();
+  State<CategoryProductsScreen> createState() =>
+      _CategoryProductsScreenState();
 }
 
 class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
@@ -36,11 +35,15 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search products...',
                   border: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => setState(() {
                       _showSearch = false;
                       _searchQuery = '';
+                      _searchController.clear();
                     }),
                   ),
                 ),
@@ -49,11 +52,11 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             : Text(widget.category),
         backgroundColor: AppColors.primary,
         actions: [
-          if (!_showSearch) IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => setState(() => _showSearch = true),
-          ),
-          
+          if (!_showSearch)
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => setState(() => _showSearch = true),
+            ),
         ],
       ),
       body: Consumer<ProductProvider>(
@@ -68,7 +71,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
 
           if (_searchQuery.isNotEmpty) {
             filteredProducts = filteredProducts
-                .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+                .where((p) => p.name
+                    .toLowerCase()
+                    .contains(_searchQuery.toLowerCase()))
                 .toList();
           }
 
@@ -88,22 +93,26 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             );
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: filteredProducts.length,
-            itemBuilder: (context, index) => GestureDetector(
-              onTap: () => _navigateToProductDetails(filteredProducts[index]),
-              child: ProductGridCard(
-                product: filteredProducts[index],
-                onAddPressed: () => _addToCart(filteredProducts[index]),
-              ),
-            ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              int crossAxisCount = constraints.maxWidth < 600 ? 2 : 4;
+
+              return GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.6,
+                ),
+                itemCount: filteredProducts.length,
+                itemBuilder: (context, index) => ProductCard(
+                  product: filteredProducts[index],
+                  onTap: () =>
+                      _navigateToProductDetails(filteredProducts[index]),
+                ),
+              );
+            },
           );
         },
       ),
@@ -115,8 +124,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     cartProvider.addItem(
       product.id.toString(),
       product.name,
-      product.originalPrice,
-      product.images[0]
+      product.originalPrice.toInt(),
+      product.image!,
+      product.shop,
     );
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -144,6 +154,4 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       ),
     );
   }
-
-  
 }

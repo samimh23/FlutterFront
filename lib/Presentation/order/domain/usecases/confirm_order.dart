@@ -8,7 +8,7 @@ class ConfirmOrder {
 
   ConfirmOrder(this.repository);
 
-  Future<Order> execute(String id) async {
+  Future<Order> call(String id) async {
     return await repository.confirmOrder(id);
   }
 }

@@ -7,7 +7,7 @@ class FindOrderByUserId {
 
   FindOrderByUserId(this.repository);
 
-  Future<List<Order>> execute(String idUser) async {
+  Future<List<Order>> call(String idUser) async {
     return await repository.findOrdersByUserId(idUser);
   }
 }

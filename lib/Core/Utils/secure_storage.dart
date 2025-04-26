@@ -17,6 +17,8 @@ class SecureStorageService {
   static const String passwordKey = 'user_password';
   static const String rememberMeKey = 'remember_me';
   static const String userIdKey = 'user_id'; // Added for user ID
+  static const String _hederaAccountIdKey = 'hedera_account_id';
+  static const String _hederaPrivateKeyKey = 'hedera_private_key';
 
 
   // Authentication token methods
@@ -39,6 +41,27 @@ class SecureStorageService {
   Future<void> saveUserId(String userId) async {
     await _storage.write(key: userIdKey, value: userId);
   }
+
+  Future<void> saveHederaAccountId(String accountId) async {
+    await _storage.write(key: _hederaAccountIdKey, value: accountId);
+    print("✅ Saved Hedera Account ID to secure storage."); // For debugging
+  }
+
+  Future<String?> getHederaAccountId() async {
+    return await _storage.read(key: _hederaAccountIdKey);
+  }
+
+  Future<void> saveHederaPrivateKey(String privateKey) async {
+    // Ensure you understand the security risks of storing private keys on the client
+    await _storage.write(key: _hederaPrivateKeyKey, value: privateKey);
+    print("🔒 Saved Hedera Private Key to secure storage. (Handle with extreme care!)"); // For debugging
+  }
+
+  Future<String?> getHederaPrivateKey() async {
+    print("🔑 Retrieving Hedera Private Key from secure storage."); // For debugging
+    return await _storage.read(key: _hederaPrivateKeyKey);
+  }
+
 
   Future<String?> getUserId() async {
     return await _storage.read(key: userIdKey);
@@ -81,10 +104,16 @@ class SecureStorageService {
     await _storage.delete(key: passwordKey);
     await _storage.delete(key: rememberMeKey);
   }
+  Future<void> clearHederaCredentials() async {
+    await _storage.delete(key: _hederaAccountIdKey);
+    await _storage.delete(key: _hederaPrivateKeyKey);
+    print("🗑️ Cleared Hedera credentials from secure storage."); // For debugging
+  }
 
   // Clear everything (used for logout)
   Future<void> clearAll() async {
     await clearTokens();
     await clearSavedCredentials();
+    await clearHederaCredentials();
   }
 }

@@ -725,6 +725,7 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
   }
 
   /// Disconnect Button
+  /// Disconnect Button
   Widget _buildDisconnectButton(BuildContext context) {
     return Center(
       child: ElevatedButton.icon(
@@ -741,19 +742,19 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
           ),
         ),
         onPressed: () async {
-          // You may want to show a confirmation dialog
+          // --- Show Confirmation Dialog ---
           final shouldLogout = await showDialog<bool>(
             context: context,
-            builder: (context) => AlertDialog(
+            builder: (dialogContext) => AlertDialog( // Use dialogContext
               title: const Text("Log out"),
               content: const Text("Are you sure you want to disconnect?"),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
+                  onPressed: () => Navigator.of(dialogContext).pop(false), // Use dialogContext
                   child: const Text("Cancel"),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
+                  onPressed: () => Navigator.of(dialogContext).pop(true), // Use dialogContext
                   child: const Text(
                     "Disconnect",
                     style: TextStyle(color: Colors.red),
@@ -763,20 +764,37 @@ class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
             ),
           );
 
-          if (shouldLogout == true) {
-            try {
-              // Call your logout logic here
-              await context.read<ProfileProvider>().logout();
+          // --- Proceed if confirmed ---
+          // Check if the widget is still mounted before proceeding after the dialog
+          if (shouldLogout == true && mounted) {
+            // Capture the provider and navigator using the current context
+            // before the async gap, in case the context becomes invalid.
+            final profileProvider = context.read<ProfileProvider>();
+            final navigator = Navigator.of(context);
+            final scaffoldMessenger = ScaffoldMessenger.of(context); // Capture ScaffoldMessenger
 
-              // Use MaterialPageRoute directly instead of named route
-              Navigator.of(context).pushAndRemoveUntil(
+            try {
+              // --- Call Logout Logic ---
+              await profileProvider.logout(); // Clears state and tokens
+
+              // --- Navigate AFTER logout ---
+              // Check if the navigator is still mounted before navigation
+              if (navigator.mounted) {
+                navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const LoginPage()),
-                      (route) => false
-              );
+                      (route) => false, // Remove all previous routes
+                );
+              }
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error logging out: $e')),
-              );
+              // --- Handle Logout Errors ---
+              // Check if the scaffoldMessenger's context is still valid
+              if (scaffoldMessenger.mounted) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('Error during logout: ${e.toString()}')),
+                );
+              }
+              // Optionally print the error for debugging
+              print('Logout error: $e');
             }
           }
         },

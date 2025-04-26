@@ -16,8 +16,7 @@ class SideMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Use watch to ensure widget rebuilds when theme changes
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
-    final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
+
 
     return NavigationDrawer(
       selectedIndex: selectedIndex,
@@ -71,12 +70,12 @@ class SideMenu extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                     Icons.light_mode,
                     color: Theme.of(context).iconTheme.color,
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    isDarkMode ? 'Dark Mode' : 'Light Mode',
+                     'Light Mode',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],

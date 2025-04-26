@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
@@ -75,12 +76,19 @@ import 'Presentation/Sales/Domain_Layer/usecases/get_sales_by_crop_id.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/update_sale.dart';
 import 'Presentation/Sales/Presentation_Layer/viewmodels/sale_viewmodel.dart';
 import 'injection_container.dart' as di;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
-  Stripe.publishableKey = 'pk_test_51Oo6gMEbvcankNU3AIwY77tk7CIMEuCFcEIxv4GKfG9EgPzoNDtBkrmUV5CStzaEINbRDuQBD3RsMwyEwULgbl7n00T58lrP75';
-  await Stripe.instance.applySettings();
+  if (!kIsWeb) {
+    // Initialize Stripe only for mobile (iOS/Android)
+
+    Stripe.publishableKey = 'pk_test_51Oo6gMEbvcankNU3AIwY77tk7CIMEuCFcEIxv4GKfG9EgPzoNDtBkrmUV5CStzaEINbRDuQBD3RsMwyEwULgbl7n00T58lrP75';
+    await Stripe.instance.applySettings();
+
+  }
+
   final deliveryService = DeliveryTrackingService();
   await di.init();
 
@@ -99,17 +107,20 @@ void main() async {
   runApp(MyApp(
     initialRoute: initialRoute,
     secureStorageService: secureStorageService,
+    navigatorKey: navigatorKey,
   ));
 }
 
 class MyApp extends StatelessWidget {
   final String initialRoute;
   final SecureStorageService secureStorageService;
+  final GlobalKey<NavigatorState> navigatorKey;
 
   const MyApp({
     Key? key,
     required this.initialRoute,
     required this.secureStorageService,
+    required this.navigatorKey,
   }) : super(key: key);
 
   @override
@@ -266,9 +277,7 @@ class MyApp extends StatelessWidget {
           ),
           lazy: false,
         ),
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
-        ),
+
 
 
         // Farm crop providers
@@ -361,6 +370,7 @@ class MyApp extends StatelessWidget {
           create: (context) => AuthProvider(
             loginUseCase: loginUseCase,
             secureStorageService: secureStorageService,
+            navigatorKey: navigatorKey,
           ),
         ),
         ChangeNotifierProvider(
@@ -382,15 +392,14 @@ class MyApp extends StatelessWidget {
     create: (_) => DashboardViewModel(apiService),)
       ],
       child: Builder(builder: (context) {
-        return Consumer<ThemeProvider>(builder: (context, themeProvider, _) {
-          print(
-              'Building MaterialApp with themeMode: ${themeProvider.themeMode}');
+
 
           return MaterialApp(
+            navigatorKey: navigatorKey,
             title: 'Hanouty',
-            theme: lightTheme,
-            themeMode: themeProvider.themeMode,
-            darkTheme: darkTheme,
+
+
+
             debugShowCheckedModeBanner: false,
             initialRoute: initialRoute,
 
@@ -405,8 +414,8 @@ class MyApp extends StatelessWidget {
               '/profile':(context)=> const ProfilePage(),
             },
           );
-        });
-      }),
-    );
+        }));
+      }
+
   }
-}
+

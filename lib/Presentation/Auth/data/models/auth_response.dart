@@ -1,15 +1,12 @@
+import 'dart:convert';
+// Ensure RoleExtension is here if User.fromJson uses it (which it should)
 import '../../../../Core/Enums/role_enum.dart';
-import '../../domain/entities/user.dart';
-
-import 'dart:convert';
-
-import 'dart:convert';
-import '../../domain/entities/user.dart';
+import '../../domain/entities/user.dart'; // Ensure User class is defined correctly
 
 class AuthResponse {
   final String accessToken;
   final String refreshToken;
-  final User? user;
+  final User? user; // Your User entity
 
   AuthResponse({
     required this.accessToken,
@@ -18,46 +15,41 @@ class AuthResponse {
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
-    final String token = json['accessToken'] ?? json['access_token'] ?? '';
+    // Get tokens from the top level
+    final String accessToken = json['accessToken'] ?? json['access_token'] ?? '';
+    final String refreshToken = json['refreshToken'] ?? '';
 
-    // Decode JWT token to get user data
-    User? user;
-    if (token.isNotEmpty) {
+    User? parsedUser;
+
+    // --- PARSE USER OBJECT FROM RESPONSE BODY ---
+    // Check if the 'user' key exists and is a map
+    if (json.containsKey('user') && json['user'] is Map<String, dynamic>) {
       try {
-        final parts = token.split('.');
-        if (parts.length > 1) {
-          final payload = parts[1];
-          final normalized = base64Url.normalize(payload);
-          final decoded = utf8.decode(base64Url.decode(normalized));
-          final decodedJson = jsonDecode(decoded);
+        // Call the User.fromJson factory constructor
+        // Pass the user map directly to it
+        parsedUser = User.fromJson(json['user'] as Map<String, dynamic>);
+        print('✅ Successfully parsed User object from response body.');
+        // Optional: Print some details for verification
+        print('   - User ID: ${parsedUser.id}');
+        print('   - User Role: ${parsedUser.role}'); // Or parsedUser.role.value
+        print('   - Hedera Account ID: ${parsedUser.headerAccountId ?? 'Not Found in User Object'}');
 
-          print('Decoded JWT payload: $decodedJson'); // Debug print
-
-          // Convert the role string to Role enum using your RoleExtension
-          final roleString = decodedJson['role'] ?? 'Client';
-          final role = RoleExtension.fromString(roleString);
-
-          print('Converted role string "$roleString" to enum: ${role.value}'); // Debug print
-
-          // Create user from JWT payload
-          user = User(
-            id: decodedJson['userId'] ?? '',
-            email: decodedJson['email'] ?? '',
-            name: decodedJson['name'],
-            lastName: decodedJson['lastName'],
-            role: role, // Pass the Role enum value
-          );
-          print('Created user with role: ${user.role.value}'); // Debug print
-        }
       } catch (e) {
-        print('Error decoding JWT: $e');
+        print('❌ Error parsing User object from response body: $e');
+        print('   - Raw user data received: ${json['user']}');
+        parsedUser = null;
       }
+    } else {
+      print('⚠️ "user" object not found or not a map in the AuthResponse JSON.');
+      // parsedUser remains null
     }
 
+    // --- JWT DECODING LOGIC IS REMOVED ---
+
     return AuthResponse(
-      accessToken: token,
-      refreshToken: json['refreshToken'] ?? '',
-      user: user,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      user: parsedUser, // Assign the user parsed from the body (or null)
     );
   }
 }

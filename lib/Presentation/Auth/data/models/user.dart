@@ -4,6 +4,8 @@ class User {
   final String email;
   final List<dynamic> phonenumbers; // Changed from List<String>
   final String profilepicture;
+  final String? headerAccountId; // Add this
+  final String? privateKey;
   final String role;
   final bool isTwoFactorEnabled; // Added property for 2FA status
 
@@ -14,6 +16,8 @@ class User {
     required this.phonenumbers,
     required this.profilepicture,
     required this.role,
+    this.headerAccountId, // Add to constructor
+    this.privateKey,
     this.isTwoFactorEnabled = false, // Default to false if not provided
   });
 
@@ -33,6 +37,8 @@ class User {
       phonenumbers: phoneList,
       profilepicture: json['profilepicture'] ?? '',
       role: json['role'] ?? '',
+      headerAccountId: json['headerAccountId'], // Parse Hedera Account ID
+      privateKey: json['privateKey'],
       isTwoFactorEnabled: json['isTwoFactorEnabled'] ?? false, // Parse from JSON
     );
   }
@@ -50,6 +56,7 @@ class User {
       'phonenumbers': phonenumbers,
       'profilepicture': profilepicture,
       'role': role,
+
       'isTwoFactorEnabled': isTwoFactorEnabled, // Include in JSON output
     };
   }
@@ -63,6 +70,8 @@ class User {
     String? profilepicture,
     String? role,
     bool? isTwoFactorEnabled,
+    String? headerAccountId, // ADDED
+    String? privateKey,
   }) {
     return User(
       id: id ?? this.id,
@@ -72,6 +81,8 @@ class User {
       profilepicture: profilepicture ?? this.profilepicture,
       role: role ?? this.role,
       isTwoFactorEnabled: isTwoFactorEnabled ?? this.isTwoFactorEnabled,
+      headerAccountId: headerAccountId ?? this.headerAccountId, // ADDED
+      privateKey: privateKey ?? this.privateKey,
     );
   }
 }

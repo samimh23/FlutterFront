@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
 import '../../Domain_Layer/entities/sale.dart';
 
 class SaleRemoteDataSource {
-  final String apiUrl = '${ApiEndpoints.baseUrl}/farm-sales';
+  final String apiUrl = 'http://192.168.100.12:3000/farm-sales';
 
   // Mock data for development (remove in production)
   final List<Sale> _mockSales = [];
@@ -145,4 +144,32 @@ class SaleRemoteDataSource {
       throw _handleException('Failed to load sales for crop ID: $cropId', e);
     }
   }
+
+
+  Future<List<Sale>> getSalesByFarmMarket(String farmMarketId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl/sales/farm/$farmMarketId'),
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authentication headers if needed
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonList = json.decode(response.body) as List;
+        return jsonList.map((json) => Sale.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Failed to load sales: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception(
+         'Error fetching sales: ${e.toString()}',
+      );
+    }
+  }
+
+
 }

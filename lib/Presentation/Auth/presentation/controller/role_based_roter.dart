@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/Core/Enums/role_enum.dart';
-import 'package:hanouty/Presentation/Farm_Crop/Presentation_Layer/pages/farm_main_screen.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/dashboard_page.dart';
+
+import '../../../Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
 
 
   class RoleBasedRouter {
@@ -14,7 +15,7 @@ import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/dashboard_p
         case Role.Farmer:
           Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const FarmMainScreen())
+              MaterialPageRoute(builder: (context) => const FarmMobileNavigation())
           );
           break;
         case Role.Merchant:

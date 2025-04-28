@@ -6,7 +6,7 @@ import 'Core/Utils/secure_storage.dart';
 
 class HederaApiService {
   // Update this with your actual NestJS backend URL
-  final String baseUrl = 'http://192.168.251.19:3000';
+  final String baseUrl = ApiEndpoints.baseUrl;
   final SecureStorageService _secureStorage = SecureStorageService();
 
   // Helper method to get auth headers

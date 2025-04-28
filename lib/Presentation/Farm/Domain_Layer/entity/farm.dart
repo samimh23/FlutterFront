@@ -4,15 +4,11 @@ class Farm {
   final String farmLocation;
   final String? farmPhone;
   final String? farmEmail;
+  final String? farmDescription;
+  final double? rate;
   final String? marketImage;
-  final List<String>? crops;  // This should be ObjectIDs referencing FarmCrop documents
+  final List<String>? sale;
 
-  // Properties inherited from Markets schema
-  final String? marketName;
-  final String? marketLocation;
-  final String? marketDescription;
-  final String? marketCategory;
-  final double? marketRating;
 
   Farm({
     this.id,
@@ -21,18 +17,10 @@ class Farm {
     this.farmPhone,
     this.farmEmail,
     this.marketImage,
-    this.crops,
-    this.marketName,
-    this.marketLocation,
-    this.marketDescription,
-    this.marketCategory,
-    this.marketRating,
+    this.sale,  // Updated from crops to sale
+    this.rate,
+    this.farmDescription,
   });
-
-
-
-// Other methods remain the same...
-
 
   factory Farm.fromJson(Map<String, dynamic> json) {
     return Farm(
@@ -42,15 +30,12 @@ class Farm {
       farmPhone: json['farmPhone'],
       farmEmail: json['farmEmail'],
       marketImage: json['marketImage'],
-      crops: json['crops'] != null
-          ? List<String>.from(json['crops'])
-          : null,
-      marketName: json['marketName'],
-      marketLocation: json['marketLocation'],
-      marketDescription: json['marketDescription'],
-      marketCategory: json['marketCategory'],
-      marketRating: json['marketRating'] != null
-          ? double.parse(json['marketRating'].toString())
+      sale: json['Sale'] != null
+          ? List<String>.from(json['Sale'])
+          : null,  // Updated from crops to Sale
+      farmDescription: json['farmDescription'],
+      rate: json['rate'] != null
+          ? double.parse(json['rate'].toString())
           : null,
     );
   }
@@ -65,15 +50,13 @@ class Farm {
     if (farmPhone != null) data['farmPhone'] = farmPhone;
     if (farmEmail != null) data['farmEmail'] = farmEmail;
     if (marketImage != null) data['marketImage'] = marketImage;
-    if (crops != null) data['crops'] = crops;  // Should be a list of ObjectIDs
-    if (marketName != null) data['marketName'] = marketName;
-    if (marketLocation != null) data['marketLocation'] = marketLocation;
-    if (marketDescription != null) data['marketDescription'] = marketDescription;
-    if (marketCategory != null) data['marketCategory'] = marketCategory;
-    if (marketRating != null) data['marketRating'] = marketRating;
+    if (sale != null) data['Sale'] = sale;  // Updated from crops to Sale
+    if (farmDescription != null) data['farmDescription'] = farmDescription;
+    if (rate != null) data['rate'] = rate;
 
     return data;
   }
+
   Farm copyWith({
     String? id,
     String? farmName,
@@ -81,12 +64,9 @@ class Farm {
     String? farmPhone,
     String? farmEmail,
     String? marketImage,
-    List<String>? crops,
-    String? marketName,
-    String? marketLocation,
-    String? marketDescription,
-    String? marketCategory,
-    double? marketRating,
+    List<String>? sale,
+    String? farmDescription,
+    double? rate,
   }) {
     return Farm(
       id: id ?? this.id,
@@ -95,12 +75,9 @@ class Farm {
       farmPhone: farmPhone ?? this.farmPhone,
       farmEmail: farmEmail ?? this.farmEmail,
       marketImage: marketImage ?? this.marketImage,
-      crops: crops ?? this.crops,
-      marketName: marketName ?? this.marketName,
-      marketLocation: marketLocation ?? this.marketLocation,
-      marketDescription: marketDescription ?? this.marketDescription,
-      marketCategory: marketCategory ?? this.marketCategory,
-      marketRating: marketRating ?? this.marketRating,
+      sale: sale ?? this.sale,  // Updated from crops to sale
+      farmDescription: farmDescription ?? this.farmDescription,
+      rate: rate ?? this.rate,
     );
   }
 }

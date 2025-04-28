@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../Sales/Domain_Layer/entities/sale.dart';
 import '../../Domain_Layer/entity/farm.dart';
 import '../../Domain_Layer/repositories/farm_repository.dart';
 import '../datasources/farm_remote_data_source.dart';
@@ -56,6 +57,16 @@ class FarmMarketRepositoryImpl implements FarmMarketRepository {
     try {
       await remoteDataSource.deleteFarmMarket(id);
       return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Sale>>> getSalesByFarmMarketId(String farmMarketId) async {
+    try {
+      final remoteSales = await remoteDataSource.getSalesByFarmMarketId(farmMarketId);
+      return Right(remoteSales);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

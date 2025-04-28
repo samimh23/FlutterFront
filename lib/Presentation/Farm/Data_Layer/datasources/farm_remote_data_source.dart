@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../../../Sales/Domain_Layer/entities/sale.dart';
 import '../../Domain_Layer/entity/farm.dart';
 
 class FarmMarketRemoteDataSource {
-  final String baseUrl = 'http://localhost:3000/farm';
+  final String baseUrl = 'http://192.168.100.12:3000/farm';
   final http.Client client;
 
   FarmMarketRemoteDataSource({http.Client? client}) : client = client ?? http.Client();
@@ -99,6 +100,32 @@ class FarmMarketRemoteDataSource {
       }
     } catch (e) {
       throw Exception('Failed to delete farm market: $e');
+    }
+  }
+
+  @override
+  Future<List<Sale>> getSalesByFarmMarketId(String farmMarketId) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/sales/farm/$farmMarketId'),
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authentication headers if needed
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonList = json.decode(response.body) as List;
+        return jsonList.map((json) => Sale.fromJson(json)).toList();
+      } else {
+        throw Exception(
+           'Failed to load sales: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception(
+         'Error fetching sales: ${e.toString()}',
+      );
     }
   }
 

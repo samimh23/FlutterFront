@@ -13,7 +13,6 @@ import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_all_farm_ma
 import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_farm_market_by_id.dart';
 import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/update_farm_market.dart';
 import 'package:hanouty/Presentation/Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
-import 'package:hanouty/Presentation/Farm_Crop/Presentation_Layer/pages/farm_main_screen.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote_datasources.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/repositories/normamarket_domain_repository.dart';
@@ -53,6 +52,9 @@ import 'Presentation/Auth/presentation/pages/farmerscreen.dart';
 import 'Presentation/Auth/presentation/pages/login_page.dart';
 import 'Presentation/Auth/presentation/pages/signup_page.dart';
 import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
+import 'Presentation/DiseaseDetection/Presentation_Layer/viewmodels/productVM.dart' show DiseaseDetectionViewModel;
+import 'Presentation/Farm/Domain_Layer/usescases/GetSalesByFarmMarketId.dart' show GetSalesByFarmMarketId;
+import 'Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
 import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/add_farm_crop.dart';
@@ -66,6 +68,7 @@ import 'Presentation/Sales/Data_Layer/datasources/Sale_Remote_DataSource.dart';
 import 'Presentation/Sales/Data_Layer/repositories/sale_repository_impl.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/add_sale.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/delete_sale.dart';
+import 'Presentation/Sales/Domain_Layer/usecases/getSalesByFarmMarket.dart' show GetSalesByFarmMarket;
 import 'Presentation/Sales/Domain_Layer/usecases/get_all_sales.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/get_sale_by_id.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/get_sales_by_crop_id.dart';
@@ -251,6 +254,9 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               DeleteFarmMarket(context.read<FarmMarketRepositoryImpl>()),
         ),
+         Provider<GetSalesByFarmMarketId>(
+          create: (context) => GetSalesByFarmMarketId(context.read<FarmMarketRepositoryImpl>()),
+        ),
         ChangeNotifierProvider<FarmMarketViewModel>(
           create: (context) => FarmMarketViewModel(
             getAllFarmMarkets: context.read<GetAllFarmMarkets>(),
@@ -258,11 +264,15 @@ class MyApp extends StatelessWidget {
             addFarmMarket: context.read<AddFarmMarket>(),
             updateFarmMarket: context.read<UpdateFarmMarket>(),
             deleteFarmMarket: context.read<DeleteFarmMarket>(),
+            getSalesByFarmMarketId: context.read<GetSalesByFarmMarketId>(),
+
           ),
           lazy: false,
         ),
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
+
+
+         ChangeNotifierProvider<DiseaseDetectionViewModel>(
+          create: (_) => DiseaseDetectionViewModel(),
         ),
 
 
@@ -309,6 +319,8 @@ class MyApp extends StatelessWidget {
           ),
           lazy: false,
         ),
+
+
         // Sale providers
         Provider<SaleRemoteDataSource>(
           create: (_) => SaleRemoteDataSource(),
@@ -325,8 +337,7 @@ class MyApp extends StatelessWidget {
           create: (context) => GetSaleById(context.read<SaleRepositoryImpl>()),
         ),
         Provider<GetSalesByCropId>(
-          create: (context) =>
-              GetSalesByCropId(context.read<SaleRepositoryImpl>()),
+          create: (context) => GetSalesByCropId(context.read<SaleRepositoryImpl>()),
         ),
         Provider<AddSale>(
           create: (context) => AddSale(context.read<SaleRepositoryImpl>()),
@@ -337,6 +348,11 @@ class MyApp extends StatelessWidget {
         Provider<DeleteSale>(
           create: (context) => DeleteSale(context.read<SaleRepositoryImpl>()),
         ),
+        // Add new GetSalesByFarmMarket provider
+        Provider<GetSalesByFarmMarket>(
+          create: (context) => GetSalesByFarmMarket(context.read<SaleRepositoryImpl>()),
+        ),
+        // Add GetSalesByFarmMarketId for the Sales feature
 
         ChangeNotifierProvider<SaleViewModel>(
           create: (context) => SaleViewModel(
@@ -347,6 +363,7 @@ class MyApp extends StatelessWidget {
             updateSale: context.read<UpdateSale>(),
             deleteSale: context.read<DeleteSale>(),
             getFarmCropById: context.read<GetFarmCropById>(),
+            getSalesByFarmMarket: context.read<GetSalesByFarmMarket>(),
           ),
         ),
 
@@ -392,10 +409,11 @@ class MyApp extends StatelessWidget {
               '/login': (context) => const LoginPage(),
               '/register': (context) => const RegisterPage(),
               '/home': (context) => const MainScreen(),
-              '/farmer': (context) => const FarmMainScreen(),
+              '/farmer': (context) => const FarmMobileNavigation(),
               '/merchant': (context) => const DashboardPage(),
               '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
               '/cart': (context) => const CartScreen(),
+             
             },
           );
         });

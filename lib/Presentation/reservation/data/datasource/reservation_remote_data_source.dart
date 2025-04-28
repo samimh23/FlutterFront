@@ -4,6 +4,8 @@ import 'package:hanouty/presentation/reservation/data/models/reservation_model.d
 import 'package:hanouty/presentation/reservation/domain/entity/reservation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../Core/Utils/Api_EndPoints.dart';
+
 abstract class ReservationRemoteDataSource {
   Future<ReservationModel> createReservation(
       ReservationModel reservation, String userId);
@@ -20,7 +22,7 @@ class ReservationRemoteDataSourceImpl implements ReservationRemoteDataSource {
   final http.Client client;
 
   ReservationRemoteDataSourceImpl({required this.client});
-  final String baseUrl = 'http://127.0.0.1:3000/reservations';
+  final String baseUrl = '${ApiEndpoints.baseUrl}/reservations';
   @override
   Future<ReservationModel> createReservation(
       ReservationModel reservation, String userId) async {

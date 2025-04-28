@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
+import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
 import 'package:hanouty/Presentation/review/data/models/review_model.dart';
 import 'package:http/http.dart' as http;
+
+import '../../../../Core/Utils/Api_EndPoints.dart';
 
 abstract class ReviewRemoteDataSource {
   Future<ReviewModel> getReviewById(String id);
@@ -14,7 +17,7 @@ abstract class ReviewRemoteDataSource {
   Future<List<ReviewModel>> getReviewsByUserId(String userId);
 }
 
-const BASE_URL = "http://127.0.0.1:3000/review";
+const BASE_URL = "${ApiEndpoints.baseUrl}/review";
 
 class ReviewRemoteDataSourceImpl extends ReviewRemoteDataSource {
   final http.Client client;
@@ -57,19 +60,22 @@ class ReviewRemoteDataSourceImpl extends ReviewRemoteDataSource {
 
   @override
   Future<ReviewModel> updateReview(String reviewId, ReviewModel review) async {
-    print('updateReview method called'); // Initial log to confirm method call
 
-
+    final storage = SecureStorageService();
+    String? token = await storage.getAccessToken();
     final body = json.encode({
       ...review.toJson(), // Include user ID in the request body
     });
     print('Review:$review');
     print('Review ID:$reviewId');
-    
+
     // Ensure reviewId is appended to the URL
     final response = await client.patch(
-      Uri.parse('$BASE_URL/$reviewId'), // Corrected endpoint
-      headers: {"Content-Type": "application/json"},
+      Uri.parse('$BASE_URL/update/$reviewId'), // Corrected endpoint
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token"
+      },
       body: body,
     );
     print('Response:${response.body}');

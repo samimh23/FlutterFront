@@ -14,6 +14,7 @@ class HorizontalProductsList extends StatefulWidget {
   final String marketName; // Optional market name to display
   final Function? onProductsUpdated; // Callback when products are updated
   final String? marketId; // Added market ID parameter
+  final bool isDarkMode; // Add isDarkMode parameter for theme support
 
   const HorizontalProductsList({
     super.key,
@@ -21,6 +22,7 @@ class HorizontalProductsList extends StatefulWidget {
     this.marketName = '',
     this.onProductsUpdated,
     this.marketId,
+    this.isDarkMode = false, // Default to light mode
   });
 
   @override
@@ -40,6 +42,15 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
 
   @override
   Widget build(BuildContext context) {
+    // Colors based on theme
+    final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final headingColor = widget.isDarkMode ? Colors.white : const Color(0xFF2E7D32);
+    final subTextColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey[600];
+    final iconBgColor = accentColor.withOpacity(widget.isDarkMode ? 0.2 : 0.1);
+    final orangeBgColor = const Color(0xFFFF9800).withOpacity(widget.isDarkMode ? 0.2 : 0.1);
+    final scrollBtnColor = widget.isDarkMode ? Colors.grey[800] : Colors.grey[100];
+    final scrollIconColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey[600];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -51,12 +62,12 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9800).withOpacity(0.1),
+                  color: orangeBgColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.shopping_basket_outlined,
-                  color: Color(0xFFFF9800),
+                  color: widget.isDarkMode ? Colors.amber[300] : const Color(0xFFFF9800),
                   size: 24,
                 ),
               ),
@@ -67,16 +78,16 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   children: [
                     Text(
                       widget.marketName.isEmpty ? 'Products' : '${widget.marketName} Products',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E7D32),
+                        color: headingColor,
                       ),
                     ),
                     Text(
                       '${widget.products.length} ${widget.products.length == 1 ? 'item' : 'items'} available',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: subTextColor,
                         fontSize: 14,
                       ),
                     ),
@@ -86,7 +97,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  color: iconBgColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: GestureDetector(
@@ -106,19 +117,19 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       }
                     });
                   },
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.add_circle_outline,
-                        color: Color(0xFF4CAF50),
+                        color: accentColor,
                         size: 16,
                       ),
-                      SizedBox(width: 6),
+                      const SizedBox(width: 6),
                       Text(
                         'Add Product',
                         style: TextStyle(
-                          color: Color(0xFF4CAF50),
+                          color: accentColor,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -152,13 +163,13 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: scrollBtnColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: scrollIconColor,
                       ),
                     ),
                   ),
@@ -168,7 +179,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                 Icon(
                   Icons.swipe,
                   size: 14,
-                  color: Colors.grey[400],
+                  color: widget.isDarkMode ? Colors.grey[600] : Colors.grey[400],
                 ),
 
                 const SizedBox(width: 6),
@@ -177,7 +188,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   'Swipe to see more',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: subTextColor,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -197,13 +208,13 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: scrollBtnColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: scrollIconColor,
                       ),
                     ),
                   ),
@@ -272,14 +283,24 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
   }
 
   Widget _buildEmptyProductsView(BuildContext context) {
+    // Colors for dark mode
+    final emptyBgColor = widget.isDarkMode ? const Color(0xFF252525) : const Color(0xFFEEF7ED);
+    final emptyBorderColor = widget.isDarkMode ? Colors.grey.shade800 : const Color(0xFF4CAF50).withOpacity(0.2);
+    final textColor = widget.isDarkMode ? Colors.white : const Color(0xFF333333);
+    final subtitleColor = widget.isDarkMode ? Colors.grey[400] : const Color(0xFF666666);
+    final iconColor = widget.isDarkMode
+        ? const Color(0xFF81C784).withOpacity(0.5)
+        : const Color(0xFF4CAF50).withOpacity(0.5);
+    final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF7ED),
+        color: emptyBgColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.2),
+          color: emptyBorderColor,
           width: 1,
         ),
       ),
@@ -288,24 +309,24 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
           Icon(
             Icons.shopping_basket,
             size: 80,
-            color: const Color(0xFF4CAF50).withOpacity(0.5),
+            color: iconColor,
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'No Products Yet',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
+              color: textColor,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Start adding products to this market to track your inventory',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF666666),
+              color: subtitleColor,
             ),
             textAlign: TextAlign.center,
           ),
@@ -330,7 +351,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Add First Product'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: accentColor,
               foregroundColor: Colors.white,
               textStyle: const TextStyle(
                 fontSize: 14,
@@ -348,6 +369,15 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
   }
 
   Widget _buildProductCard(BuildContext context, Product product, ProductProvider productProvider) {
+    final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = widget.isDarkMode ? Colors.white : const Color(0xFF333333);
+    final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : AppColors.primary;
+    final stockPositiveColor = widget.isDarkMode ? Colors.green[400] : Colors.green[700];
+    final stockNegativeColor = widget.isDarkMode ? Colors.red[400] : Colors.red[700];
+    final shadowColor = widget.isDarkMode
+        ? Colors.black.withOpacity(0.2)
+        : Colors.black.withOpacity(0.08);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -363,11 +393,11 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         width: 160,
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: shadowColor,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -396,10 +426,10 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   // Product name
                   Text(
                     product.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF333333),
+                      color: textColor,
                     ),
                     maxLines: 1, // Limit to 1 line to avoid overflow
                     overflow: TextOverflow.ellipsis,
@@ -412,20 +442,20 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     children: [
                       Text(
                         "${product.originalPrice.toStringAsFixed(2)} DT",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                          color: accentColor,
                         ),
                       ),
                       if (product.isDiscounted && product.discountValue > 0) ...[
                         const SizedBox(width: 4),
                         Text(
                           "${(product.originalPrice + product.discountValue).toStringAsFixed(2)} DT",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             decoration: TextDecoration.lineThrough,
-                            color: Colors.grey,
+                            color: widget.isDarkMode ? Colors.grey[500] : Colors.grey,
                           ),
                         ),
                       ],
@@ -438,7 +468,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     "Stock: ${product.stock}",
                     style: TextStyle(
                       fontSize: 12,
-                      color: product.stock > 0 ? Colors.green[700] : Colors.red[700],
+                      color: product.stock > 0 ? stockPositiveColor : stockNegativeColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -450,7 +480,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     children: [
                       _buildActionButton(
                         icon: Icons.edit_outlined,
-                        color: Colors.blue,
+                        color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -471,7 +501,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       const SizedBox(width: 8),
                       _buildActionButton(
                         icon: Icons.delete_outline,
-                        color: Colors.red,
+                        color: widget.isDarkMode ? Colors.red.shade300 : Colors.red,
                         onTap: () {
                           // Show confirmation dialog
                           _showDeleteConfirmationDialog(
@@ -521,13 +551,19 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
       Product product,
       ProductProvider productProvider,
       ) {
+    final dialogBgColor = widget.isDarkMode ? const Color(0xFF252525) : Colors.white;
+    final textColor = widget.isDarkMode ? Colors.white : null;
+    final buttonTextColor = widget.isDarkMode ? Colors.grey[300] : Colors.grey;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete ${product.name}?'),
-          content: const Text(
+          backgroundColor: dialogBgColor,
+          title: Text('Delete ${product.name}?', style: TextStyle(color: textColor)),
+          content: Text(
             'Are you sure you want to delete this product? This action cannot be undone.',
+            style: TextStyle(color: textColor),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -535,9 +571,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: buttonTextColor),
               ),
             ),
             ElevatedButton(
@@ -596,23 +632,27 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
 
   // Show loading dialog
   void _showLoadingDialog(BuildContext context) {
+    final dialogBgColor = widget.isDarkMode ? const Color(0xFF252525) : Colors.white;
+    final textColor = widget.isDarkMode ? Colors.white : null;
+    final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: Colors.white,
+          backgroundColor: dialogBgColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text('Deleting product...'),
+                CircularProgressIndicator(color: accentColor),
+                const SizedBox(width: 20),
+                Text('Deleting product...', style: TextStyle(color: textColor)),
               ],
             ),
           ),
@@ -622,15 +662,22 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
   }
 
   Widget _buildLoadingProductCard() {
+    final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final shimmerColor = widget.isDarkMode ? Colors.grey[800] : Colors.grey[200];
+    final shadowColor = widget.isDarkMode
+        ? Colors.black.withOpacity(0.2)
+        : Colors.black.withOpacity(0.05);
+    final loaderColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+
     return Container(
       width: 160,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: shadowColor,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -644,10 +691,11 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             child: Container(
               height: 120,
               width: double.infinity,
-              color: Colors.grey[200],
-              child: const Center(
+              color: shimmerColor,
+              child: Center(
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
+                  color: loaderColor,
                 ),
               ),
             ),
@@ -662,7 +710,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                 Container(
                   height: 14,
                   width: double.infinity,
-                  color: Colors.grey[200],
+                  color: shimmerColor,
                 ),
 
                 const SizedBox(height: 8),
@@ -671,7 +719,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                 Container(
                   height: 14,
                   width: 80,
-                  color: Colors.grey[200],
+                  color: shimmerColor,
                 ),
 
                 const SizedBox(height: 8),
@@ -680,7 +728,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                 Container(
                   height: 12,
                   width: 60,
-                  color: Colors.grey[200],
+                  color: shimmerColor,
                 ),
               ],
             ),
@@ -691,15 +739,22 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
   }
 
   Widget _buildErrorProductCard() {
+    final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final errorColor = widget.isDarkMode ? Colors.red[400] : Colors.red[300];
+    final textColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey;
+    final shadowColor = widget.isDarkMode
+        ? Colors.black.withOpacity(0.2)
+        : Colors.black.withOpacity(0.05);
+
     return Container(
       width: 160,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: shadowColor,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -710,15 +765,15 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         children: [
           Icon(
             Icons.error_outline,
-            color: Colors.red[300],
+            color: errorColor,
             size: 40,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Failed to load',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey,
+              color: textColor,
             ),
           ),
         ],
@@ -726,15 +781,23 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-  // Updated image loading function using ApiConstants
+  // Updated image loading function with improved error handling
   Widget _buildProductImage(BuildContext context, String? imageUrl) {
+    final placeholderColor = widget.isDarkMode
+        ? AppColors.primary.withOpacity(0.2)
+        : AppColors.primary.withOpacity(0.1);
+    final iconColor = widget.isDarkMode ? Colors.grey[600] : Colors.grey[400];
+    final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : AppColors.primary;
+    final errorBgColor = widget.isDarkMode ? Colors.grey[900] : Colors.grey[200];
+    final errorTextColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey;
+
     if (imageUrl == null || imageUrl.isEmpty) {
       return Container(
-        color: AppColors.primary.withOpacity(0.1),
+        color: placeholderColor,
         child: Center(
           child: Icon(
             Icons.image,
-            color: Colors.grey[400],
+            color: iconColor,
             size: 30,
           ),
         ),
@@ -746,77 +809,125 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         ? ApiConstants.getImageUrlWithCacheBusting(imageUrl) // Use with cache busting for web
         : ApiConstants.getFullImageUrl(imageUrl);            // Use standard URL for mobile
 
-    print('Loading product image: $fullImageUrl');
-
     return Stack(
       fit: StackFit.expand,
       children: [
         // Base placeholder
-        Container(color: AppColors.primary.withOpacity(0.1)),
+        Container(color: placeholderColor),
 
         // Actual image
         CachedNetworkImage(
           imageUrl: fullImageUrl,
           fit: BoxFit.cover,
+          // Add a key based on URL to force refresh when image changes
+          key: ValueKey(fullImageUrl),
+          // Add memory & disk cache settings
+          memCacheHeight: 400, // Optimized size for thumbnail
+          memCacheWidth: 400,
+          maxHeightDiskCache: 800, // Higher quality for disk cache
+          maxWidthDiskCache: 800,
           placeholder: (context, url) => Center(
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: AppColors.primary,
+              color: accentColor,
             ),
           ),
           errorWidget: (context, url, error) {
-            print('Error loading product image: $url - Error: $error');
-
+            print('Error loading product image: $url - $error');
             return GestureDetector(
               onTap: () {
                 // Show image URL in dialog for debugging
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Image Error'),
+                    backgroundColor: widget.isDarkMode ? const Color(0xFF252525) : Colors.white,
+                    title: Text('Image Error',
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white : null)
+                    ),
                     content: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Failed to load image:'),
+                          Text('Failed to load image:',
+                              style: TextStyle(color: widget.isDarkMode ? Colors.white : null)
+                          ),
                           const SizedBox(height: 8),
-                          Text(fullImageUrl, style: const TextStyle(fontSize: 12)),
+                          Text(fullImageUrl,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: widget.isDarkMode ? Colors.grey[300] : null
+                              )
+                          ),
                           const SizedBox(height: 8),
-                          Text('Original path: $imageUrl', style: const TextStyle(fontSize: 12)),
+                          Text('Original path: $imageUrl',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: widget.isDarkMode ? Colors.grey[300] : null
+                              )
+                          ),
                           const SizedBox(height: 12),
-                          const Text('Check that:'),
-                          const Text('• Backend server is running'),
-                          const Text('• File exists on server'),
-                          const Text('• Path is correct'),
+                          Text('Error: ${error.toString()}',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red[widget.isDarkMode ? 400 : 600]
+                              )
+                          ),
+                          const SizedBox(height: 12),
+                          Text('Check that:',
+                              style: TextStyle(color: widget.isDarkMode ? Colors.white : null)
+                          ),
+                          Text('• Backend server is running',
+                              style: TextStyle(color: widget.isDarkMode ? Colors.grey[300] : null)
+                          ),
+                          Text('• File exists on server',
+                              style: TextStyle(color: widget.isDarkMode ? Colors.grey[300] : null)
+                          ),
+                          Text('• Path is correct',
+                              style: TextStyle(color: widget.isDarkMode ? Colors.grey[300] : null)
+                          ),
                         ],
                       ),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Close'),
+                        child: Text('Close',
+                            style: TextStyle(color: accentColor)
+                        ),
+                      ),
+                      // Add option to retry loading
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          // Force a refresh by clearing the cache for this URL
+                          CachedNetworkImage.evictFromCache(fullImageUrl);
+                          setState(() {});
+                        },
+                        child: Text('Retry',
+                            style: TextStyle(color: accentColor)
+                        ),
                       ),
                     ],
                   ),
                 );
               },
               child: Container(
-                color: Colors.grey[200],
+                color: errorBgColor,
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.broken_image, color: Colors.grey[400], size: 24),
+                      Icon(Icons.broken_image, color: iconColor, size: 24),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Image not found',
-                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                        style: TextStyle(fontSize: 10, color: errorTextColor),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      Text(
                         'Tap for details',
-                        style: TextStyle(fontSize: 8, color: Colors.grey),
+                        style: TextStyle(fontSize: 8, color: errorTextColor),
                       ),
                     ],
                   ),

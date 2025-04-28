@@ -1,4 +1,5 @@
 
+import '../../../../Core/Utils/Api_EndPoints.dart';
 import '../../presentation/controller/profileservice.dart';
 
 class GetProfileUseCase {
@@ -6,7 +7,7 @@ class GetProfileUseCase {
 
   GetProfileUseCase({
     ProfileService? profileService,
-  }) : _profileService = profileService ?? ProfileService(baseUrl: 'http://localhost:3000');
+  }) : _profileService = profileService ?? ProfileService(baseUrl: ApiEndpoints.baseUrl);
 
   Future<Map<String, dynamic>> execute() async {
     final user = await _profileService.getProfile();

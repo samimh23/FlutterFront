@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/theme/theme_provider.dart';
 import 'package:hanouty/Presentation/Auth/domain/use_cases/verify_reset_code_usecase.dart';
@@ -13,6 +15,7 @@ import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_all_farm_ma
 import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_farm_market_by_id.dart';
 import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/update_farm_market.dart';
 import 'package:hanouty/Presentation/Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
+import 'package:hanouty/Presentation/Farm_Crop/Presentation_Layer/pages/farm_main_screen.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote_datasources.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/repositories/normamarket_domain_repository.dart';
@@ -35,6 +38,7 @@ import 'package:hanouty/Presentation/product/presentation/provider/product_provi
 import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
 import 'package:hanouty/nav_bar.dart';
 import 'package:provider/provider.dart';
+import 'Core/Utils/Api_EndPoints.dart';
 import 'Core/api/Api_Serice.dart';
 import 'Core/theme/theme_data.dart';
 import 'Presentation/AIForBussines/DashboardViewModel.dart';
@@ -50,11 +54,9 @@ import 'Presentation/Auth/presentation/controller/profilep^rovider.dart';
 import 'Presentation/Auth/presentation/controller/register_controler.dart';
 import 'Presentation/Auth/presentation/pages/farmerscreen.dart';
 import 'Presentation/Auth/presentation/pages/login_page.dart';
+import 'Presentation/Auth/presentation/pages/profilepage.dart';
 import 'Presentation/Auth/presentation/pages/signup_page.dart';
 import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
-import 'Presentation/DiseaseDetection/Presentation_Layer/viewmodels/productVM.dart' show DiseaseDetectionViewModel;
-import 'Presentation/Farm/Domain_Layer/usescases/GetSalesByFarmMarketId.dart' show GetSalesByFarmMarketId;
-import 'Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
 import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/add_farm_crop.dart';
@@ -68,17 +70,25 @@ import 'Presentation/Sales/Data_Layer/datasources/Sale_Remote_DataSource.dart';
 import 'Presentation/Sales/Data_Layer/repositories/sale_repository_impl.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/add_sale.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/delete_sale.dart';
-import 'Presentation/Sales/Domain_Layer/usecases/getSalesByFarmMarket.dart' show GetSalesByFarmMarket;
 import 'Presentation/Sales/Domain_Layer/usecases/get_all_sales.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/get_sale_by_id.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/get_sales_by_crop_id.dart';
 import 'Presentation/Sales/Domain_Layer/usecases/update_sale.dart';
 import 'Presentation/Sales/Presentation_Layer/viewmodels/sale_viewmodel.dart';
 import 'injection_container.dart' as di;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb) {
+    // Initialize Stripe only for mobile (iOS/Android)
+
+    Stripe.publishableKey = 'pk_test_51Oo6gMEbvcankNU3AIwY77tk7CIMEuCFcEIxv4GKfG9EgPzoNDtBkrmUV5CStzaEINbRDuQBD3RsMwyEwULgbl7n00T58lrP75';
+    await Stripe.instance.applySettings();
+
+  }
+
   final deliveryService = DeliveryTrackingService();
   await di.init();
 
@@ -97,17 +107,20 @@ void main() async {
   runApp(MyApp(
     initialRoute: initialRoute,
     secureStorageService: secureStorageService,
+    navigatorKey: navigatorKey,
   ));
 }
 
 class MyApp extends StatelessWidget {
   final String initialRoute;
   final SecureStorageService secureStorageService;
+  final GlobalKey<NavigatorState> navigatorKey;
 
   const MyApp({
     Key? key,
     required this.initialRoute,
     required this.secureStorageService,
+    required this.navigatorKey,
   }) : super(key: key);
 
   @override
@@ -135,7 +148,7 @@ class MyApp extends StatelessWidget {
         Provider<Dio>(
           create: (_) => Dio(BaseOptions(
             // For web deployment, using relative URL to match the hosting domain
-            baseUrl: 'http://localhost:3000/normal',
+            baseUrl: '${ApiEndpoints.baseUrl}/normal',
             connectTimeout: const Duration(seconds: 5),
             receiveTimeout: const Duration(seconds: 10),
             contentType: 'application/json',
@@ -254,9 +267,6 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               DeleteFarmMarket(context.read<FarmMarketRepositoryImpl>()),
         ),
-         Provider<GetSalesByFarmMarketId>(
-          create: (context) => GetSalesByFarmMarketId(context.read<FarmMarketRepositoryImpl>()),
-        ),
         ChangeNotifierProvider<FarmMarketViewModel>(
           create: (context) => FarmMarketViewModel(
             getAllFarmMarkets: context.read<GetAllFarmMarkets>(),
@@ -264,16 +274,10 @@ class MyApp extends StatelessWidget {
             addFarmMarket: context.read<AddFarmMarket>(),
             updateFarmMarket: context.read<UpdateFarmMarket>(),
             deleteFarmMarket: context.read<DeleteFarmMarket>(),
-            getSalesByFarmMarketId: context.read<GetSalesByFarmMarketId>(),
-
           ),
           lazy: false,
         ),
 
-
-         ChangeNotifierProvider<DiseaseDetectionViewModel>(
-          create: (_) => DiseaseDetectionViewModel(),
-        ),
 
 
         // Farm crop providers
@@ -319,8 +323,6 @@ class MyApp extends StatelessWidget {
           ),
           lazy: false,
         ),
-
-
         // Sale providers
         Provider<SaleRemoteDataSource>(
           create: (_) => SaleRemoteDataSource(),
@@ -337,7 +339,8 @@ class MyApp extends StatelessWidget {
           create: (context) => GetSaleById(context.read<SaleRepositoryImpl>()),
         ),
         Provider<GetSalesByCropId>(
-          create: (context) => GetSalesByCropId(context.read<SaleRepositoryImpl>()),
+          create: (context) =>
+              GetSalesByCropId(context.read<SaleRepositoryImpl>()),
         ),
         Provider<AddSale>(
           create: (context) => AddSale(context.read<SaleRepositoryImpl>()),
@@ -348,11 +351,6 @@ class MyApp extends StatelessWidget {
         Provider<DeleteSale>(
           create: (context) => DeleteSale(context.read<SaleRepositoryImpl>()),
         ),
-        // Add new GetSalesByFarmMarket provider
-        Provider<GetSalesByFarmMarket>(
-          create: (context) => GetSalesByFarmMarket(context.read<SaleRepositoryImpl>()),
-        ),
-        // Add GetSalesByFarmMarketId for the Sales feature
 
         ChangeNotifierProvider<SaleViewModel>(
           create: (context) => SaleViewModel(
@@ -363,7 +361,6 @@ class MyApp extends StatelessWidget {
             updateSale: context.read<UpdateSale>(),
             deleteSale: context.read<DeleteSale>(),
             getFarmCropById: context.read<GetFarmCropById>(),
-            getSalesByFarmMarket: context.read<GetSalesByFarmMarket>(),
           ),
         ),
 
@@ -373,6 +370,7 @@ class MyApp extends StatelessWidget {
           create: (context) => AuthProvider(
             loginUseCase: loginUseCase,
             secureStorageService: secureStorageService,
+            navigatorKey: navigatorKey,
           ),
         ),
         ChangeNotifierProvider(
@@ -394,30 +392,30 @@ class MyApp extends StatelessWidget {
     create: (_) => DashboardViewModel(apiService),)
       ],
       child: Builder(builder: (context) {
-        return Consumer<ThemeProvider>(builder: (context, themeProvider, _) {
-          print(
-              'Building MaterialApp with themeMode: ${themeProvider.themeMode}');
+
 
           return MaterialApp(
+            navigatorKey: navigatorKey,
             title: 'Hanouty',
-            theme: lightTheme,
-            themeMode: themeProvider.themeMode,
-            darkTheme: darkTheme,
+
+
+
             debugShowCheckedModeBanner: false,
             initialRoute: initialRoute,
+
             routes: {
               '/login': (context) => const LoginPage(),
               '/register': (context) => const RegisterPage(),
               '/home': (context) => const MainScreen(),
-              '/farmer': (context) => const FarmMobileNavigation(),
+              '/farmer': (context) => const FarmMainScreen(),
               '/merchant': (context) => const DashboardPage(),
               '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
               '/cart': (context) => const CartScreen(),
-             
+              '/profile':(context)=> const ProfilePage(),
             },
           );
-        });
-      }),
-    );
+        }));
+      }
+
   }
-}
+

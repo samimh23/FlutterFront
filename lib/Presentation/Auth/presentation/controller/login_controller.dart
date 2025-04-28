@@ -21,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
   final LoginUseCase _loginUseCase;
   final SecureStorageService _secureStorageService;
   late final GoogleAuthService _googleAuthService;
+  final GlobalKey<NavigatorState> _navigatorKey;
 
   // Text controllers for form fields
   final TextEditingController emailController = TextEditingController();
@@ -46,8 +47,10 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     required LoginUseCase loginUseCase,
     SecureStorageService? secureStorageService,
+    required GlobalKey<NavigatorState> navigatorKey,
   })  : _loginUseCase = loginUseCase,
-        _secureStorageService = secureStorageService ?? SecureStorageService() {
+        _secureStorageService = secureStorageService ?? SecureStorageService(),
+        _navigatorKey = navigatorKey{
     _checkSavedCredentials();
     _googleAuthService = GoogleAuthService();
   }
@@ -63,6 +66,16 @@ class AuthProvider extends ChangeNotifier {
   void setRememberMe(bool value) {
     rememberMe = value;
     notifyListeners();
+  }
+
+  void resetStatusAfterError({String? message}) {
+    // Only reset if it was actually loading, otherwise might overwrite a valid state
+    if (_status == AuthStatus.loading) {
+      _status = AuthStatus.error; // Or AuthStatus.initial / AuthStatus.unauthenticated
+      _errorMessage = message ?? 'An unexpected error occurred.';
+      notifyListeners();
+      print("AuthProvider status reset after external error."); // DEBUG
+    }
   }
 
   Future<void> _checkSavedCredentials() async {
@@ -112,6 +125,8 @@ class AuthProvider extends ChangeNotifier {
         // Normal authentication flow
         _authResponse = AuthResponse.fromJson(result);
         print('User Role: ${_authResponse?.user?.role}');
+        await _saveAuthData(_authResponse!); // Use helper function
+
 
         await _secureStorageService.saveAccessToken(_authResponse!.accessToken);
         await _secureStorageService.saveRefreshToken(_authResponse!.refreshToken);
@@ -203,6 +218,8 @@ class AuthProvider extends ChangeNotifier {
       print('✅ 2FA verification response: $result');
 
       _authResponse = AuthResponse.fromJson(result);
+      await _saveAuthData(_authResponse!); // Use helper function
+
       print(
           '✅ Access token received: ${_authResponse!.accessToken.substring(0, min(10, _authResponse!.accessToken.length))}...');
 
@@ -226,6 +243,44 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<void> _saveAuthData(AuthResponse response) async {
+    if (response.user == null) {
+      print("❌ Cannot save auth data: User object is null in response.");
+      // Optionally throw an error or handle this case based on your app's logic
+      _errorMessage = "Authentication failed: Missing user data.";
+      _status = AuthStatus.error;
+      notifyListeners();
+      throw Exception("User data missing in authentication response.");
+    }
+
+    // Save standard tokens and app user ID
+    await _secureStorageService.saveAccessToken(response.accessToken);
+    await _secureStorageService.saveRefreshToken(response.refreshToken);
+    // Ensure you save the correct user ID (e.g., _id from your backend)
+    await _secureStorageService.saveUserId(response.user!.id ?? '');
+
+    // --- SAVE HEDERA DETAILS ---
+    // Ensure your AuthResponse.User model has these fields correctly mapped
+    final hederaAccountId = response.user!.headerAccountId;
+    final hederaPrivateKey = response.user!.privateKey;
+
+    if (hederaAccountId != null && hederaAccountId.isNotEmpty) {
+      await _secureStorageService.saveHederaAccountId(hederaAccountId);
+    } else {
+      print("⚠️ Warning: Hedera Account ID not found in user data during save.");
+      // Consider if this should be an error state depending on your app requirements
+    }
+
+    if (hederaPrivateKey != null && hederaPrivateKey.isNotEmpty) {
+      await _secureStorageService.saveHederaPrivateKey(hederaPrivateKey);
+    } else {
+      print("⚠️ Warning: Hedera Private Key not found in user data during save.");
+      // Consider if this should be an error state
+    }
+    print("✅ Auth data (Tokens, UserID, Hedera creds) saved.");
+  }
+
 
   void signInWithGoogle(BuildContext context) async {
     try {
@@ -314,10 +369,41 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Method to navigate based on user role
-  void navigateBasedOnRole(BuildContext context) {
+  void navigateBasedOnRole(/* No BuildContext needed here */) {
     if (_authResponse != null && _authResponse!.user != null) {
-      print(authResponse!.user!.role);
-      RoleBasedRouter.navigateBasedOnRole(context, _authResponse!.user!.role);
+      final userRole = _authResponse!.user!.role;
+      print("Determined role: $userRole. Navigating using GlobalKey."); // DEBUG
+
+      String targetRoute;
+
+      // Determine the target route based on the role
+      switch (userRole) {
+        case 'Farmer':
+          targetRoute = '/farmer';
+          break;
+        case 'Merchant':
+          targetRoute = '/merchant';
+          break;
+        case 'Client': // Assuming '/home' is for clients or a general default
+        case 'admin': // Example: Admins might go home too initially
+        default:
+          targetRoute = '/home';
+          break;
+      }
+      print("Target route: $targetRoute"); // DEBUG
+
+      // Use the GlobalKey's current state to navigate
+      // Use pushNamedAndRemoveUntil to clear the stack (recommended after login)
+      _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        targetRoute,
+            (route) => false, // Remove all routes below the new one
+      );
+
+      // Alternatively, use pushReplacementNamed if you only want to replace LoginPage
+      // _navigatorKey.currentState?.pushReplacementNamed(targetRoute);
+
+    } else {
+      print("Cannot navigate: AuthResponse or User is null."); // DEBUG
     }
   }
 }

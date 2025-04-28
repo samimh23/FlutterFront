@@ -350,34 +350,81 @@ class _LoginFormState extends State<_LoginForm> {
     );
   }
   Future<void> _handleLogin(BuildContext context, AuthProvider authProvider) async {
+    // --- 1. Start Login Process ---
+    print("Login button pressed."); // DEBUG
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() {
-        // Show loading indicator if you have one
-        _isLoading = true;
-      });
+      print("Form is valid."); // DEBUG
 
-      final success = await authProvider.login();
+      // Use ScaffoldMessenger captured before async gap
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      try {
+        print("Calling authProvider.login()..."); // DEBUG
+        // --- 2. Call Provider Login ---
+        final success = await authProvider.login();
+        print("authProvider.login() completed. Success: $success, Status: ${authProvider.status}, Error: ${authProvider.errorMessage}"); // DEBUG
 
-        if (success) {
-          // Check if 2FA is required
-          if (authProvider.status == AuthStatus.requiresTwoFactor) {
-            // Navigate to 2FA verification screen
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const TwoFactorAuthScreen(),
-              ),
-            );
-          } else if (authProvider.status == AuthStatus.authenticated) {
-            // Normal authentication flow - navigate based on role
-            authProvider.navigateBasedOnRole(context);
+        // --- 3. Handle Result (check mounted AFTER await) ---
+        if (mounted) {
+          if (success) {
+            print("Login reported success."); // DEBUG
+            // Check if 2FA is required
+            if (authProvider.status == AuthStatus.requiresTwoFactor) {
+              print("Navigating to 2FA screen."); // DEBUG
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const TwoFactorAuthScreen(),
+                ),
+              );
+            } else if (authProvider.status == AuthStatus.authenticated) {
+              print("Navigating based on role."); // DEBUG
+              // Normal authentication flow - navigate based on role
+              authProvider.navigateBasedOnRole();
+            } else {
+              // This case might indicate an inconsistent state in AuthProvider
+              print("Login success reported, but status is unexpected: ${authProvider.status}"); // DEBUG
+              if (scaffoldMessenger.mounted) {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Login completed but state is unexpected. Please try again.')),
+                );
+              }
+            }
+          } else {
+            // --- 4. Handle Failure ---
+            print("Login reported failure."); // DEBUG
+            // Login failed, rely on the provider's error message if available
+            // If provider didn't set an error message, show a generic one.
+            if (authProvider.errorMessage == null && scaffoldMessenger.mounted) {
+              print("Provider error message is null, showing generic SnackBar."); // DEBUG
+              scaffoldMessenger.showSnackBar(
+                const SnackBar(content: Text('Login failed. Please check your credentials.')),
+              );
+            } else {
+              print("Provider error message: ${authProvider.errorMessage}"); // DEBUG
+              // The Consumer widget should display the authProvider.errorMessage
+            }
           }
+        } else {
+          print("Widget unmounted after login attempt."); // DEBUG
+        }
+
+      } catch (e, stackTrace) {
+        // --- 5. Handle Exceptions ---
+        print("Error during login process: $e"); // DEBUG
+        print("Stack trace: $stackTrace"); // DEBUG
+        if (mounted && scaffoldMessenger.mounted) {
+          scaffoldMessenger.showSnackBar(
+            SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
+          );
+        }
+        // Ensure loading state is reset in provider if an exception occurs
+        // (AuthProvider's login method should ideally handle this internally in its own catch block)
+        if (authProvider.status == AuthStatus.loading) {
+          authProvider.resetStatusAfterError(); // Assuming such a method exists or implement one
         }
       }
+    } else {
+      print("Form is invalid."); // DEBUG
     }
   }
   // Helper method for creating text fields

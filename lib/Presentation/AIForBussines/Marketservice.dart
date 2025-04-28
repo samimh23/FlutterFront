@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'dart:developer' as developer;
+import '../../Core/Utils/Api_EndPoints.dart';
 import '../../Core/Utils/secure_storage.dart';
 import 'market.dart';
 
@@ -9,7 +10,7 @@ class MarketService {
   final String baseUrl;
   final SecureStorageService _secureStorage = SecureStorageService();
 
-  MarketService({this.baseUrl = 'http://localhost:3000'}); // Replace with your actual IP
+  MarketService({this.baseUrl = '${ApiEndpoints.baseUrl}'}); // Replace with your actual IP
 
 
 

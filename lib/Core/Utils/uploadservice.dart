@@ -6,6 +6,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
 import '../Utils/secure_storage.dart';
 import '../api/api_exceptions.dart';
+import 'Api_EndPoints.dart';
 
 class UploadService {
   final SecureStorageService _secureStorageService;
@@ -15,7 +16,7 @@ class UploadService {
     String? baseUrl,
     SecureStorageService? secureStorageService,
   }) :
-        _baseUrl = baseUrl ?? 'http://localhost:3000',
+        _baseUrl = baseUrl ?? ApiEndpoints.baseUrl,
         _secureStorageService = secureStorageService ?? SecureStorageService();
 
   // Upload for mobile platforms using File

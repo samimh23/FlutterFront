@@ -50,15 +50,30 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  Future<List<Order>> findOrdersByShopId(String idShopId) {
-    // TODO: implement findOrdersByShopId
-    throw UnimplementedError();
-  }
+  Future<List<Order>> findOrdersByShopId(String idShopId) async {
+    try {
+      // Call the data source implementation
+      final orderModels = await remoteDataSource.findOrdersByShopId(idShopId);
 
+      // The returned orderModels are already Order objects since OrderModel extends Order,
+      // so we can directly return them
+      return orderModels;
+    } catch (e) {
+      // Log the error or handle it as needed
+      print('Error in OrderRepositoryImpl.findOrdersByShopId: $e');
+      rethrow; // Rethrow to let the caller handle the error
+    }
+  }
   @override
-  Future<List<Order>> findOrdersByUserId(String idUser) async {
+  Future<List<Order>> findOrdersByUserId(String idUser) async{
     return await remoteDataSource.findOrdersByUserId(idUser);
   }
+  @override
+  Future<Order> sendPackage(String id) async {
+    return await remoteDataSource.sendPackage(id);
+  }
+
+
   
   @override
   Future<Order> findOrderById(String id) async{

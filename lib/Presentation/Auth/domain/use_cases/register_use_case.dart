@@ -15,6 +15,7 @@ class RegisterUseCase {
     required String email,
     required List<int> phoneNumbers,
     required String password,
+    required int age,
     int? cin,
     String? profilePicture,
     String? patentImage,

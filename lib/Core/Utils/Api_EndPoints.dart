@@ -1,5 +1,5 @@
 class ApiEndpoints {
-  static const String baseUrl = 'http://localhost:3000';
+  static const String baseUrl = 'http://192.168.40.19:3000';
 
 
 
@@ -27,6 +27,6 @@ class ApiEndpoints {
   static const String verifyTwoFactorEndpoint = '/2fa/verify';
 
   // Request timeout duration
-  static const int timeoutSeconds = 30;
+  static const int timeoutSeconds = 60;
 }
 

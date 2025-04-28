@@ -8,4 +8,6 @@ abstract class OrderRepository {
   Future<Order> updateOrder(String id, Order order);
   Future<List<Order>> findOrdersByUserId(String idUser);
   Future<List<Order>> findOrdersByShopId(String idShopId);
+  Future<Order> sendPackage(String id);
+
 }

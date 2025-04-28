@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Review extends Equatable {
-  final String id;
+  final String? id;
   final int rating;
   final String user;
   final String product;
@@ -9,7 +9,7 @@ class Review extends Equatable {
   final DateTime updatedAt;
 
   Review({
-    required this.id,
+    this.id,
     required this.rating,
     required this.user,
     required this.product,
@@ -19,11 +19,10 @@ class Review extends Equatable {
 
   @override
   List<Object> get props => [
-        id,
-        rating,
-        user,
-        product,
-        createdAt,
-        updatedAt,
-      ];
+    rating,
+    user,
+    product,
+    createdAt,
+    updatedAt,
+  ];
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+  import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/market_details_screen.dart';
@@ -10,6 +10,8 @@ import 'package:hanouty/Presentation/product/presentation/widgets/shop_card.dart
 import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/responsive/responsive_layout.dart';
 import 'package:provider/provider.dart';
+
+import '../../../../Core/Utils/Api_EndPoints.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -496,7 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSpacing: 24,
                   ),
                   itemCount:
-                      provider.markets.length > 6 ? 6 : provider.markets.length,
+                      provider.markets.length ,
                   itemBuilder: (context, index) {
                     return _buildStoreCard(provider.markets[index]);
                   },
@@ -516,7 +518,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final String marketPhone = market.marketPhone ?? 'Unknown Phone';
     final String marketEmail = market.marketEmail ?? 'Unknown Email';
     final String? imagePath = market.marketImage;
-    final String imageUrl = 'http://localhost:3000/$imagePath';
+    final String imageUrl = '${ApiEndpoints.baseUrl}/$imagePath';
     final List<String> products =
         market.products; // Assuming products is a list
     print(products);

@@ -1,0 +1,2 @@
+C:/Users/Sami Mahjoub/StudioProjects/hanouty/android/app/.cxx/Debug/j501yny2/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Sami Mahjoub/StudioProjects/hanouty/android/app/.cxx/Debug/j501yny2/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -14,8 +14,9 @@ import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/delete_farm_mar
 import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_all_farm_markets.dart';
 import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/get_farm_market_by_id.dart';
 import 'package:hanouty/Presentation/Farm/Domain_Layer/usescases/update_farm_market.dart';
+import 'package:hanouty/Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
 import 'package:hanouty/Presentation/Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
-import 'package:hanouty/Presentation/Farm_Crop/Presentation_Layer/pages/farm_main_screen.dart';
+import 'package:hanouty/Presentation/Sales/Domain_Layer/usecases/getSalesByFarmMarket.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote_datasources.dart';
 import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/repositories/normamarket_domain_repository.dart';
@@ -57,6 +58,7 @@ import 'Presentation/Auth/presentation/pages/login_page.dart';
 import 'Presentation/Auth/presentation/pages/profilepage.dart';
 import 'Presentation/Auth/presentation/pages/signup_page.dart';
 import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
+import 'Presentation/Farm/Domain_Layer/usescases/GetSalesByFarmMarketId.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
 import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/add_farm_crop.dart';
@@ -274,6 +276,7 @@ class MyApp extends StatelessWidget {
             addFarmMarket: context.read<AddFarmMarket>(),
             updateFarmMarket: context.read<UpdateFarmMarket>(),
             deleteFarmMarket: context.read<DeleteFarmMarket>(),
+            getSalesByFarmMarketId: context.read<GetSalesByFarmMarketId>()
           ),
           lazy: false,
         ),
@@ -361,6 +364,7 @@ class MyApp extends StatelessWidget {
             updateSale: context.read<UpdateSale>(),
             deleteSale: context.read<DeleteSale>(),
             getFarmCropById: context.read<GetFarmCropById>(),
+            getSalesByFarmMarket: context.read<GetSalesByFarmMarket>()
           ),
         ),
 
@@ -407,7 +411,7 @@ class MyApp extends StatelessWidget {
               '/login': (context) => const LoginPage(),
               '/register': (context) => const RegisterPage(),
               '/home': (context) => const MainScreen(),
-              '/farmer': (context) => const FarmMainScreen(),
+              '/farmer': (context) => const FarmMobileNavigation(),
               '/merchant': (context) => const DashboardPage(),
               '/setup-2fa': (context) => const SetupTwoFactorAuthScreen(),
               '/cart': (context) => const CartScreen(),

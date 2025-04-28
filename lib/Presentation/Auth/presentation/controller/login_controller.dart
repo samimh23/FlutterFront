@@ -5,6 +5,7 @@ import 'package:hanouty/Core/api/api_exceptions.dart';
 import 'package:hanouty/Presentation/Auth/data/models/auth_response.dart';
 import 'package:hanouty/Presentation/Auth/domain/use_cases/login_usecase.dart';
 import 'package:hanouty/Presentation/Auth/presentation/controller/role_based_roter.dart';
+import '../../../../Core/Enums/role_enum.dart';
 import '../../../../Core/Utils/secure_storage.dart';
 import 'GoogleAuthService.dart';
 
@@ -378,29 +379,28 @@ class AuthProvider extends ChangeNotifier {
 
       // Determine the target route based on the role
       switch (userRole) {
-        case 'Farmer':
+        case Role.Farmer:
           targetRoute = '/farmer';
           break;
-        case 'Merchant':
+        case Role.Merchant:
           targetRoute = '/merchant';
           break;
         case 'Client': // Assuming '/home' is for clients or a general default
-        case 'admin': // Example: Admins might go home too initially
+       // Example: Admins might go home too initially
         default:
           targetRoute = '/home';
           break;
       }
       print("Target route: $targetRoute"); // DEBUG
 
-      // Use the GlobalKey's current state to navigate
-      // Use pushNamedAndRemoveUntil to clear the stack (recommended after login)
+
       _navigatorKey.currentState?.pushNamedAndRemoveUntil(
         targetRoute,
             (route) => false, // Remove all routes below the new one
       );
 
       // Alternatively, use pushReplacementNamed if you only want to replace LoginPage
-      // _navigatorKey.currentState?.pushReplacementNamed(targetRoute);
+      //_navigatorKey.currentState?.pushReplacementNamed(targetRoute);
 
     } else {
       print("Cannot navigate: AuthResponse or User is null."); // DEBUG

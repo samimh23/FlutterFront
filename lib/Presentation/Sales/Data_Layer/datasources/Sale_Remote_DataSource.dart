@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../../Core/Utils/Api_EndPoints.dart';
 import '../../Domain_Layer/entities/sale.dart';
 
 class SaleRemoteDataSource {
-  final String apiUrl = 'http://192.168.100.12:3000/farm-sales';
+  final String apiUrl = '${ApiEndpoints.baseUrl}/farm-sales';
 
   // Mock data for development (remove in production)
   final List<Sale> _mockSales = [];

@@ -58,6 +58,7 @@ import 'Presentation/Auth/presentation/pages/login_page.dart';
 import 'Presentation/Auth/presentation/pages/profilepage.dart';
 import 'Presentation/Auth/presentation/pages/signup_page.dart';
 import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
+import 'Presentation/DiseaseDetection/Presentation_Layer/viewmodels/productVM.dart';
 import 'Presentation/Farm/Domain_Layer/usescases/GetSalesByFarmMarketId.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
 import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
@@ -269,6 +270,9 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               DeleteFarmMarket(context.read<FarmMarketRepositoryImpl>()),
         ),
+        Provider<GetSalesByFarmMarketId>(
+          create: (context) => GetSalesByFarmMarketId(context.read<FarmMarketRepositoryImpl>()),
+        ),
         ChangeNotifierProvider<FarmMarketViewModel>(
           create: (context) => FarmMarketViewModel(
             getAllFarmMarkets: context.read<GetAllFarmMarkets>(),
@@ -354,7 +358,9 @@ class MyApp extends StatelessWidget {
         Provider<DeleteSale>(
           create: (context) => DeleteSale(context.read<SaleRepositoryImpl>()),
         ),
-
+        Provider<GetSalesByFarmMarket>(
+          create: (context) => GetSalesByFarmMarket(context.read<SaleRepositoryImpl>()),
+        ),
         ChangeNotifierProvider<SaleViewModel>(
           create: (context) => SaleViewModel(
             getAllSales: context.read<GetAllSales>(),
@@ -364,12 +370,13 @@ class MyApp extends StatelessWidget {
             updateSale: context.read<UpdateSale>(),
             deleteSale: context.read<DeleteSale>(),
             getFarmCropById: context.read<GetFarmCropById>(),
-            getSalesByFarmMarket: context.read<GetSalesByFarmMarket>()
+            getSalesByFarmMarket: context.read<GetSalesByFarmMarket>(),
           ),
         ),
-
         //ahmedd
-
+        ChangeNotifierProvider<DiseaseDetectionViewModel>(
+          create: (_) => DiseaseDetectionViewModel(),
+        ),
         ChangeNotifierProvider(
           create: (context) => AuthProvider(
             loginUseCase: loginUseCase,

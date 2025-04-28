@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../../../../Core/Utils/Api_EndPoints.dart';
 import '../../../Sales/Domain_Layer/entities/sale.dart';
 import '../../Domain_Layer/entity/farm.dart';
 
 class FarmMarketRemoteDataSource {
-  final String baseUrl = 'http://192.168.100.12:3000/farm';
+  final String baseUrl = '${ApiEndpoints.baseUrl}/farm';
   final http.Client client;
 
   FarmMarketRemoteDataSource({http.Client? client}) : client = client ?? http.Client();

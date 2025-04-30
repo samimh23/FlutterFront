@@ -529,6 +529,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       },
                     ),
                     _actionButton(
+
                       Icons.credit_card,
                       "Transfer",
                       _showTransferDialog,

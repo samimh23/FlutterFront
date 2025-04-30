@@ -1,5 +1,6 @@
 class Farm {
   final String? id;
+  final String? owner;
   final String farmName;
   final String farmLocation;
   final String? farmPhone;
@@ -12,6 +13,7 @@ class Farm {
 
   Farm({
     this.id,
+     this.owner,
     required this.farmName,
     required this.farmLocation,
     this.farmPhone,
@@ -25,6 +27,7 @@ class Farm {
   factory Farm.fromJson(Map<String, dynamic> json) {
     return Farm(
       id: json['_id'] ?? json['id'],
+      owner: json['owner'],
       farmName: json['farmName'],
       farmLocation: json['farmLocation'],
       farmPhone: json['farmPhone'],
@@ -40,17 +43,22 @@ class Farm {
     );
   }
 
+  @override
+  String toString() {
+    return 'Farm{id: $id, farmName: $farmName, farmLocation: $farmLocation, farmPhone: $farmPhone}';
+  }
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
       'farmName': farmName,
       'farmLocation': farmLocation,
     };
-
-    if (id != null) data['_id'] = id;
+    if (id != null && id != "null") data['_id'] = id;
+    if(owner != null) data['owner']=owner;
     if (farmPhone != null) data['farmPhone'] = farmPhone;
     if (farmEmail != null) data['farmEmail'] = farmEmail;
     if (marketImage != null) data['marketImage'] = marketImage;
-    if (sale != null) data['Sale'] = sale;  // Updated from crops to Sale
+    if (sale != null) data['sale'] = sale;  // Updated from crops to Sale
     if (farmDescription != null) data['farmDescription'] = farmDescription;
     if (rate != null) data['rate'] = rate;
 
@@ -59,6 +67,7 @@ class Farm {
 
   Farm copyWith({
     String? id,
+    String? owner,
     String? farmName,
     String? farmLocation,
     String? farmPhone,
@@ -70,6 +79,7 @@ class Farm {
   }) {
     return Farm(
       id: id ?? this.id,
+      owner: owner?? this.owner,
       farmName: farmName ?? this.farmName,
       farmLocation: farmLocation ?? this.farmLocation,
       farmPhone: farmPhone ?? this.farmPhone,

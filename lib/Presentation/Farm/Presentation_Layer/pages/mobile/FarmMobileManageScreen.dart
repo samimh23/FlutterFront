@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -28,6 +29,9 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
   late TextEditingController _farmEmailController;
   late TextEditingController _farmDescriptionController;
 
+  final SecureStorageService sc = SecureStorageService();
+  String? ownerId;
+
   File? _selectedImage;
   String? _existingImagePath;
   bool _isUploading = false;
@@ -41,8 +45,14 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
     _farmEmailController = TextEditingController(text: widget.farm?.farmEmail ?? '');
     _farmDescriptionController = TextEditingController(text: widget.farm?.farmDescription ?? '');
     _existingImagePath = widget.farm?.marketImage;
+    _initializeOwnerId();
   }
-
+  Future<void> _initializeOwnerId() async {
+    final id = await sc.getUserId();
+    setState(() {
+      ownerId = id;
+    });
+  }
   @override
   void dispose() {
     _farmNameController.dispose();
@@ -169,9 +179,9 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
       }
 
       final farm = Farm(
-        id: widget.isEditing ? widget.farm!.id : DateTime.now().millisecondsSinceEpoch.toString(),
-        farmName: _farmNameController.text.trim(),
-        farmLocation: _farmLocationController.text.trim(),
+          owner: ownerId,
+        farmName: _farmNameController.text,
+        farmLocation: _farmLocationController.text,
         farmPhone: _farmPhoneController.text.trim().isEmpty ? null : _farmPhoneController.text.trim(),
         farmEmail: _farmEmailController.text.trim().isEmpty ? null : _farmEmailController.text.trim(),
         farmDescription: _farmDescriptionController.text.trim().isEmpty ? null : _farmDescriptionController.text.trim(),

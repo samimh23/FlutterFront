@@ -243,7 +243,7 @@ class MyApp extends StatelessWidget {
         //ahmed
 
         Provider<FarmMarketRemoteDataSource>(
-          create: (_) => FarmMarketRemoteDataSource(),
+          create: (_) => FarmMarketRemoteDataSource(secureStorageService),
         ),
         Provider<FarmMarketRepositoryImpl>(
           create: (context) => FarmMarketRepositoryImpl(

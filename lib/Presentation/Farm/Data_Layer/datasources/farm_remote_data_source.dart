@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../../Core/Utils/Api_EndPoints.dart';
+import '../../../../Core/Utils/secure_storage.dart';
 import '../../../Sales/Domain_Layer/entities/sale.dart';
 import '../../Domain_Layer/entity/farm.dart';
 
 class FarmMarketRemoteDataSource {
   final String baseUrl = '${ApiEndpoints.baseUrl}/farm';
   final http.Client client;
+  final SecureStorageService _secureStorageService;
 
-  FarmMarketRemoteDataSource({http.Client? client}) : client = client ?? http.Client();
+  FarmMarketRemoteDataSource(this._secureStorageService,{http.Client? client}) : client = client ?? http.Client();
 
   Future<List<Farm>> getAllFarmMarkets() async {
     try {
@@ -46,24 +48,37 @@ class FarmMarketRemoteDataSource {
       throw Exception('Failed to fetch farm market: $e');
     }
   }
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await _secureStorageService.getAccessToken();
+    return {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+  }
 
   Future<void> addFarmMarket(Farm farmMarket) async {
     try {
+      // Check if farmName and farmLocation are valid strings
+      if (farmMarket.farmName.isEmpty || farmMarket.farmLocation.isEmpty) {
+        throw Exception('farmName and farmLocation cannot be empty');
+      }
+
+      final headers = await _getAuthHeaders();
       final response = await client.post(
         Uri.parse('$baseUrl'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: json.encode(farmMarket.toJson()),
       );
+
+      // Debugging the request payload and response
       print("Request Payload: ${json.encode(farmMarket.toJson())}");
       print("Response Status: ${response.statusCode}");
       print("Response Body: ${response.body}");
 
       if (response.statusCode != 201 && response.statusCode != 200) {
         throw Exception(
-            'Failed to add farm market. Status: ${response.statusCode}, Response: ${response.body}'
-        );
+            'Failed to add farm market. Status: ${response.statusCode}, Response: ${response.body}');
       }
     } catch (e) {
       print("Exception in addFarmMarket: $e");
@@ -71,13 +86,14 @@ class FarmMarketRemoteDataSource {
     }
   }
 
+
   Future<void> updateFarmMarket(Farm farmMarket) async {
     try {
+      final headers = await _getAuthHeaders();
+
       final response = await client.patch(
         Uri.parse('$baseUrl/${farmMarket.id}'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: json.encode(farmMarket.toJson()),
       );
 

@@ -113,6 +113,7 @@ class FarmMarketViewModel extends ChangeNotifier {
 
   Future<void> createFarmMarket(Farm farmMarket) async {
     _setLoading(true);
+    print("Farm Market Data: ${farmMarket.toString()}");  // Add this line to log farmMarket data
     final result = await addFarmMarket(farmMarket);
     result.fold(
           (failure) {
@@ -126,6 +127,7 @@ class FarmMarketViewModel extends ChangeNotifier {
     );
     _setLoading(false);
   }
+
 
   Future<void> modifyFarmMarket(Farm farmMarket) async {
     _setLoading(true);

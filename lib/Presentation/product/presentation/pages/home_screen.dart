@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+  import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/market_details_screen.dart';
@@ -592,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSpacing: 24,
                   ),
                   itemCount:
-                      provider.markets.length > 6 ? 6 : provider.markets.length,
+                      provider.markets.length ,
                   itemBuilder: (context, index) {
                     return _buildStoreCard(provider.markets[index]);
                   },

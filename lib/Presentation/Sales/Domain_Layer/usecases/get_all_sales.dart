@@ -2,7 +2,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
 import '../entities/sale.dart';
-import '../repositories/sale_repository.dart';
+import '../repositories/Sale_Repository.dart';
 
 class GetAllSales {
   final SaleRepository repository;

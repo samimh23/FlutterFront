@@ -27,22 +27,14 @@ class FarmCropViewModel extends ChangeNotifier {
   List<FarmCrop> _crops = [];
   List<FarmCrop> get crops => _crops;
 
+  FarmCrop? _selectedCrop;
+  FarmCrop? get selectedCrop => _selectedCrop;
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
-
-  // Current farm ID (should be set when user selects a farm)
-  String _currentFarmId = '';
-  String get currentFarmId => _currentFarmId;
-
-  void setCurrentFarm(String farmId) {
-    _currentFarmId = farmId;
-    notifyListeners();
-    // Fetch crops for this farm
-    fetchAllCrops();
-  }
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -60,12 +52,7 @@ class FarmCropViewModel extends ChangeNotifier {
     result.fold(
           (failure) => _setError(failure.toString()),
           (data) {
-        // If currentFarmId is set, filter crops for that farm
-        if (_currentFarmId.isNotEmpty) {
-          _crops = data.where((crop) => crop.farmId == _currentFarmId).toList();
-        } else {
-          _crops = data;
-        }
+        _crops = data;
         _setError(null);
       },
     );
@@ -75,16 +62,8 @@ class FarmCropViewModel extends ChangeNotifier {
   Future<void> createFarmCrop(FarmCrop farmCrop) async {
     _setLoading(true);
 
-    // Ensure farmId is set - if it's not provided in the form, use currentFarmId
-    final String useFarmId = farmCrop.farmId.isEmpty
-        ? _currentFarmId
-        : farmCrop.farmId;
-
-    // Create a new FarmCrop with the correct farmId
-    final cropToAdd = farmCrop.copyWith(farmId: useFarmId);
-
     // Call the use case to add the crop
-    final result = await addFarmCrop(cropToAdd);
+    final result = await addFarmCrop(farmCrop);
 
     result.fold(
           (failure) {
@@ -97,17 +76,22 @@ class FarmCropViewModel extends ChangeNotifier {
       },
     );
 
-
     _setLoading(false);
   }
-
 
   Future<void> modifyFarmCrop(FarmCrop farmCrop) async {
     _setLoading(true);
     final result = await updateFarmCrop(farmCrop);
     result.fold(
           (failure) => _setError(failure.toString()),
-          (_) => fetchAllCrops(),
+          (_) {
+        fetchAllCrops();
+        // Update selected crop if it's the one being modified
+        if (_selectedCrop != null && _selectedCrop!.id == farmCrop.id) {
+          _selectedCrop = farmCrop;
+          notifyListeners();
+        }
+      },
     );
     _setLoading(false);
   }
@@ -117,7 +101,14 @@ class FarmCropViewModel extends ChangeNotifier {
     final result = await deleteFarmCrop(id);
     result.fold(
           (failure) => _setError(failure.toString()),
-          (_) => fetchAllCrops(),
+          (_) {
+        fetchAllCrops();
+        // Clear selected crop if it's the one being deleted
+        if (_selectedCrop != null && _selectedCrop!.id == id) {
+          _selectedCrop = null;
+          notifyListeners();
+        }
+      },
     );
     _setLoading(false);
   }
@@ -128,15 +119,28 @@ class FarmCropViewModel extends ChangeNotifier {
     result.fold(
           (failure) => _setError(failure.toString()),
           (crop) {
+        _selectedCrop = crop;
         // Find the index of the crop in the list
         final index = _crops.indexWhere((c) => c.id == crop.id);
         if (index != -1) {
           // Update the crop in the list
           _crops[index] = crop;
-          notifyListeners();
+        } else {
+          // Add to list if not found
+          _crops.add(crop);
         }
+        notifyListeners();
       },
     );
     _setLoading(false);
+  }
+
+  void selectCrop(String id) {
+    fetchCropById(id);
+  }
+
+  void clearSelectedCrop() {
+    _selectedCrop = null;
+    notifyListeners();
   }
 }

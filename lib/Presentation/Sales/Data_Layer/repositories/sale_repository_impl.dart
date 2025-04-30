@@ -1,10 +1,10 @@
-// In Data_Layer/repositories/sale_repository_impl.dart
 
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
 import '../../Domain_Layer/entities/sale.dart';
-import '../../Domain_Layer/repositories/sale_repository.dart';
+import '../../Domain_Layer/repositories/Sale_Repository.dart';
 import '../datasources/Sale_Remote_DataSource.dart';
+
 
 class SaleRepositoryImpl implements SaleRepository {
   final SaleRemoteDataSource remoteDataSource;
@@ -66,6 +66,17 @@ class SaleRepositoryImpl implements SaleRepository {
     try {
       final sales = await remoteDataSource.getSalesByCropId(cropId);
       return Right(sales);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  
+  @override
+  Future<Either<Failure, List<Sale>>> getSalesByFarmMarket(String farmMarketId)async {
+    try {
+      final remoteSales = await remoteDataSource.getSalesByFarmMarket(farmMarketId);
+      return Right(remoteSales);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

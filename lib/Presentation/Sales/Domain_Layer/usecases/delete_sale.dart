@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
-import '../repositories/sale_repository.dart';
+import '../repositories/Sale_Repository.dart';
+
 import '../../../../core/errors/failure.dart';
 class DeleteSale {
   final SaleRepository repository;

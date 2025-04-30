@@ -79,7 +79,7 @@ class _TwoFactorAuthScreenState extends State<TwoFactorAuthScreen> {
                 });
 
                 if (success) {
-                  authProvider.navigateBasedOnRole(context);
+                  authProvider.navigateBasedOnRole();
                 }
               },
               child: _isLoading

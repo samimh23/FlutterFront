@@ -50,7 +50,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 onChanged: (value) => setState(() => _searchQuery = value),
               )
             : Text(widget.category),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.grey,
         actions: [
           if (!_showSearch)
             IconButton(

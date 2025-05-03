@@ -7,6 +7,7 @@ import '../../Domain_Layer/usescases/GetSalesByFarmMarketId.dart';
 import '../../Domain_Layer/usescases/addfarm.dart';
 import '../../Domain_Layer/usescases/delete_farm_market.dart';
 import '../../Domain_Layer/usescases/get_all_farm_markets.dart';
+import '../../Domain_Layer/usescases/get_farm_by_owner.dart';
 import '../../Domain_Layer/usescases/get_farm_market_by_id.dart';
 import '../../Domain_Layer/usescases/update_farm_market.dart';
 
@@ -17,6 +18,7 @@ class FarmMarketViewModel extends ChangeNotifier {
   final UpdateFarmMarket updateFarmMarket;
   final DeleteFarmMarket deleteFarmMarket;
   final GetSalesByFarmMarketId getSalesByFarmMarketId;
+  final GetFarmsByOwner getFarmsByOwner;
 
   FarmMarketViewModel({
     required this.getAllFarmMarkets,
@@ -25,12 +27,18 @@ class FarmMarketViewModel extends ChangeNotifier {
     required this.updateFarmMarket,
     required this.deleteFarmMarket,
     required this.getSalesByFarmMarketId,
+    required this.getFarmsByOwner,
+
+
   }) {
     fetchAllFarmMarkets();
   }
 
   List<Farm> _farmMarkets = [];
   List<Farm> get farmMarkets => _farmMarkets;
+
+  List<Farm> _farmerFarms = [];
+  List<Farm> get farmerFarms => _farmerFarms;
 
   Farm? _selectedFarmMarket;
   Farm? get selectedFarmMarket => _selectedFarmMarket;
@@ -87,6 +95,20 @@ class FarmMarketViewModel extends ChangeNotifier {
 
         // Fetch sales for this farm market
         fetchSalesForSelectedFarm();
+      },
+    );
+    _setLoading(false);
+  }
+
+  Future<void> fetchFarmsByOwner(String owner) async {
+    _setLoading(true);
+    final result = await getFarmsByOwner(owner);
+    result.fold(
+          (failure) => _setError(failure.toString()),
+          (farms) {
+        _farmerFarms = farms;
+        _setError(null);
+        notifyListeners();
       },
     );
     _setLoading(false);

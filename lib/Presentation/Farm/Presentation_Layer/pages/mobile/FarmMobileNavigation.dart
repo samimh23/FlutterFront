@@ -42,6 +42,9 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
           final viewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
           viewModel.fetchAllFarmMarkets();
         },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.storefront),

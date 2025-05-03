@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../Domain_Layer/entities/sale.dart';
 
 class SaleRemoteDataSource {
-  final String apiUrl = 'http://192.168.100.12:3000/farm-sales';
+  final String apiUrl = 'http://localhost:3000/farm-sales';
 
   // Mock data for development (remove in production)
   final List<Sale> _mockSales = [];

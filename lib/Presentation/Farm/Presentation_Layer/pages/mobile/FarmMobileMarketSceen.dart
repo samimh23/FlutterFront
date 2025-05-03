@@ -205,7 +205,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
       final matchesSearch = farm.farmName.toLowerCase().contains(_searchQuery) ||
           (farm.farmDescription?.toLowerCase().contains(_searchQuery) ?? false) ||
           farm.farmLocation.toLowerCase().contains(_searchQuery) ||
-          (farm.sale?.any((item) => item.toLowerCase().contains(_searchQuery)) ?? false);
+          (farm.sales?.any((item) => item.toLowerCase().contains(_searchQuery)) ?? false);
 
       return matchesSearch;
     }).toList();
@@ -368,7 +368,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
     return GestureDetector(
       onTap: () {
         Provider.of<FarmMarketViewModel>(context, listen: false)
-            .selectFarmMarket(farm.farmName);
+            .selectFarmMarket(farm.id!);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -404,9 +404,9 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                   ),
-                  child: farm.marketImage != null && farm.marketImage!.isNotEmpty
+                  child: farm.farmImage != null && farm.farmImage!.isNotEmpty
                       ? Image.network(
-                    farm.marketImage!,
+                    farm.farmImage!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -447,7 +447,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                           const Icon(Icons.star, color: Colors.white, size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            farm.rate!.toStringAsFixed(1),
+                            farm.rate!,
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -460,7 +460,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                   ),
 
                 // Available items badge
-                if (farm.sale != null && farm.sale!.isNotEmpty)
+                if (farm.sales != null && farm.sales!.isNotEmpty)
                   Positioned(
                     bottom: 8,
                     left: 8,
@@ -476,7 +476,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                           const Icon(Icons.shopping_basket, color: Colors.white, size: 12),
                           const SizedBox(width: 4),
                           Text(
-                            '${farm.sale!.length} items',
+                            '${farm.sales!.length} items',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,

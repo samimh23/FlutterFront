@@ -1,13 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../Core/Utils/secure_storage.dart';
 import '../../../Domain_Layer/entity/farm.dart';
 import '../../viewmodels/farmviewmodel.dart';
 import 'FarmMobileDetailScreen.dart';
 import 'FarmMobileManageScreen.dart';
 
-class FarmListScreen extends StatelessWidget {
+class FarmListScreen extends StatefulWidget {
   const FarmListScreen({Key? key}) : super(key: key);
+
+  @override
+  State<FarmListScreen> createState() => _FarmListScreenState();
+}
+
+class _FarmListScreenState extends State<FarmListScreen> {
+  final SecureStorageService sc = SecureStorageService();
+  String? owner;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeOwnerId();
+  }
+
+  Future<void> _initializeOwnerId() async {
+    final id = await sc.getUserId();
+    setState(() {
+      owner = id;
+    });
+    if (owner != null) {
+      _fetchUserFarms();
+    }
+  }
+
+  Future<void> _fetchUserFarms() async {
+    if (owner != null) {
+      final viewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
+      await viewModel.fetchFarmsByOwner(owner!);
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,13 +54,25 @@ class FarmListScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              Provider.of<FarmMarketViewModel>(context, listen: false)
-                  .fetchAllFarmMarkets();
+              if (owner != null) {
+                setState(() {
+                  isLoading = true;
+                });
+                Provider.of<FarmMarketViewModel>(context, listen: false)
+                    .fetchFarmsByOwner(owner!)
+                    .then((_) {
+                  setState(() {
+                    isLoading = false;
+                  });
+                });
+              }
             },
           ),
         ],
       ),
-      body: Consumer<FarmMarketViewModel>(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Consumer<FarmMarketViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -42,7 +90,11 @@ class FarmListScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => viewModel.fetchAllFarmMarkets(),
+                    onPressed: () {
+                      if (owner != null) {
+                        viewModel.fetchFarmsByOwner(owner!);
+                      }
+                    },
                     child: const Text('Retry'),
                   ),
                 ],
@@ -50,7 +102,7 @@ class FarmListScreen extends StatelessWidget {
             );
           }
 
-          if (viewModel.farmMarkets.isEmpty) {
+          if (viewModel.farmerFarms.isEmpty) {
             return const Center(
               child: Text(
                 'No farms available.\nAdd a new farm to get started!',
@@ -60,9 +112,9 @@ class FarmListScreen extends StatelessWidget {
           }
 
           return ListView.builder(
-            itemCount: viewModel.farmMarkets.length,
+            itemCount: viewModel.farmerFarms.length,
             itemBuilder: (context, index) {
-              final farm = viewModel.farmMarkets[index];
+              final farm = viewModel.farmerFarms[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 elevation: 2,
@@ -94,7 +146,11 @@ class FarmListScreen extends StatelessWidget {
                                 farm: farm,
                               ),
                             ),
-                          );
+                          ).then((_) {
+                            if (owner != null) {
+                              viewModel.fetchFarmsByOwner(owner!);
+                            }
+                          });
                         },
                       ),
                       IconButton(
@@ -116,7 +172,11 @@ class FarmListScreen extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => FarmMobileDetailScreen(farm: farm),
                       ),
-                    );
+                    ).then((_) {
+                      if (owner != null) {
+                        viewModel.fetchFarmsByOwner(owner!);
+                      }
+                    });
                   },
                 ),
               );
@@ -132,7 +192,12 @@ class FarmListScreen extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => const AddEditFarmScreen(isEditing: false),
             ),
-          );
+          ).then((_) {
+            if (owner != null) {
+              Provider.of<FarmMarketViewModel>(context, listen: false)
+                  .fetchFarmsByOwner(owner!);
+            }
+          });
         },
       ),
     );
@@ -154,6 +219,9 @@ class FarmListScreen extends StatelessWidget {
             onPressed: () {
               viewModel.removeFarmMarket(farmId);
               Navigator.pop(context);
+              if (owner != null) {
+                viewModel.fetchFarmsByOwner(owner!);
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

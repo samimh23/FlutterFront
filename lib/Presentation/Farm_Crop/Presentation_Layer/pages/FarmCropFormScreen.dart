@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import '../../../../Core/Utils/secure_storage.dart';
+import '../../../Farm/Domain_Layer/entity/farm.dart';
+import '../../../Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
 import '../../Presentation_Layer/viewmodels/farm_crop_viewmodel.dart';
 
@@ -26,6 +29,11 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
   late TextEditingController _nameController;
   late TextEditingController _quantityController;
 
+  final SecureStorageService sc = SecureStorageService();
+  String? owner;
+  bool isLoading = true;
+
+  String? _selectedFarmMarketId;
   String _selectedType = 'Beefsteak tomatoes';
   DateTime _implantDate = DateTime.now();
   DateTime? _harvestedDate;
@@ -46,9 +54,15 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
     'Other'
   ];
 
+
+
   @override
   void initState() {
     super.initState();
+    _initializeOwnerId();
+
+
+
 
     // Initialize controllers with existing data or empty strings
     _nameController = TextEditingController(
@@ -60,11 +74,40 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
 
     // Initialize other fields if editing
     if (widget.isEditing && widget.cropToEdit != null) {
+      _selectedFarmMarketId = widget.cropToEdit!.farmMarketId; // Initialize selected farm market
       _selectedType = widget.cropToEdit!.type;
       _implantDate = widget.cropToEdit!.implantDate;
       _harvestedDate = widget.cropToEdit!.harvestedDay;
       _auditStatus = FarmCrop.stringToAuditStatus(widget.cropToEdit!.auditStatus) ?? AuditStatus.pending;
       _existingImageUrl = widget.cropToEdit!.picture;
+    }
+
+    if (!widget.isEditing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final farmMarketViewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
+
+        farmMarketViewModel.fetchFarmsByOwner(owner!); // Replace with actual user ID
+      });
+    }
+  }
+
+  Future<void> _fetchUserFarms() async {
+    if (owner != null) {
+      final viewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
+      await viewModel.fetchFarmsByOwner(owner!);
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _initializeOwnerId() async {
+    final id = await sc.getUserId();
+    setState(() {
+      owner = id;
+    });
+    if (owner != null) {
+      _fetchUserFarms();
     }
   }
 
@@ -166,6 +209,12 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // Validate that a farm market is selected
+      if (_selectedFarmMarketId == null || _selectedFarmMarketId!.isEmpty) {
+        _showErrorSnackBar('Please select a farm market');
+        return;
+      }
+
       setState(() {
         _isSubmitting = true;
       });
@@ -174,9 +223,10 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
       // For now, we'll just use the path or existing URL
       final imageUrl = _imageFile?.path ?? _existingImageUrl;
 
-      // Create a new crop object
+      // Create a new crop object with farmMarketId
       final crop = FarmCrop(
         id: widget.isEditing ? widget.cropToEdit!.id : null,
+        farmMarketId: _selectedFarmMarketId!, // Include the selected farm market ID
         productName: _nameController.text,
         type: _selectedType,
         implantDate: _implantDate,
@@ -280,7 +330,8 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryColor = Colors.green.shade700; // Changed to green.shade700
+    final primaryColor = Colors.green.shade700;
+    final farmMarketViewModel = Provider.of<FarmMarketViewModel>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -316,6 +367,65 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                     ),
                   ),
                 ),
+
+                // Farm Market Dropdown - Modified to use farmerFarms instead of farmMarkets
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: farmMarketViewModel.isLoading
+                      ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                      : DropdownButtonHideUnderline(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedFarmMarketId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Your Farm',
+                        border: InputBorder.none,
+                      ),
+                      icon: const Icon(Icons.arrow_drop_down),
+                      hint: const Text('Select Your Farm'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a farm';
+                        }
+                        return null;
+                      },
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedFarmMarketId = newValue;
+                          });
+                        }
+                      },
+                      items: farmMarketViewModel.farmerFarms // Use farmerFarms instead of farmMarkets
+                          .map<DropdownMenuItem<String>>((Farm farm) {
+                        return DropdownMenuItem<String>(
+                          value: farm.id,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.store,
+                                color: primaryColor,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(farm.farmName),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 // Crop Name Field
                 TextFormField(

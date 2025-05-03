@@ -44,7 +44,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
         backgroundColor: AppColors.primary,
         elevation: 2,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.green),
       ),
       body: isDesktop ? _buildDesktopLayout() : _buildMobileTabletLayout(),
       bottomNavigationBar: isDesktop ? null : _buildAddToCartButton(context),

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
-import 'package:hanouty/Core/theme/theme_provider.dart';
 import 'package:hanouty/Presentation/Auth/domain/use_cases/verify_reset_code_usecase.dart';
 import 'package:hanouty/Presentation/Auth/presentation/controller/password_reset_controller.dart';
 import 'package:hanouty/Presentation/Auth/presentation/pages/SetupTwoFactorAuthScreen.dart';
@@ -36,7 +35,6 @@ import 'package:hanouty/Presentation/review/presentation/provider/review_provide
 import 'package:hanouty/nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'Core/api/Api_Serice.dart';
-import 'Core/theme/theme_data.dart';
 import 'Presentation/AIForBussines/DashboardViewModel.dart';
 import 'Presentation/AIForBussines/apiservice.dart';
 import 'Presentation/Auth/data/repositories/auth_repository_impl.dart';
@@ -54,6 +52,7 @@ import 'Presentation/Auth/presentation/pages/signup_page.dart';
 import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
 import 'Presentation/DiseaseDetection/Presentation_Layer/viewmodels/productVM.dart' show DiseaseDetectionViewModel;
 import 'Presentation/Farm/Domain_Layer/usescases/GetSalesByFarmMarketId.dart' show GetSalesByFarmMarketId;
+import 'Presentation/Farm/Domain_Layer/usescases/get_farm_by_owner.dart';
 import 'Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
 import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
@@ -61,6 +60,7 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/add_farm_crop.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/calculate_total_expenses.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/delete_farm_crop.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_all_farm_crops.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_id.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/update_farm_crop.dart';
 import 'Presentation/Farm_Crop/Presentation_Layer/viewmodels/farm_crop_viewmodel.dart';
@@ -227,7 +227,7 @@ class MyApp extends StatelessWidget {
         //ahmed
 
         Provider<FarmMarketRemoteDataSource>(
-          create: (_) => FarmMarketRemoteDataSource(),
+          create: (_) => FarmMarketRemoteDataSource(authService: SecureStorageService(),),
         ),
         Provider<FarmMarketRepositoryImpl>(
           create: (context) => FarmMarketRepositoryImpl(
@@ -257,6 +257,9 @@ class MyApp extends StatelessWidget {
          Provider<GetSalesByFarmMarketId>(
           create: (context) => GetSalesByFarmMarketId(context.read<FarmMarketRepositoryImpl>()),
         ),
+        Provider<GetFarmsByOwner>(
+          create: (context) => GetFarmsByOwner(context.read<FarmMarketRepositoryImpl>()),
+        ),
         ChangeNotifierProvider<FarmMarketViewModel>(
           create: (context) => FarmMarketViewModel(
             getAllFarmMarkets: context.read<GetAllFarmMarkets>(),
@@ -265,6 +268,8 @@ class MyApp extends StatelessWidget {
             updateFarmMarket: context.read<UpdateFarmMarket>(),
             deleteFarmMarket: context.read<DeleteFarmMarket>(),
             getSalesByFarmMarketId: context.read<GetSalesByFarmMarketId>(),
+            getFarmsByOwner: context.read<GetFarmsByOwner>(),
+
 
           ),
           lazy: false,
@@ -278,7 +283,7 @@ class MyApp extends StatelessWidget {
 
         // Farm crop providers
         Provider<FarmCropRemoteDataSource>(
-          create: (_) => FarmCropRemoteDataSource(),
+          create: (_) => FarmCropRemoteDataSource(authService: SecureStorageService(),),
         ),
         Provider<FarmCropRepositoryImpl>(
           create: (context) => FarmCropRepositoryImpl(
@@ -308,6 +313,9 @@ class MyApp extends StatelessWidget {
         Provider<CalculateTotalExpenses>(
           create: (context) => CalculateTotalExpenses(),
         ),
+        Provider<GetFarmCropsByFarmMarketId>(
+          create: (context) => GetFarmCropsByFarmMarketId(context.read<FarmCropRepositoryImpl>()),
+        ),
         ChangeNotifierProvider<FarmCropViewModel>(
           create: (context) => FarmCropViewModel(
             getAllFarmCrops: context.read<GetAllFarmCrops>(),
@@ -315,6 +323,8 @@ class MyApp extends StatelessWidget {
             addFarmCrop: context.read<AddFarmCrop>(),
             updateFarmCrop: context.read<UpdateFarmCrop>(),
             deleteFarmCrop: context.read<DeleteFarmCrop>(),
+            getFarmCropsByFarmMarketId: context.read<GetFarmCropsByFarmMarketId>(),
+
             // calculateTotalExpenses: context.read<CalculateTotalExpenses>(),
           ),
           lazy: false,
@@ -352,7 +362,7 @@ class MyApp extends StatelessWidget {
         Provider<GetSalesByFarmMarket>(
           create: (context) => GetSalesByFarmMarket(context.read<SaleRepositoryImpl>()),
         ),
-        // Add GetSalesByFarmMarketId for the Sales feature
+        
 
         ChangeNotifierProvider<SaleViewModel>(
           create: (context) => SaleViewModel(
@@ -394,15 +404,13 @@ class MyApp extends StatelessWidget {
     create: (_) => DashboardViewModel(apiService),)
       ],
       child: Builder(builder: (context) {
-        return Consumer<ThemeProvider>(builder: (context, themeProvider, _) {
-          print(
-              'Building MaterialApp with themeMode: ${themeProvider.themeMode}');
+      
 
           return MaterialApp(
             title: 'Hanouty',
-            theme: lightTheme,
-            themeMode: themeProvider.themeMode,
-            darkTheme: darkTheme,
+          //  theme: lightTheme,
+          //  themeMode: themeProvider.themeMode,
+          //  darkTheme: darkTheme,
             debugShowCheckedModeBanner: false,
             initialRoute: initialRoute,
             routes: {
@@ -416,8 +424,8 @@ class MyApp extends StatelessWidget {
              
             },
           );
-        });
-      }),
+        },
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
 import '../../Domain_Layer/usecases/get_all_farm_crops.dart';
+import '../../Domain_Layer/usecases/get_farm_crop_by_farm.dart';
 import '../../Domain_Layer/usecases/get_farm_crop_by_id.dart';
 import '../../Domain_Layer/usecases/add_farm_crop.dart';
 import '../../Domain_Layer/usecases/update_farm_crop.dart';
@@ -13,6 +14,8 @@ class FarmCropViewModel extends ChangeNotifier {
   final AddFarmCrop addFarmCrop;
   final UpdateFarmCrop updateFarmCrop;
   final DeleteFarmCrop deleteFarmCrop;
+  final GetFarmCropsByFarmMarketId getFarmCropsByFarmMarketId;
+
 
   FarmCropViewModel({
     required this.getAllFarmCrops,
@@ -20,6 +23,8 @@ class FarmCropViewModel extends ChangeNotifier {
     required this.addFarmCrop,
     required this.updateFarmCrop,
     required this.deleteFarmCrop,
+    required this.getFarmCropsByFarmMarketId,
+
   }) {
     fetchAllCrops();
   }
@@ -54,6 +59,20 @@ class FarmCropViewModel extends ChangeNotifier {
           (data) {
         _crops = data;
         _setError(null);
+      },
+    );
+    _setLoading(false);
+  }
+
+  Future<void> fetchCropsByFarmMarketId(String farmMarketId) async {
+    _setLoading(true);
+    final result = await getFarmCropsByFarmMarketId(farmMarketId);
+    result.fold(
+          (failure) => _setError(failure.toString()),
+          (data) {
+        _crops = data;
+        _setError(null);
+        notifyListeners();
       },
     );
     _setLoading(false);

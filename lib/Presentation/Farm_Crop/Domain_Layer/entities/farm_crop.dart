@@ -44,7 +44,7 @@ class Expense extends Equatable {
 
 class FarmCrop extends Equatable {
   final String? id;
-  // Removed farmId as it doesn't exist in the backend schema
+  final String farmMarketId;
   final String productName;
   final String type;
   final DateTime implantDate;
@@ -58,6 +58,7 @@ class FarmCrop extends Equatable {
 
   const FarmCrop({
     this.id,
+    required this.farmMarketId,
     required this.productName,
     required this.type,
     required this.implantDate,
@@ -105,6 +106,7 @@ class FarmCrop extends Equatable {
   factory FarmCrop.fromJson(Map<String, dynamic> json) {
     return FarmCrop(
       id: json['_id'] as String? ?? json['id'] as String?,
+      farmMarketId: json['farmMarketId'] as String,
       productName: json['productName'] as String,
       type: json['type'] as String,
       implantDate: DateTime.parse(json['implantDate'] as String),
@@ -120,17 +122,19 @@ class FarmCrop extends Equatable {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool forUpdate = false}) {
     final Map<String, dynamic> data = {
+      'farmMarketId': farmMarketId,
       'productName': productName,
       'type': type,
       'implantDate': implantDate.toIso8601String(),
       'expenses': expenses.map((e) => e.toJson()).toList(),
     };
 
-    if (id != null && id!.isNotEmpty) {
+    if (!forUpdate && id != null && id!.isNotEmpty) {
       data['_id'] = id;
     }
+
     if (harvestedDay != null) {
       data['harvestedDay'] = harvestedDay!.toIso8601String();
     }
@@ -155,6 +159,7 @@ class FarmCrop extends Equatable {
 
   FarmCrop copyWith({
     String? id,
+    String? farmMarketId,
     String? productName,
     String? type,
     DateTime? implantDate,
@@ -168,6 +173,7 @@ class FarmCrop extends Equatable {
   }) {
     return FarmCrop(
       id: id ?? this.id,
+      farmMarketId: farmMarketId ?? this.farmMarketId,
       productName: productName ?? this.productName,
       type: type ?? this.type,
       implantDate: implantDate ?? this.implantDate,
@@ -184,6 +190,7 @@ class FarmCrop extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    farmMarketId,
     productName,
     type,
     implantDate,

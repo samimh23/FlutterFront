@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../Domain_Layer/entities/farm_crop.dart';
+import '../../../Farm/Domain_Layer/entity/farm.dart';
+import '../../../Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
 import '../../Presentation_Layer/viewmodels/farm_crop_viewmodel.dart';
 import 'FarmCropDetailScreen.dart';
 import 'FarmCropFormScreen.dart';
-
+import '../../../../Core/Utils/secure_storage.dart';
 
 class FarmCropsListScreen extends StatefulWidget {
   const FarmCropsListScreen({Key? key}) : super(key: key);
@@ -20,15 +22,61 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  String? _selectedFarmMarketId;
+  String? _userId;
+  final SecureStorageService _secureStorage = SecureStorageService();
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    // Refresh crops list when screen is loaded
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<FarmCropViewModel>(context, listen: false).fetchAllCrops();
-    });
+
+    // Initialize user ID and fetch farms
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    // Get user ID from secure storage
+    final userId = await _secureStorage.getUserId();
+
+    if (userId != null) {
+      setState(() {
+        _userId = userId;
+      });
+
+      // Fetch farms after screen is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final farmViewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
+        farmViewModel.fetchFarmsByOwner(userId).then((_) {
+          // After farms are loaded, set the selected farm to the first one in the list (if available)
+          if (farmViewModel.farmerFarms.isNotEmpty && _selectedFarmMarketId == null) {
+            setState(() {
+              _selectedFarmMarketId = farmViewModel.farmerFarms.first.id;
+              _isInitialized = true;
+            });
+
+            // Now fetch crops for the selected farm
+            Provider.of<FarmCropViewModel>(context, listen: false)
+                .fetchCropsByFarmMarketId(_selectedFarmMarketId!);
+          } else {
+            setState(() {
+              _isInitialized = true;
+            });
+            // Fetch all crops if there are no farms
+            Provider.of<FarmCropViewModel>(context, listen: false).fetchAllCrops();
+          }
+        });
+      });
+    } else {
+      // If no user ID, just fetch all crops
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<FarmCropViewModel>(context, listen: false).fetchAllCrops();
+        setState(() {
+          _isInitialized = true;
+        });
+      });
+    }
   }
 
   @override
@@ -68,8 +116,8 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
         },
         child: const Icon(Icons.add),
       ),
-      body: Consumer<FarmCropViewModel>(
-        builder: (context, viewModel, child) {
+      body: Consumer2<FarmCropViewModel, FarmMarketViewModel>(
+        builder: (context, cropViewModel, farmViewModel, child) {
           return NestedScrollView(
             controller: _scrollController,
             headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -168,37 +216,105 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
                           ),
                         ] : null,
                       ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search crop name, type...',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
+                      child: Row(
+                        children: [
+                          // Farm Markets Dropdown
+                          Expanded(
+                            flex: 2,
+                            child: Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  hint: Text('Select Farm'),
+                                  value: _selectedFarmMarketId,
+                                  icon: const Icon(Icons.arrow_drop_down),
+                                  style: TextStyle(color: Colors.black87, fontSize: 14),
+                                  onChanged: farmViewModel.isLoading || !_isInitialized
+                                      ? null
+                                      : (String? newValue) {
+                                    setState(() {
+                                      _selectedFarmMarketId = newValue;
+                                    });
+                                    if (newValue != null) {
+                                      cropViewModel.fetchCropsByFarmMarketId(newValue);
+                                    } else {
+                                      cropViewModel.fetchAllCrops();
+                                    }
+                                  },
+                                  items: [
+                                    // "All Farms" option
+
+                                    // Farm options from the view model
+                                    ...farmViewModel.farmerFarms.map<DropdownMenuItem<String>>((Farm farm) {
+                                      return DropdownMenuItem<String>(
+                                        value: farm.id,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.agriculture, color: primaryColor, size: 16),
+                                            SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                farm.farmName,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value.toLowerCase();
-                          });
-                        },
+
+                          SizedBox(width: 8),
+
+                          // Search Field
+                          Expanded(
+                            flex: 3,
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Search crops...',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: BorderSide.none,
+                                ),
+                                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchQuery = value.toLowerCase();
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ];
             },
-            body: _buildContent(viewModel, context),
+            body: !_isInitialized || farmViewModel.isLoading
+                ? Center(child: CircularProgressIndicator())
+                : _buildContent(cropViewModel, farmViewModel, context),
           );
         },
       ),
     );
   }
 
-  Widget _buildContent(FarmCropViewModel viewModel, BuildContext context) {
+  Widget _buildContent(FarmCropViewModel viewModel, FarmMarketViewModel farmViewModel, BuildContext context) {
     if (viewModel.isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -217,7 +333,7 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
     }).toList();
 
     if (filteredCrops.isEmpty) {
-      return _buildEmptyView(context);
+      return _buildEmptyView(context, _selectedFarmMarketId != null);
     }
 
     return _buildCropsGrid(filteredCrops, context);
@@ -269,7 +385,13 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => viewModel.fetchAllCrops(),
+              onPressed: () {
+                if (_selectedFarmMarketId != null) {
+                  viewModel.fetchCropsByFarmMarketId(_selectedFarmMarketId!);
+                } else {
+                  viewModel.fetchAllCrops();
+                }
+              },
               icon: const Icon(Icons.refresh),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
@@ -287,7 +409,7 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
     );
   }
 
-  Widget _buildEmptyView(BuildContext context) {
+  Widget _buildEmptyView(BuildContext context, bool isFiltered) {
     return Center(
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -295,15 +417,17 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              _searchQuery.isEmpty ? Icons.grass : Icons.search_off,
+              isFiltered ? Icons.filter_list : (_searchQuery.isEmpty ? Icons.grass : Icons.search_off),
               size: 80,
               color: Colors.grey.shade400,
             ),
             const SizedBox(height: 24),
             Text(
-              _searchQuery.isEmpty
+              isFiltered
+                  ? 'No crops in this farm yet'
+                  : (_searchQuery.isEmpty
                   ? 'No crops available yet'
-                  : 'No crops match your search',
+                  : 'No crops match your search'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -313,9 +437,11 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _searchQuery.isEmpty
+              isFiltered
+                  ? 'Add a crop to this farm to get started'
+                  : (_searchQuery.isEmpty
                   ? 'Start by adding your first crop'
-                  : 'Try adjusting your search or explore other options',
+                  : 'Try adjusting your search or explore other options'),
               style: TextStyle(
                 color: Colors.grey.shade600,
                 fontSize: 14,
@@ -323,27 +449,28 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            if (_searchQuery.isEmpty)
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FarmCropFormScreen(),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FarmCropFormScreen(
+                      isEditing: false,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Add New Crop'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
                   ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Add New Crop'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
+            ),
           ],
         ),
       ),

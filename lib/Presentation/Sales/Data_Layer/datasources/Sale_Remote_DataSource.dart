@@ -167,7 +167,7 @@ class SaleRemoteDataSource {
       }
     } catch (e) {
       throw Exception(
-         'Error fetching sales: ${e.toString()}',
+        'Error fetching sales: ${e.toString()}',
       );
     }
   }

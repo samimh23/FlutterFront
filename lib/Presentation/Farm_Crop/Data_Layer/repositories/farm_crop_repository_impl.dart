@@ -30,6 +30,16 @@ class FarmCropRepositoryImpl implements FarmCropRepository {
   }
 
   @override
+  Future<Either<Failure, List<FarmCrop>>> getFarmCropsByFarmMarketId(String farmMarketId) async {
+    try {
+      final crops = await remoteDataSource.getCropsByFarmMarketId(farmMarketId);
+      return Right(crops);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> addFarmCrop(FarmCrop farmCrop) async {
     try {
       await remoteDataSource.addCrop(farmCrop);

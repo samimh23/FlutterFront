@@ -18,8 +18,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import '../../../../Core/Utils/secure_storage.dart';
+import '../../../../hedera_api_service.dart';
 
 class NormalMarketProvider extends ChangeNotifier {
+
+
   final GetNormalMarkets getNormalMarkets;
   final GetMyNormalMarkets getMyNormalMarkets;
   final GetNormalMarketById getNormalMarketById;
@@ -99,6 +102,11 @@ class NormalMarketProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+
+
+
+
 
   // Method to load authenticated user's markets
   Future<void> loadMyMarkets() async {

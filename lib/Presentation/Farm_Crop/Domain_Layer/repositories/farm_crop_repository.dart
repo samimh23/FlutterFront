@@ -9,4 +9,5 @@ abstract class FarmCropRepository {
   Future<Either<Failure, void>> addFarmCrop(FarmCrop farmCrop);
   Future<Either<Failure, void>> updateFarmCrop(FarmCrop farmCrop);
   Future<Either<Failure, void>> deleteFarmCrop(String id);
+  Future<Either<Failure, List<FarmCrop>>> getFarmCropsByFarmMarketId(String farmMarketId);
 }

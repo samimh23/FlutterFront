@@ -22,6 +22,16 @@ class FarmMarketRepositoryImpl implements FarmMarketRepository {
   }
 
   @override
+  Future<Either<Failure, List<Farm>>> getFarmsByOwner(String owner) async {
+    try {
+      final farms = await remoteDataSource.getFarmsByOwner(owner);
+      return Right(farms);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, Farm>> getFarmMarketById(String id) async {
     try {
       final farmMarket = await remoteDataSource.getFarmMarketById(id);
@@ -44,6 +54,9 @@ class FarmMarketRepositoryImpl implements FarmMarketRepository {
 
   @override
   Future<Either<Failure, void>> updateFarmMarket(Farm farmMarket) async {
+    if (farmMarket.id == null) {
+      throw Exception('Cannot update farm market: ID is missing');
+    }
     try {
       await remoteDataSource.updateFarmMarket(farmMarket);
       return const Right(null);

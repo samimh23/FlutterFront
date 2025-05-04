@@ -64,6 +64,34 @@ class HederaApiService {
       rethrow;
     }
   }
+  Future<Map<String, dynamic>> getBalancebyMarket(String marketId) async {
+    try {
+      final headers = await _getAuthHeaders();
+
+      final uri = Uri.parse('$baseUrl/hedera/balance/bymarket')
+          .replace(queryParameters: {'marketid': marketId});
+
+      final response = await http.get(
+        uri,
+        headers: headers,
+      ).timeout(Duration(seconds: 30));
+
+      print('Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print('Balance retrieved successfully');
+        return result;
+      } else {
+        print('Error response: ${response.body}');
+        throw Exception('Failed to load balance: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching balance: $e');
+      rethrow;
+    }
+  }
+
 
   Future<Map<String, dynamic>> transferTokens({
     required String receiverAccountId,

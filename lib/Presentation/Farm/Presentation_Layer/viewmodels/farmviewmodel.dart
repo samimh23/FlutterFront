@@ -7,6 +7,7 @@ import '../../Domain_Layer/usescases/GetSalesByFarmMarketId.dart';
 import '../../Domain_Layer/usescases/addfarm.dart';
 import '../../Domain_Layer/usescases/delete_farm_market.dart';
 import '../../Domain_Layer/usescases/get_all_farm_markets.dart';
+import '../../Domain_Layer/usescases/get_farm_by_owner.dart';
 import '../../Domain_Layer/usescases/get_farm_market_by_id.dart';
 import '../../Domain_Layer/usescases/update_farm_market.dart';
 
@@ -17,6 +18,7 @@ class FarmMarketViewModel extends ChangeNotifier {
   final UpdateFarmMarket updateFarmMarket;
   final DeleteFarmMarket deleteFarmMarket;
   final GetSalesByFarmMarketId getSalesByFarmMarketId;
+  final GetFarmsByOwner getFarmsByOwner;
 
   FarmMarketViewModel({
     required this.getAllFarmMarkets,
@@ -25,12 +27,18 @@ class FarmMarketViewModel extends ChangeNotifier {
     required this.updateFarmMarket,
     required this.deleteFarmMarket,
     required this.getSalesByFarmMarketId,
+    required this.getFarmsByOwner,
+
+
   }) {
     fetchAllFarmMarkets();
   }
 
   List<Farm> _farmMarkets = [];
   List<Farm> get farmMarkets => _farmMarkets;
+
+  List<Farm> _farmerFarms = [];
+  List<Farm> get farmerFarms => _farmerFarms;
 
   Farm? _selectedFarmMarket;
   Farm? get selectedFarmMarket => _selectedFarmMarket;
@@ -92,6 +100,20 @@ class FarmMarketViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
+  Future<void> fetchFarmsByOwner(String owner) async {
+    _setLoading(true);
+    final result = await getFarmsByOwner(owner);
+    result.fold(
+          (failure) => _setError(failure.toString()),
+          (farms) {
+        _farmerFarms = farms;
+        _setError(null);
+        notifyListeners();
+      },
+    );
+    _setLoading(false);
+  }
+
   Future<void> fetchSalesForSelectedFarm() async {
     if (_selectedFarmMarket == null || _selectedFarmMarket!.id == null) {
       _farmSales = [];
@@ -113,7 +135,6 @@ class FarmMarketViewModel extends ChangeNotifier {
 
   Future<void> createFarmMarket(Farm farmMarket) async {
     _setLoading(true);
-    print("Farm Market Data: ${farmMarket.toString()}");  // Add this line to log farmMarket data
     final result = await addFarmMarket(farmMarket);
     result.fold(
           (failure) {
@@ -128,7 +149,6 @@ class FarmMarketViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
-
   Future<void> modifyFarmMarket(Farm farmMarket) async {
     _setLoading(true);
     final result = await updateFarmMarket(farmMarket);
@@ -136,7 +156,6 @@ class FarmMarketViewModel extends ChangeNotifier {
           (failure) => _setError(failure.toString()),
           (_) {
         fetchAllFarmMarkets();
-        // Also update selected farm market if it's the one being modified
         if (_selectedFarmMarket != null && _selectedFarmMarket!.id == farmMarket.id) {
           _selectedFarmMarket = farmMarket;
           // Refresh sales after farm update

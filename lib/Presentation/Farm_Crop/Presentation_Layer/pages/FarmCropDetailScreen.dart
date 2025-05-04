@@ -839,82 +839,165 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Record Harvest'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(
-                'Harvest Date: ${DateFormat('MMM d, yyyy').format(harvestDate)}',
-              ),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: () async {
-                final DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: harvestDate,
-                  firstDate: crop.implantDate,
-                  lastDate: DateTime.now(),
-                );
-                if (pickedDate != null && pickedDate != harvestDate) {
-                  harvestDate = pickedDate;
-                  (context as Element).markNeedsBuild();
-                }
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          bool isAuditing = false;
+          double progress = 0;
+          int total = 0;
+          int current = 0;
+          List<String> auditResults = []; // <-- track results
+
+          Future<void> startAudit(FarmCrop initialCrop, int quantity) async {
+            setState(() {
+              isAuditing = true;
+              total = quantity;
+              current = 0;
+              progress = 0;
+              auditResults.clear();
+            });
+
+            await viewModel.auditHarvestedTomatoes(
+              crop: initialCrop,
+              quantityToCheck: quantity,
+              onProgress: (cur, tot) {
+                setState(() {
+                  current = cur;
+                  total = tot;
+                  progress = tot > 0 ? cur / tot : 0;
+                });
               },
+              onResult: (status) { // <-- NEW!
+                setState(() {
+                  auditResults.add(status); // 'fresh', 'rotten', 'unknown'
+                });
+              },
+            );
+
+            setState(() {
+              isAuditing = false;
+              progress = 1;
+            });
+
+            // Optionally show a summary message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Audit finished! Accepted: ${viewModel.selectedCrop?.quantity ?? 0}')),
+            );
+          }
+
+          return AlertDialog(
+            title: const Text('Record Harvest'),
+            content: isAuditing
+                ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Auditing tomatoes, please wait...'),
+                const SizedBox(height: 20),
+                LinearProgressIndicator(value: progress),
+                const SizedBox(height: 10),
+                Text('Checked $current of $total'),
+                const SizedBox(height: 12),
+                // Show a row of icons for each tomato
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: auditResults.map((s) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                      child: Text(
+                        s == 'fresh'
+                            ? '✔️'
+                            : s == 'rotten'
+                            ? '❌'
+                            : '❓',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    )).toList(),
+                  ),
+                ),
+              ],
+            )
+                : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: Text(
+                    'Harvest Date: ${DateFormat('MMM d, yyyy').format(harvestDate)}',
+                  ),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: harvestDate,
+                      firstDate: crop.implantDate,
+                      lastDate: DateTime.now(),
+                    );
+                    if (pickedDate != null && pickedDate != harvestDate) {
+                      setState(() {
+                        harvestDate = pickedDate;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: quantityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity Harvested',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.inventory_2),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Harvest Notes (Optional)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.note),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: quantityController,
-              decoration: const InputDecoration(
-                labelText: 'Quantity Harvested',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.inventory_2),
+            actions: isAuditing
+                ? []
+                : [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
               ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: notesController,
-              decoration: const InputDecoration(
-                labelText: 'Harvest Notes (Optional)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.note),
+              TextButton(
+                onPressed: () async {
+                  if (quantityController.text.isNotEmpty) {
+                    try {
+                      final quantity = int.parse(quantityController.text);
+                      final updatedCrop = crop.copyWith(
+                        harvestedDay: harvestDate,
+                        quantity: quantity,
+                        auditReport: notesController.text.isNotEmpty
+                            ? notesController.text
+                            : null,
+                      );
+                      await viewModel.modifyFarmCrop(updatedCrop);
+                      // Start the audit after saving the harvest
+                      await startAudit(updatedCrop, quantity);
+
+                      Navigator.of(context).pop();
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter a valid quantity'),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Save & Audit'),
               ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (quantityController.text.isNotEmpty) {
-                try {
-                  final quantity = int.parse(quantityController.text);
-                  final updatedCrop = crop.copyWith(
-                    harvestedDay: harvestDate,
-                    quantity: quantity,
-                    auditReport: notesController.text.isNotEmpty
-                        ? notesController.text
-                        : null,
-                  );
-                  viewModel.modifyFarmCrop(updatedCrop);
-                  Navigator.of(context).pop();
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a valid quantity'),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

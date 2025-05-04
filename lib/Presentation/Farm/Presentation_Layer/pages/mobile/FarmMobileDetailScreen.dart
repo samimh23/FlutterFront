@@ -56,9 +56,9 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
               expandedHeight: 250.0,
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                background: widget.farm.marketImage != null && widget.farm.marketImage!.isNotEmpty
+                background: widget.farm.farmImage != null && widget.farm.farmImage!.isNotEmpty
                     ? Image.network(
-                  widget.farm.marketImage!,
+                  widget.farm.farmImage!,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
                     decoration: BoxDecoration(
@@ -201,7 +201,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                                 Icon(Icons.star, color: Colors.amber, size: 16),
                                 const SizedBox(width: 6),
                                 Text(
-                                  widget.farm.rate!.toStringAsFixed(1),
+                                  widget.farm.rate!,
                                   style: const TextStyle(
                                     color: Colors.green,
                                     fontWeight: FontWeight.bold,
@@ -338,7 +338,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                     const SizedBox(height: 24),
 
                     // Available Items Section
-                    if (widget.farm.sale != null && widget.farm.sale!.isNotEmpty)
+                    if (widget.farm.sales != null && widget.farm.sales!.isNotEmpty)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -347,7 +347,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: widget.farm.sale!
+                            children: widget.farm.sales!
                                 .map((item) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(

@@ -2,17 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
 import '../../Domain_Layer/usecases/get_all_farm_crops.dart';
+import '../../Domain_Layer/usecases/get_farm_crop_by_farm.dart';
 import '../../Domain_Layer/usecases/get_farm_crop_by_id.dart';
 import '../../Domain_Layer/usecases/add_farm_crop.dart';
 import '../../Domain_Layer/usecases/update_farm_crop.dart';
 import '../../Domain_Layer/usecases/delete_farm_crop.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 class FarmCropViewModel extends ChangeNotifier {
   final GetAllFarmCrops getAllFarmCrops;
   final GetFarmCropById getFarmCropById;
   final AddFarmCrop addFarmCrop;
   final UpdateFarmCrop updateFarmCrop;
   final DeleteFarmCrop deleteFarmCrop;
+  final GetFarmCropsByFarmMarketId getFarmCropsByFarmMarketId;
+
+
 
   FarmCropViewModel({
     required this.getAllFarmCrops,
@@ -20,6 +25,9 @@ class FarmCropViewModel extends ChangeNotifier {
     required this.addFarmCrop,
     required this.updateFarmCrop,
     required this.deleteFarmCrop,
+    required this.getFarmCropsByFarmMarketId,
+
+
   }) {
     fetchAllCrops();
   }
@@ -45,6 +53,21 @@ class FarmCropViewModel extends ChangeNotifier {
     _errorMessage = message;
     notifyListeners();
   }
+
+  Future<void> fetchCropsByFarmMarketId(String farmMarketId) async {
+    _setLoading(true);
+    final result = await getFarmCropsByFarmMarketId(farmMarketId);
+    result.fold(
+          (failure) => _setError(failure.toString()),
+          (data) {
+        _crops = data;
+        _setError(null);
+        notifyListeners();
+      },
+    );
+    _setLoading(false);
+  }
+
 
   Future<void> fetchAllCrops() async {
     _setLoading(true);
@@ -76,25 +99,31 @@ class FarmCropViewModel extends ChangeNotifier {
       },
     );
 
+
     _setLoading(false);
   }
 
   Future<void> modifyFarmCrop(FarmCrop farmCrop) async {
     _setLoading(true);
-    final result = await updateFarmCrop(farmCrop);
+
+    // Remove the ID before sending to the update use case
+    final sanitizedCrop = farmCrop.copyWith(id: null);
+
+    final result = await updateFarmCrop(sanitizedCrop);
     result.fold(
           (failure) => _setError(failure.toString()),
           (_) {
         fetchAllCrops();
-        // Update selected crop if it's the one being modified
         if (_selectedCrop != null && _selectedCrop!.id == farmCrop.id) {
           _selectedCrop = farmCrop;
           notifyListeners();
         }
       },
     );
+
     _setLoading(false);
   }
+
 
   Future<void> removeFarmCrop(String id) async {
     _setLoading(true);
@@ -137,6 +166,68 @@ class FarmCropViewModel extends ChangeNotifier {
 
   void selectCrop(String id) {
     fetchCropById(id);
+  }
+
+  Future<void> auditHarvestedTomatoes({
+    required FarmCrop crop,
+    required void Function(int current, int total)? onProgress, // to update UI during audit
+    void Function(String result)? onResult,
+    int? quantityToCheck,
+  }) async {
+    final int total = quantityToCheck ?? crop.quantity ?? 0;
+    if (total == 0) return;
+
+    int accepted = 0;
+    int rejected = 0;
+    List<String> auditResults = [];
+
+    _setLoading(true);
+
+    for (int i = 0; i < total; i++) {
+      try {
+        final response = await http.get(Uri.parse('http://127.0.0.1:8002/audit'));
+        print('API response: ${response.statusCode} ${response.body}');
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final statusRaw = data['audit_status'];
+          final status = (statusRaw is String) ? statusRaw.trim().toLowerCase() : '';
+          print('Audit status: $status, type: ${status.runtimeType}');
+          auditResults.add(status);
+          if (onResult != null) onResult(status); // <-- Call here!
+          if (status == 'fresh') {
+            accepted++;
+          } else if (status == 'rotten') {
+            rejected++;
+          }
+        } else {
+          auditResults.add('unknown');
+          if (onResult != null) onResult('unknown'); // <-- Call here!
+        }
+      } catch (e) {
+        print('Audit error: $e');
+        auditResults.add('unknown');
+        if (onResult != null) onResult('unknown'); // <-- Call here!
+      }
+      if (onProgress != null) onProgress(i + 1, total);
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+
+    // Update the crop
+    final AuditStatus newStatus = accepted > 0
+        ? (rejected == 0 ? AuditStatus.confirmed : AuditStatus.pending)
+        : AuditStatus.rejected;
+    final String report = "Accepted: $accepted, Rejected: $rejected\n" +
+        "Details: " +
+        auditResults.map((s) => s == 'fresh' ? '✔️' : s == 'rotten' ? '❌' : '❓').join(' ');
+
+    final updatedCrop = crop.copyWith(
+      quantity: accepted,
+      auditReport: report,
+      auditStatus: FarmCrop.auditStatusToString(newStatus),
+    );
+    await modifyFarmCrop(updatedCrop);
+
+    _setLoading(false);
   }
 
   void clearSelectedCrop() {

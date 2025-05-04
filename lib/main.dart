@@ -56,6 +56,9 @@ import 'Presentation/Farm/Domain_Layer/usescases/get_farm_by_owner.dart';
 import 'Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
 import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConfirmAndConvertFarmCrop.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConvertFarmCropToProduct.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ProcessAllConfirmedFarmCrops.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/add_farm_crop.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/calculate_total_expenses.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/delete_farm_crop.dart';
@@ -316,6 +319,15 @@ class MyApp extends StatelessWidget {
         Provider<GetFarmCropsByFarmMarketId>(
           create: (context) => GetFarmCropsByFarmMarketId(context.read<FarmCropRepositoryImpl>()),
         ),
+        Provider<ProcessAllConfirmedFarmCrops>(
+          create: (context) => ProcessAllConfirmedFarmCrops(context.read<FarmCropRepositoryImpl>()),
+        ),
+        Provider<ConvertFarmCropToProduct>(
+          create: (context) => ConvertFarmCropToProduct(context.read<FarmCropRepositoryImpl>()),
+        ),
+        Provider<ConfirmAndConvertFarmCrop>(
+          create: (context) => ConfirmAndConvertFarmCrop(context.read<FarmCropRepositoryImpl>()),
+        ),
         ChangeNotifierProvider<FarmCropViewModel>(
           create: (context) => FarmCropViewModel(
             getAllFarmCrops: context.read<GetAllFarmCrops>(),
@@ -324,6 +336,9 @@ class MyApp extends StatelessWidget {
             updateFarmCrop: context.read<UpdateFarmCrop>(),
             deleteFarmCrop: context.read<DeleteFarmCrop>(),
             getFarmCropsByFarmMarketId: context.read<GetFarmCropsByFarmMarketId>(),
+            confirmAndConvertFarmCrop: context.read<ConfirmAndConvertFarmCrop>(),
+            convertFarmCropToProduct: context.read<ConvertFarmCropToProduct>(),
+            processAllConfirmedFarmCrops: context.read<ProcessAllConfirmedFarmCrops>(),
 
             // calculateTotalExpenses: context.read<CalculateTotalExpenses>(),
           ),

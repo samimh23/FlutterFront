@@ -248,8 +248,6 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
                                     }
                                   },
                                   items: [
-                                    // "All Farms" option
-
                                     // Farm options from the view model
                                     ...farmViewModel.farmerFarms.map<DropdownMenuItem<String>>((Farm farm) {
                                       return DropdownMenuItem<String>(
@@ -484,7 +482,7 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.75,
+          childAspectRatio: 0.75, // Adjusted aspect ratio
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -507,9 +505,6 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
     // Format dates
     final dateFormat = DateFormat('MMM d, yyyy');
     final implantDateFormatted = dateFormat.format(crop.implantDate);
-    final harvestedDateFormatted = crop.harvestedDay != null
-        ? dateFormat.format(crop.harvestedDay!)
-        : 'Not harvested';
 
     // Get audit status color
     Color statusColor;
@@ -578,7 +573,7 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
             Stack(
               children: [
                 Container(
-                  height: 140,
+                  height: 120, // Reduced height from 140 to 120
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
@@ -608,14 +603,14 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(statusIcon, color: Colors.white, size: 16),
-                          const SizedBox(width: 4),
+                          Icon(statusIcon, color: Colors.white, size: 12), // Reduced icon size
+                          const SizedBox(width: 2), // Reduced spacing
                           Text(
                             crop.auditStatus ?? 'Pending',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: 10, // Reduced font size
                             ),
                           ),
                         ],
@@ -628,21 +623,21 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
                   bottom: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Reduced padding
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(getCropIcon(), color: Colors.white, size: 12),
-                        const SizedBox(width: 4),
+                        Icon(getCropIcon(), color: Colors.white, size: 10), // Reduced icon size
+                        const SizedBox(width: 2), // Reduced spacing
                         Text(
                           crop.type,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 10, // Reduced font size
                           ),
                         ),
                       ],
@@ -652,93 +647,94 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
               ],
             ),
 
-            // Crop details
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      crop.productName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+            // Crop details - constrained in a fixed height container
+            Container(
+              height: 80, // Fixed height to prevent overflow
+              padding: const EdgeInsets.all(8), // Reduced padding
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // Use min size
+                children: [
+                  Text(
+                    crop.productName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14, // Reduced font size
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4), // Reduced spacing
+
+                  // Implant date
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 12, // Reduced icon size
+                        color: Theme.of(context).primaryColor,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Implant date
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            implantDateFormatted,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 2), // Reduced spacing
+                      Expanded(
+                        child: Text(
+                          implantDateFormatted,
+                          style: TextStyle(
+                            fontSize: 10, // Reduced font size
+                            color: Colors.grey.shade700,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
 
-                    const SizedBox(height: 8),
+                  const Spacer(), // Push expenses info to bottom
 
-                    // Quantity and Expenses
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (crop.quantity != null)
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.inventory_2,
-                                size: 14,
-                                color: Colors.grey.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${crop.quantity}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
+                  // Quantity and Expenses
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (crop.quantity != null)
                         Row(
                           children: [
                             Icon(
-                              Icons.attach_money,
-                              size: 14,
-                              color: totalExpenses > 0 ? Colors.red.shade400 : Colors.grey.shade700,
+                              Icons.inventory_2,
+                              size: 12, // Reduced icon size
+                              color: Colors.grey.shade700,
                             ),
-                            const SizedBox(width: 2),
+                            const SizedBox(width: 2), // Reduced spacing
                             Text(
-                              '\$${totalExpenses.toStringAsFixed(2)}',
+                              '${crop.quantity}',
                               style: TextStyle(
-                                fontSize: 12,
-                                color: totalExpenses > 0 ? Colors.red.shade400 : Colors.grey.shade700,
-                                fontWeight: totalExpenses > 0 ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 10, // Reduced font size
+                                color: Colors.grey.shade700,
                               ),
                             ),
                           ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        )
+                      else
+                        Container(), // Empty container for layout
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.attach_money,
+                            size: 12, // Reduced icon size
+                            color: totalExpenses > 0 ? Colors.red.shade400 : Colors.grey.shade700,
+                          ),
+                          Text(
+                            '\$${totalExpenses.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 10, // Reduced font size
+                              color: totalExpenses > 0 ? Colors.red.shade400 : Colors.grey.shade700,
+                              fontWeight: totalExpenses > 0 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -774,7 +770,7 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
         child: Icon(
           _getCropTypeIcon(crop.type),
           color: Colors.grey.shade700,
-          size: 50,
+          size: 40, // Reduced icon size
         ),
       ),
     );

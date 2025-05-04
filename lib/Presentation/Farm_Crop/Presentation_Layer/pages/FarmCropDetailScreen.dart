@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
 import '../../Presentation_Layer/viewmodels/farm_crop_viewmodel.dart';
 import 'FarmCropFormScreen.dart';
+import 'FarmCropTransformScreen.dart'; // Add this import
 
 class FarmCropDetailScreen extends StatefulWidget {
   final String cropId;
@@ -173,6 +174,20 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                   ),
                 ),
                 actions: [
+                  // Add this button as the first action
+                  if (crop.harvestedDay != null) // Only show for harvested crops
+                    IconButton(
+                      icon: const Icon(Icons.transform),
+                      tooltip: 'Transform to Product',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
+                          ),
+                        );
+                      },
+                    ),
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
@@ -191,9 +206,28 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                     onSelected: (value) {
                       if (value == 'delete') {
                         _showDeleteConfirmationDialog(context, viewModel, crop);
+                      } else if (value == 'transform') {
+                        // Navigate to transform screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
+                          ),
+                        );
                       }
                     },
                     itemBuilder: (context) => [
+                      if (crop.harvestedDay != null) // Only show for harvested crops
+                        const PopupMenuItem(
+                          value: 'transform',
+                          child: Row(
+                            children: [
+                              Icon(Icons.transform, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Text('Transform to Product'),
+                            ],
+                          ),
+                        ),
                       const PopupMenuItem(
                         value: 'delete',
                         child: Row(
@@ -441,12 +475,34 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Harvest Information',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Harvest Information',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                // Add Transform to Product button in harvest section
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.transform),
+                                  label: const Text('Transform to Product'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 12),
                             Container(
@@ -544,7 +600,9 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                         ),
 
                       const SizedBox(height: 40),
+
                     ],
+
                   ),
                 ),
               ),

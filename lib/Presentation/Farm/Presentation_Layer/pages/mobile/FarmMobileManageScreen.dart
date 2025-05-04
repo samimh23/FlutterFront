@@ -161,6 +161,9 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
     );
   }
 
+// Inside _AddEditFarmScreenState class in FarmMobileManageScreen.dart
+// Replace the existing _saveFarm method with this fixed version:
+
   Future<void> _saveFarm() async {
     if (_formKey.currentState!.validate()) {
       final viewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
@@ -182,6 +185,7 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
       }
 
       final farm = Farm(
+        id: widget.isEditing ? widget.farm!.id : null, // Include the ID when editing
         owner: owner,
         farmName: _farmNameController.text,
         farmLocation: _farmLocationController.text.trim(),
@@ -189,14 +193,16 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
         farmEmail: _farmEmailController.text.trim().isEmpty ? null : _farmEmailController.text.trim(),
         farmDescription: _farmDescriptionController.text.trim().isEmpty ? null : _farmDescriptionController.text.trim(),
         farmImage: imageUrl,
-
-        // Removed: sale and rate fields
+        // Preserve other fields from the original farm
+        sales: widget.isEditing ? widget.farm!.sales : null,
+        crops: widget.isEditing ? widget.farm!.crops : null,
+        rate: widget.isEditing ? widget.farm!.rate : null,
       );
 
       if (widget.isEditing) {
-        viewModel.modifyFarmMarket(farm);
+        await viewModel.modifyFarmMarket(farm);
       } else {
-        viewModel.createFarmMarket(farm);
+        await viewModel.createFarmMarket(farm);
       }
 
       setState(() {

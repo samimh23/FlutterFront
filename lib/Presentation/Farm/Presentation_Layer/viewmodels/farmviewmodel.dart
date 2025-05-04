@@ -156,7 +156,6 @@ class FarmMarketViewModel extends ChangeNotifier {
           (failure) => _setError(failure.toString()),
           (_) {
         fetchAllFarmMarkets();
-        // Also update selected farm market if it's the one being modified
         if (_selectedFarmMarket != null && _selectedFarmMarket!.id == farmMarket.id) {
           _selectedFarmMarket = farmMarket;
           // Refresh sales after farm update

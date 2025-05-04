@@ -26,14 +26,14 @@ class HederaApiService {
 
   Future<Map<String, dynamic>> getBalance() async {
     try {
-      // Print current date and time for logging
+      // // current date and time for logging
       final now = DateTime.now().toUtc();
       final formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-      print('Current Date and Time (UTC): $formattedDate');
+      //('Current Date and Time (UTC): $formattedDate');
 
       // Get auth headers
       final headers = await _getAuthHeaders();
-      print('Attempting to fetch balance from backend...');
+      //('Attempting to fetch balance from backend...');
 
       // Make the request to your NestJS backend
       final response = await http.get(
@@ -41,29 +41,30 @@ class HederaApiService {
         headers: headers,
       ).timeout(Duration(seconds: 30));
 
-      print('Response status: ${response.statusCode}');
+      //('Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        print('Balance retrieved successfully');
+        //('Balance retrieved successfully');
         return result;
       } else {
-        print('Error response: ${response.body}');
+        //('Error response: ${response.body}');
         throw Exception('Failed to load balance: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching balance: $e');
+      //('Error fetching balance: $e');
 
       // More specific error handling
       if (e is http.ClientException) {
-        print('Network error: ${e.message}');
+        //('Network error: ${e.message}');
       } else if (e is FormatException) {
-        print('Error parsing response data');
+        //('Error parsing response data');
       }
 
       rethrow;
     }
   }
+
   Future<Map<String, dynamic>> getBalancebyMarket(String marketId) async {
     try {
       final headers = await _getAuthHeaders();
@@ -71,24 +72,43 @@ class HederaApiService {
       final uri = Uri.parse('$baseUrl/hedera/balance/bymarket')
           .replace(queryParameters: {'marketid': marketId});
 
+      //('Requesting balance for market ID: $marketId at ${uri.toString()}');
+
       final response = await http.get(
         uri,
         headers: headers,
       ).timeout(Duration(seconds: 30));
 
-      print('Response status: ${response.statusCode}');
+      //('Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-        print('Balance retrieved successfully');
-        return result;
+        // Check if response body is not empty before parsing
+        if (response.body.isNotEmpty) {
+          try {
+            final result = jsonDecode(response.body);
+            //('Balance retrieved successfully');
+            return result;
+          } catch (parseError) {
+            //('Error parsing JSON response: $parseError');
+            //('Response body length: ${response.body.length}');
+            if (response.body.length < 100) {
+              //('Raw response: ${response.body}');
+            }
+            // Return empty map instead of throwing error
+            return {};
+          }
+        } else {
+          //('Response body is empty');
+          return {};
+        }
       } else {
-        print('Error response: ${response.body}');
-        throw Exception('Failed to load balance: ${response.statusCode}');
+        //('Error status: ${response.statusCode}, response: ${response.body}');
+        return {}; // Return empty map instead of throwing
       }
     } catch (e) {
-      print('Error fetching balance: $e');
-      rethrow;
+      //('Error fetching balance: $e');
+      // Return empty map instead of rethrowing for better resilience
+      return {};
     }
   }
 
@@ -99,7 +119,7 @@ class HederaApiService {
   }) async {
     try {
       final headers = await _getAuthHeaders();
-      print('Initiating token transfer of $amount to $receiverAccountId');
+      //('Initiating token transfer of $amount to $receiverAccountId');
 
       final response = await http.post(
         Uri.parse('$baseUrl/hedera/transfer'),
@@ -110,21 +130,21 @@ class HederaApiService {
         }),
       ).timeout(Duration(seconds: 30));
 
-      print('Transfer response status: ${response.statusCode}');
+      //('Transfer response status: ${response.statusCode}');
 
       // Accept any 2xx status code as success (200, 201, 204, etc.)
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final result = jsonDecode(response.body);
-        print('Transfer completed successfully');
+        //('Transfer completed successfully');
         return result is Map<String, dynamic>
             ? result
             : {'message': 'Transfer successful', 'data': result};
       } else {
-        print('Transfer error response: ${response.body}');
+        //('Transfer error response: ${response.body}');
         throw Exception('Transfer failed: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error transferring tokens: $e');
+      //('Error transferring tokens: $e');
       rethrow;
     }
   }
@@ -133,7 +153,7 @@ class HederaApiService {
     try {
       final headers = await _getAuthHeaders();
 
-      print('Attempting to trace Hedera transactions...');
+      //('Attempting to trace Hedera transactions...');
 
       // Use either the provided accountId or just use the user's own transactions
       final Uri uri = Uri.parse('$baseUrl/hedera/trace');
@@ -150,24 +170,24 @@ class HederaApiService {
         headers: headers,
       ).timeout(Duration(seconds: 30));
 
-      print('Trace response status: ${response.statusCode}');
+      //('Trace response status: ${response.statusCode}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final result = jsonDecode(response.body);
-        print('Transaction trace retrieved successfully');
+        //('Transaction trace retrieved successfully');
         return result;
       } else {
-        print('Trace error response: ${response.body}');
+        //('Trace error response: ${response.body}');
         throw Exception('Failed to retrieve transaction history: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error tracing transactions: $e');
+      //('Error tracing transactions: $e');
 
       // More specific error handling like in your getBalance method
       if (e is http.ClientException) {
-        print('Network error: ${e.message}');
+        //('Network error: ${e.message}');
       } else if (e is FormatException) {
-        print('Error parsing trace response data');
+        //('Error parsing trace response data');
       }
 
       rethrow;
@@ -179,7 +199,7 @@ class HederaApiService {
   }) async {
     try {
       final headers = await _getAuthHeaders();
-      print('Initiating token lock of $amount');
+      //('Initiating token lock of $amount');
 
       final response = await http.post(
         Uri.parse('$baseUrl/hedera/lock'),
@@ -189,18 +209,18 @@ class HederaApiService {
         }),
       ).timeout(Duration(seconds: 30));
 
-      print('Lock response status: ${response.statusCode}');
+      //('Lock response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        print('Lock completed successfully');
+        //('Lock completed successfully');
         return result;
       } else {
-        print('Lock error response: ${response.body}');
+        //('Lock error response: ${response.body}');
         throw Exception('Lock failed: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error locking tokens: $e');
+      //('Error locking tokens: $e');
       rethrow;
     }
   }
@@ -210,7 +230,7 @@ class HederaApiService {
   }) async {
     try {
       final headers = await _getAuthHeaders();
-      print('Initiating token unlock of $amount');
+      //('Initiating token unlock of $amount');
 
       final response = await http.post(
         Uri.parse('$baseUrl/hedera/unlock'),
@@ -220,18 +240,18 @@ class HederaApiService {
         }),
       ).timeout(Duration(seconds: 30));
 
-      print('Unlock response status: ${response.statusCode}');
+      //('Unlock response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        print('Unlock completed successfully');
+        //('Unlock completed successfully');
         return result;
       } else {
-        print('Unlock error response: ${response.body}');
+        //('Unlock error response: ${response.body}');
         throw Exception('Unlock failed: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error unlocking tokens: $e');
+      //('Error unlocking tokens: $e');
       rethrow;
     }
   }

@@ -426,20 +426,16 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
     } on DioException catch (e) {
       _logDioError('shareFractionalNFT', e);
 
-      // Extract error information from response if available
       if (e.response?.data != null) {
         var responseData = e.response!.data;
 
-        // Parse the response data if it's a string
         if (responseData is String && responseData.isNotEmpty) {
           try {
             responseData = jsonDecode(responseData);
           } catch (_) {
-            // If parsing fails, keep it as a string
           }
         }
 
-        // Return structured error information
         if (responseData is Map<String, dynamic>) {
           return {
             'success': false,

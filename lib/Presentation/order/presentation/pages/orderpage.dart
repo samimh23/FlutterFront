@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hanouty/Core/heritables/Markets.dart';
 import 'package:hanouty/Core/network/apiconastant.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/entities/normalmarket_entity.dart';
-import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_market_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
-import 'package:hanouty/Presentation/order/domain/entities/order.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
+import 'package:hanouty/hedera_api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -28,8 +27,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
-  bool _isFiltering = false;
   String? _filterCategory;
+
+  // Initialize HederaApiService
+  final HederaApiService _hederaApiService = HederaApiService();
 
   // Animation for screen transitions
   final Tween<double> _fadeInTween = Tween<double>(begin: 0.0, end: 1.0);
@@ -53,6 +54,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
       _marketProvider.loadMyMarkets();
       _animationController.forward();
       _loadMarketOrderCounts();
+      _loadMarketBalances(); // Load market balances from Hedera
     });
 
     // Set preferred orientation for better experience
@@ -72,6 +74,82 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  // Load market balances from Hedera API
+  Future<void> _loadMarketBalances() async {
+    if (_marketProvider.myMarkets.isEmpty) return;
+
+    setState(() {
+      _isLoadingOrderCounts = true;
+    });
+
+    try {
+      for (var market in _marketProvider.myMarkets) {
+        try {
+          print('Fetching balance for market: ${market.id}');
+
+          // Call the getBalancebyMarket method from HederaApiService
+          final balanceResponse = await _hederaApiService.getBalancebyMarket(market.id);
+
+          // Initialize token balance
+          double hcTokenBalance = 0.0;
+
+          if (balanceResponse.isNotEmpty) {
+            print('Balance response for ${market.id}: ${balanceResponse.keys}');
+
+            // Check if the response has the expected structure with balance field
+            if (balanceResponse.containsKey('balance')) {
+              var balanceValue = balanceResponse['balance'];
+              print('Raw balance data: $balanceValue');
+
+              // Parse the balance value
+              if (balanceValue is Map) {
+                // If it's a nested map
+                if (balanceValue.containsKey('tokenBalances')) {
+                  // Look for HC token in tokenBalances
+                  final tokenBalances = balanceValue['tokenBalances'] as List?;
+                  if (tokenBalances != null) {
+                    for (var token in tokenBalances) {
+                      if (token is Map &&
+                          token.containsKey('tokenId') &&
+                          token['tokenId'] == '0.0.5883473') {
+                        hcTokenBalance = double.tryParse(token['balance']?.toString() ?? '0') ?? 0.0;
+                        break;
+                      }
+                    }
+                  }
+                } else {
+                  // If it's a direct balance value in a map
+                  hcTokenBalance = double.tryParse(balanceValue.toString()) ?? 0.0;
+                }
+              } else {
+                // If it's a direct primitive value
+                hcTokenBalance = double.tryParse(balanceValue.toString()) ?? 0.0;
+              }
+            }
+          }
+
+          print('Market ${market.id} HC token balance loaded: $hcTokenBalance');
+
+          setState(() {
+            _marketRevenue[market.id] = hcTokenBalance;
+          });
+        } catch (e) {
+          print('Error loading HC token balance for market ${market.id}: $e');
+          // Keep existing revenue value or set to 0
+          if (!_marketRevenue.containsKey(market.id)) {
+            _marketRevenue[market.id] = 0.0;
+          }
+        }
+      }
+    } catch (e) {
+      print('Error in market HC token balances batch loading: $e');
+    } finally {
+      setState(() {
+        _isLoadingOrderCounts = false;
+      });
+    }
+  }
+
   Future<void> _loadMarketOrderCounts() async {
     if (_marketProvider.myMarkets.isEmpty) return;
 
@@ -83,15 +161,11 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
       for (var market in _marketProvider.myMarkets) {
         final orders = await _orderProvider.findOrdersByShopId(market.id);
 
-        // Calculate order count and total revenue for this market
+        // Calculate order count for this market
         final count = orders.length;
-        final revenue = orders.fold<double>(
-            0, (sum, order) => sum + order.totalPrice
-        );
 
         setState(() {
           _marketOrderCounts[market.id] = count;
-          _marketRevenue[market.id] = revenue;
         });
       }
     } catch (e) {
@@ -361,6 +435,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                     HapticFeedback.lightImpact();
                     provider.loadMyMarkets();
                     _loadMarketOrderCounts();
+                    _loadMarketBalances(); // Add reload of market balances
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4CAF50),
@@ -567,6 +642,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           HapticFeedback.lightImpact();
           await provider.loadMyMarkets();
           await _loadMarketOrderCounts();
+          await _loadMarketBalances(); // Load market balances on refresh
         },
         child: Scrollbar(
           controller: _scrollController,
@@ -984,8 +1060,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               icon: Icons.attach_money,
               iconColor: revenueColor,
               bgColor: revenueColor.withOpacity(0.1),
-              value: '₮ ${totalRevenue.toStringAsFixed(2)}',
-              label: 'Revenue',
+              value: 'HC ${totalRevenue.toStringAsFixed(2)}',
+              label: 'HC Tokens',
               isSmallScreen: isSmallScreen,
               iconSize: iconSize,
               fontSize: fontSize,
@@ -1456,7 +1532,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                       ),
                       SizedBox(height: isSmallScreen ? 6 : 8),
 
-                      // Revenue Info with animated progress bar
+                      // HC Token Balance with animated progress bar
                       Row(
                         children: [
                           Container(
@@ -1477,7 +1553,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Revenue: ₮ ${revenue.toStringAsFixed(2)}',
+                                  'HC Tokens: ${revenue.toStringAsFixed(2)}', // Changed to HC Token balance
                                   style: TextStyle(
                                     fontSize: smallFontSize,
                                     color: subtitleColor,
@@ -1561,167 +1637,168 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.transparent;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        duration: const Duration(milliseconds: 200),
+    decoration: BoxDecoration(
+    color: cardColor,
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: borderColor),
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
+    blurRadius: 10,
+    offset: const Offset(0, 4),
+    ),
+    ],
+    ),
+    child: Material(
+    color: Colors.transparent,
+    borderRadius: BorderRadius.circular(16),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+    onTap: () {
+    HapticFeedback.mediumImpact();
+    _navigateToMarketOrders(market);
+    },
+    splashColor: accentColor.withOpacity(0.1),
+    highlightColor: accentColor.withOpacity(0.05),
+    child: Padding(
+    padding: EdgeInsets.all(padding),
+    child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+    //
+      // Market Image with hero animation
+      Hero(
+        tag: 'market_image_${market.id}_orders',
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            width: imageSize,
+            height: imageSize,
+            child: _buildMarketImage(imagePath, isSmallScreen, isDarkMode),
           ),
-        ],
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            _navigateToMarketOrders(market);
-          },
-          splashColor: accentColor.withOpacity(0.1),
-          highlightColor: accentColor.withOpacity(0.05),
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+      SizedBox(width: isSmallScreen ? 12 : 16),
+
+      // Market Info
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                // Market Image with hero animation
-                Hero(
-                  tag: 'market_image_${market.id}_orders',
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: imageSize,
-                      height: imageSize,
-                      child: _buildMarketImage(imagePath, isSmallScreen, isDarkMode),
+                // Market Name
+                Expanded(
+                  child: Text(
+                    (market as dynamic).marketName ?? '',
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                SizedBox(width: isSmallScreen ? 12 : 16),
 
-                // Market Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Order Badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 6 : 8,
+                    vertical: isSmallScreen ? 3 : 4,
+                  ),
+                  margin: EdgeInsets.only(left: isSmallScreen ? 6 : 8),
+                  decoration: BoxDecoration(
+                    color: orderCount > 0
+                        ? const Color(0xFF4CAF50)
+                        : Colors.orange,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          // Market Name
-                          Expanded(
-                            child: Text(
-                              (market as dynamic).marketName ?? '',
-                              style: TextStyle(
-                                fontSize: fontSize,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-
-                          // Order Badge
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen ? 6 : 8,
-                              vertical: isSmallScreen ? 3 : 4,
-                            ),
-                            margin: EdgeInsets.only(left: isSmallScreen ? 6 : 8),
-                            decoration: BoxDecoration(
-                              color: orderCount > 0
-                                  ? const Color(0xFF4CAF50)
-                                  : Colors.orange,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  orderCount > 0 ? Icons.receipt : Icons.hourglass_empty,
-                                  size: iconSize - 2,
-                                  color: Colors.white,
-                                ),
-                                SizedBox(width: isSmallScreen ? 2 : 3),
-                                Text(
-                                  orderCount > 0 ? '$orderCount' : '0',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isSmallScreen ? 10 : 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      Icon(
+                        orderCount > 0 ? Icons.receipt : Icons.hourglass_empty,
+                        size: iconSize - 2,
+                        color: Colors.white,
                       ),
-
-                      SizedBox(height: isSmallScreen ? 4 : 6),
-
-                      // Location
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: iconSize - 2,
-                            color: subtitleColor,
-                          ),
-                          SizedBox(width: isSmallScreen ? 2 : 4),
-                          Expanded(
-                            child: Text(
-                              (market as dynamic).marketLocation ?? '',
-                              style: TextStyle(
-                                fontSize: smallFontSize - 1,
-                                color: subtitleColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: isSmallScreen ? 8 : 10),
-
-                      // Revenue info
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.attach_money,
-                            size: iconSize,
-                            color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
-                          ),
-                          SizedBox(width: isSmallScreen ? 2 : 4),
-                          Text(
-                            'Revenue: ₮ ${revenue.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: smallFontSize,
-                              fontWeight: FontWeight.w500,
-                              color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
-                            ),
-                          ),
-                        ],
+                      SizedBox(width: isSmallScreen ? 2 : 3),
+                      Text(
+                        orderCount > 0 ? '$orderCount' : '0',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 10 : 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
+              ],
+            ),
 
-                // Arrow icon
+            SizedBox(height: isSmallScreen ? 4 : 6),
+
+            // Location
+            Row(
+              children: [
                 Icon(
-                  Icons.chevron_right,
-                  size: isSmallScreen ? 20 : 24,
+                  Icons.location_on_outlined,
+                  size: iconSize - 2,
                   color: subtitleColor,
+                ),
+                SizedBox(width: isSmallScreen ? 2 : 4),
+                Expanded(
+                  child: Text(
+                    (market as dynamic).marketLocation ?? '',
+                    style: TextStyle(
+                      fontSize: smallFontSize - 1,
+                      color: subtitleColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
-          ),
+
+            SizedBox(height: isSmallScreen ? 8 : 10),
+
+            // HC Token Balance info
+            Row(
+              children: [
+                Icon(
+                  Icons.attach_money,
+                  size: iconSize,
+                  color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                ),
+                SizedBox(width: isSmallScreen ? 2 : 4),
+                Text(
+                  'HC Tokens: ${revenue.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: smallFontSize,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
+
+      // Arrow icon
+      Icon(
+        Icons.chevron_right,
+        size: isSmallScreen ? 20 : 24,
+        color: subtitleColor,
+      ),
+    ],
+    ),
+    ),
+    ),
+    ),
     );
   }
 
@@ -1879,7 +1956,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             ),
             Divider(color: dividerColor),
             _buildSortOption(
-              title: 'Highest Revenue',
+              title: 'Highest HC Token Balance',
               icon: Icons.attach_money,
               isDarkMode: isDarkMode,
               onTap: () {
@@ -1996,5 +2073,122 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     return maxHeight != oldDelegate.maxHeight ||
         minHeight != oldDelegate.minHeight ||
         child != oldDelegate.child;
+  }
+}
+
+// ShimmerLoadingImage for image loading with shimmer effect
+class ShimmerLoadingImage extends StatefulWidget {
+  final String imageUrl;
+  final bool isSmallScreen;
+  final bool isDarkMode;
+
+  const ShimmerLoadingImage({
+    Key? key,
+    required this.imageUrl,
+    required this.isSmallScreen,
+    required this.isDarkMode,
+  }) : super(key: key);
+
+  @override
+  State<ShimmerLoadingImage> createState() => _ShimmerLoadingImageState();
+}
+
+class _ShimmerLoadingImageState extends State<ShimmerLoadingImage> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  bool _isLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Shimmer effect for loading
+        if (!_isLoaded)
+          AnimatedBuilder(
+            animation: _animation,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                      widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
+                      widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                    ],
+                    stops: [
+                      0.0,
+                      _animation.value,
+                      1.0,
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+
+        // Actual image
+        Image.network(
+          widget.imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) {
+              // Image loaded
+              if (!_isLoaded) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() {
+                      _isLoaded = true;
+                    });
+                  }
+                });
+              }
+              return child;
+            }
+            return Container();
+          },
+          errorBuilder: (context, error, stackTrace) {
+            // Error loading image
+            if (!_isLoaded) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _isLoaded = true;
+                  });
+                }
+              });
+            }
+            return Container(
+              color: widget.isDarkMode ? Colors.grey[800] : Colors.grey[200],
+              child: Center(
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: widget.isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                  size: widget.isSmallScreen ? 30 : 40,
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 }

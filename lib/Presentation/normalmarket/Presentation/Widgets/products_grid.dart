@@ -9,12 +9,14 @@ import 'package:hanouty/Presentation/product/presentation/provider/product_provi
 import 'package:hanouty/injection_container.dart';
 import 'package:hanouty/Core/network/apiconastant.dart';
 
+
 class HorizontalProductsList extends StatefulWidget {
   final List<String> products; // List of product IDs
   final String marketName; // Optional market name to display
   final Function? onProductsUpdated; // Callback when products are updated
   final String? marketId; // Added market ID parameter
   final bool isDarkMode; // Add isDarkMode parameter for theme support
+
 
   const HorizontalProductsList({
     super.key,
@@ -25,13 +27,16 @@ class HorizontalProductsList extends StatefulWidget {
     this.isDarkMode = false, // Default to light mode
   });
 
+
   @override
   State<HorizontalProductsList> createState() => _HorizontalProductsListState();
 }
 
+
 class _HorizontalProductsListState extends State<HorizontalProductsList> {
   // Create our own ScrollController to ensure it always exists
   final ScrollController _scrollController = ScrollController();
+
 
   @override
   void dispose() {
@@ -39,6 +44,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     _scrollController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +56,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final orangeBgColor = const Color(0xFFFF9800).withOpacity(widget.isDarkMode ? 0.2 : 0.1);
     final scrollBtnColor = widget.isDarkMode ? Colors.grey[800] : Colors.grey[100];
     final scrollIconColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey[600];
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +149,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
           ),
         ),
 
+
         const SizedBox(height: 16),
+
 
         // Scrollable indicator with scroll buttons
         if (widget.products.isNotEmpty)
@@ -174,7 +183,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     ),
                   ),
 
+
                 const SizedBox(width: 8),
+
 
                 Icon(
                   Icons.swipe,
@@ -182,7 +193,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   color: widget.isDarkMode ? Colors.grey[600] : Colors.grey[400],
                 ),
 
+
                 const SizedBox(width: 6),
+
 
                 Text(
                   'Swipe to see more',
@@ -193,7 +206,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   ),
                 ),
 
+
                 const Spacer(),
+
 
                 // Arrow right - scroll right button
                 if (widget.products.length > 2) // Only show if we have enough products to scroll
@@ -222,21 +237,26 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             ),
           ),
 
+
         const SizedBox(height: 8),
+
 
         // Main product list
         widget.products.isEmpty
             ? _buildEmptyProductsView(context)
             : _buildProductList(context),
 
+
         const SizedBox(height: 16),
       ],
     );
   }
 
+
   Widget _buildProductList(BuildContext context) {
     // Get the ProductProvider instance from the GetIt container
     final productProvider = sl<ProductProvider>();
+
 
     // Using NotificationListener to update scroll buttons visibility
     return NotificationListener<ScrollNotification>(
@@ -282,6 +302,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   Widget _buildEmptyProductsView(BuildContext context) {
     // Colors for dark mode
     final emptyBgColor = widget.isDarkMode ? const Color(0xFF252525) : const Color(0xFFEEF7ED);
@@ -292,6 +313,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         ? const Color(0xFF81C784).withOpacity(0.5)
         : const Color(0xFF4CAF50).withOpacity(0.5);
     final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -368,6 +390,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   Widget _buildProductCard(BuildContext context, Product product, ProductProvider productProvider) {
     final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = widget.isDarkMode ? Colors.white : const Color(0xFF333333);
@@ -377,6 +400,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final shadowColor = widget.isDarkMode
         ? Colors.black.withOpacity(0.2)
         : Colors.black.withOpacity(0.08);
+
 
     return GestureDetector(
       onTap: () {
@@ -416,6 +440,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
               ),
             ),
 
+
             // Product details
             Padding(
               padding: const EdgeInsets.all(12.0),
@@ -435,7 +460,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     overflow: TextOverflow.ellipsis,
                   ),
 
+
                   const SizedBox(height: 6),
+
 
                   // Price information
                   Row(
@@ -462,6 +489,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     ],
                   ),
 
+
                   // Stock indicator
                   const SizedBox(height: 4),
                   Text(
@@ -472,6 +500,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+
 
                   // Action buttons row
                   const SizedBox(height: 8),
@@ -522,6 +551,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   // Helper method to build action buttons
   Widget _buildActionButton({
     required IconData icon,
@@ -545,6 +575,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   // Show delete confirmation dialog
   void _showDeleteConfirmationDialog(
       BuildContext context,
@@ -554,6 +585,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final dialogBgColor = widget.isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = widget.isDarkMode ? Colors.white : null;
     final buttonTextColor = widget.isDarkMode ? Colors.grey[300] : Colors.grey;
+
 
     showDialog(
       context: context,
@@ -578,41 +610,67 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             ),
             ElevatedButton(
               onPressed: () async {
-                // Dismiss the dialog
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Dismiss confirmation dialog
 
-                // Show loading indicator
-                _showLoadingDialog(context);
 
-                // Delete the product
-                final success = await productProvider.deleteProduct(product.id);
-
-                // Dismiss the loading dialog
-                Navigator.of(context).pop();
-
-                if (success) {
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${product.name} has been deleted'),
-                      backgroundColor: Colors.green,
-                      duration: const Duration(seconds: 2),
+                // Use a local context for the dialog
+                final dialogContext = context;
+                showDialog(
+                  context: dialogContext,
+                  barrierDismissible: false,
+                  builder: (context) => Dialog(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(width: 20),
+                          Text('Deleting...'),
+                        ],
+                      ),
                     ),
-                  );
+                  ),
+                );
 
-                  // Call the callback to update the product list
-                  if (widget.onProductsUpdated != null) {
-                    widget.onProductsUpdated!();
+
+                bool success = false;
+                try {
+                  success = await productProvider.deleteProduct(product.id)
+                      .timeout(const Duration(seconds: 10), onTimeout: () => false);
+                } catch (e) {
+                  print("Delete exception: $e");
+                } finally {
+                  // Always dismiss the loading dialog using dialogContext
+                  if (Navigator.of(dialogContext, rootNavigator: true).canPop()) {
+                    Navigator.of(dialogContext, rootNavigator: true).pop();
                   }
-                } else {
-                  // Show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to delete ${product.name}'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
+                }
+
+
+                if (mounted) {
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${product.name} has been deleted'),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                    Future.delayed(const Duration(seconds: 5), () {
+                      if (mounted && widget.onProductsUpdated != null) {
+                        widget.onProductsUpdated!();
+                      }
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete ${product.name}'),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -630,11 +688,13 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   // Show loading dialog
   void _showLoadingDialog(BuildContext context) {
     final dialogBgColor = widget.isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = widget.isDarkMode ? Colors.white : null;
     final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+
 
     showDialog(
       context: context,
@@ -661,6 +721,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   Widget _buildLoadingProductCard() {
     final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final shimmerColor = widget.isDarkMode ? Colors.grey[800] : Colors.grey[200];
@@ -668,6 +729,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         ? Colors.black.withOpacity(0.2)
         : Colors.black.withOpacity(0.05);
     final loaderColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+
 
     return Container(
       width: 160,
@@ -701,6 +763,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             ),
           ),
 
+
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
@@ -713,7 +776,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   color: shimmerColor,
                 ),
 
+
                 const SizedBox(height: 8),
+
 
                 // Shimmer for price
                 Container(
@@ -722,7 +787,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   color: shimmerColor,
                 ),
 
+
                 const SizedBox(height: 8),
+
 
                 // Shimmer for stock
                 Container(
@@ -738,6 +805,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   Widget _buildErrorProductCard() {
     final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final errorColor = widget.isDarkMode ? Colors.red[400] : Colors.red[300];
@@ -745,6 +813,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final shadowColor = widget.isDarkMode
         ? Colors.black.withOpacity(0.2)
         : Colors.black.withOpacity(0.05);
+
 
     return Container(
       width: 160,
@@ -781,6 +850,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
+
   // Updated image loading function with improved error handling
   Widget _buildProductImage(BuildContext context, String? imageUrl) {
     final placeholderColor = widget.isDarkMode
@@ -790,6 +860,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : AppColors.primary;
     final errorBgColor = widget.isDarkMode ? Colors.grey[900] : Colors.grey[200];
     final errorTextColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey;
+
 
     if (imageUrl == null || imageUrl.isEmpty) {
       return Container(
@@ -804,16 +875,19 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
       );
     }
 
+
     // Get full image URL using ApiConstants
     final String fullImageUrl = kIsWeb
         ? ApiConstants.getImageUrlWithCacheBusting(imageUrl) // Use with cache busting for web
         : ApiConstants.getFullImageUrl(imageUrl);            // Use standard URL for mobile
+
 
     return Stack(
       fit: StackFit.expand,
       children: [
         // Base placeholder
         Container(color: placeholderColor),
+
 
         // Actual image
         CachedNetworkImage(
@@ -940,3 +1014,4 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 }
+

@@ -44,7 +44,7 @@ class Expense extends Equatable {
 
 class FarmCrop extends Equatable {
   final String? id;
-  final String farmId;
+  final String farmMarketId;
   final String productName;
   final String type;
   final DateTime implantDate;
@@ -58,7 +58,7 @@ class FarmCrop extends Equatable {
 
   const FarmCrop({
     this.id,
-    required this.farmId,
+    required this.farmMarketId,
     required this.productName,
     required this.type,
     required this.implantDate,
@@ -105,8 +105,8 @@ class FarmCrop extends Equatable {
 
   factory FarmCrop.fromJson(Map<String, dynamic> json) {
     return FarmCrop(
-      id: json['_id'] as String? ?? json['id'] as String,
-      farmId: json['farmId'] as String,
+      id: json['_id'] as String? ?? json['id'] as String?,
+      farmMarketId: json['farmMarketId'] as String,
       productName: json['productName'] as String,
       type: json['type'] as String,
       implantDate: DateTime.parse(json['implantDate'] as String),
@@ -122,26 +122,44 @@ class FarmCrop extends Equatable {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-    //  'id': id,
-      'farmId': farmId,
+  Map<String, dynamic> toJson({bool forUpdate = false}) {
+    final Map<String, dynamic> data = {
+      'farmMarketId': farmMarketId,
       'productName': productName,
       'type': type,
       'implantDate': implantDate.toIso8601String(),
-      if (harvestedDay != null) 'harvestedDay': harvestedDay!.toIso8601String(),
       'expenses': expenses.map((e) => e.toJson()).toList(),
-      if (quantity != null) 'quantity': quantity,
-      if (auditStatus != null) 'auditStatus': auditStatus,
-      if (auditReport != null) 'auditReport': auditReport,
-      if (auditProofImage != null) 'auditProofImage': auditProofImage,
-      if (picture != null) 'picture': picture,
     };
+
+    if (!forUpdate && id != null && id!.isNotEmpty) {
+      data['_id'] = id;
+    }
+
+    if (harvestedDay != null) {
+      data['harvestedDay'] = harvestedDay!.toIso8601String();
+    }
+    if (quantity != null) {
+      data['quantity'] = quantity;
+    }
+    if (auditStatus != null) {
+      data['auditStatus'] = auditStatus;
+    }
+    if (auditReport != null) {
+      data['auditReport'] = auditReport;
+    }
+    if (auditProofImage != null) {
+      data['auditProofImage'] = auditProofImage;
+    }
+    if (picture != null) {
+      data['picture'] = picture;
+    }
+
+    return data;
   }
 
   FarmCrop copyWith({
     String? id,
-    String? farmId,
+    String? farmMarketId,
     String? productName,
     String? type,
     DateTime? implantDate,
@@ -155,7 +173,7 @@ class FarmCrop extends Equatable {
   }) {
     return FarmCrop(
       id: id ?? this.id,
-      farmId: farmId ?? this.farmId,
+      farmMarketId: farmMarketId ?? this.farmMarketId,
       productName: productName ?? this.productName,
       type: type ?? this.type,
       implantDate: implantDate ?? this.implantDate,
@@ -172,7 +190,7 @@ class FarmCrop extends Equatable {
   @override
   List<Object?> get props => [
     id,
-    farmId,
+    farmMarketId,
     productName,
     type,
     implantDate,

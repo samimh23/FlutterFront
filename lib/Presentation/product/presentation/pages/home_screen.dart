@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+  import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/market_details_screen.dart';
@@ -6,10 +6,10 @@ import 'package:hanouty/Presentation/product/presentation/provider/product_provi
 import 'package:hanouty/Presentation/product/presentation/widgets/categories_section.dart';
 import 'package:hanouty/Presentation/product/presentation/widgets/header.dart';
 import 'package:hanouty/Presentation/product/presentation/widgets/product_card.dart';
-import 'package:hanouty/Presentation/product/presentation/widgets/shop_card.dart';
 import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/responsive/responsive_layout.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../../Core/Utils/Api_EndPoints.dart';
 
@@ -21,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late NormalMarketProvider _normalMarketProvider;
+  bool _isShimmer = true;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
       _normalMarketProvider =
           Provider.of<NormalMarketProvider>(context, listen: false);
       _normalMarketProvider.loadMarkets();
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isShimmer = false;
+        });
+      }
     });
   }
 
@@ -37,7 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      // Only show app bar on desktop if we're using the side navigation
       appBar: isDesktop
           ? AppBar(
               backgroundColor: Colors.white,
@@ -59,17 +67,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search products...',
-                      hintStyle:
-                          TextStyle(color: Colors.grey[600], fontSize: 14),
-                      prefixIcon:
-                          Icon(Icons.search, color: Colors.grey[600], size: 20),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
+                  child: _isShimmer
+                      ? _buildShimmerBox(height: 40, width: 220)
+                      : TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search products...',
+                            hintStyle:
+                                TextStyle(color: Colors.grey[600], fontSize: 14),
+                            prefixIcon: Icon(Icons.search,
+                                color: Colors.grey[600], size: 20),
+                            border: InputBorder.none,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 16),
                 IconButton(
@@ -89,13 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Only show animated header on mobile/tablet
                 if (!isDesktop) ...[
-                  const AnimatedHeader(),
+                  _isShimmer
+                      ? _buildShimmerBox(height: 60, width: double.infinity)
+                      : const AnimatedHeader(),
                   const SizedBox(height: 24),
                 ],
-
-                // Search bar - only show on mobile/tablet (desktop has it in app bar)
                 if (!isDesktop)
                   Padding(
                     padding:
@@ -112,77 +122,78 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search products...',
-                          hintStyle:
-                              TextStyle(color: Colors.grey[600], fontSize: 14),
-                          prefixIcon: Icon(Icons.search,
-                              color: Colors.grey[600], size: 20),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 15,
-                            horizontal: 20,
-                          ),
-                        ),
-                        onChanged: (value) {
-                          // Handle search logic here
-                        },
-                      ),
+                      child: _isShimmer
+                          ? _buildShimmerBox(height: 45, width: double.infinity)
+                          : TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Search products...',
+                                hintStyle: TextStyle(
+                                    color: Colors.grey[600], fontSize: 14),
+                                prefixIcon: Icon(Icons.search,
+                                    color: Colors.grey[600], size: 20),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                  horizontal: 20,
+                                ),
+                              ),
+                              onChanged: (value) {
+                                // Handle search logic here
+                              },
+                            ),
                     ),
                   ),
-
                 const SizedBox(height: 24),
-
-                // Categories section with title
-
-                const SizedBox(height: 12),
-                const CategoriesSection(),
-
-                // Featured banner
-
-                // Products section with title and see all button
+                _isShimmer
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: _buildShimmerBox(height: 35, width: 200),
+                      )
+                    : const SizedBox(height: 12),
+                _isShimmer
+                    ? _buildShimmerBox(height: 40, width: double.infinity)
+                    : const CategoriesSection(),
                 Padding(
                   padding: EdgeInsets.only(left: 24.0, top: 16.0, bottom: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Products of the Month',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.black,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          // Handle see all products
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                        ),
-                        child: const Row(
-                          children: [
-                            
-                            SizedBox(width: 4),
-                            
-                          ],
-                        ),
-                      ),
+                      _isShimmer
+                          ? _buildShimmerBox(height: 28, width: 180)
+                          : const Text(
+                              'Products of the Month',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.black,
+                              ),
+                            ),
+                      _isShimmer
+                          ? _buildShimmerBox(height: 24, width: 70)
+                          : TextButton(
+                              onPressed: () {
+                                // Handle see all products
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                              ),
+                              child: const Row(
+                                children: [
+                                  SizedBox(width: 4),
+                                ],
+                              ),
+                            ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Products section
-                _buildProductsSection(context),
+                _isShimmer
+                    ? _buildShimmerProductList(isDesktop)
+                    : _buildProductsSection(context),
                 const SizedBox(height: 32),
-
-                // Stores section
-                _buildStoresSection(context),
-
-                // Extra space at bottom for navigation bar
+                _isShimmer
+                    ? _buildShimmerStoreSection(isDesktop)
+                    : _buildStoresSection(context),
                 const SizedBox(height: 80),
               ],
             ),
@@ -192,19 +203,114 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildShimmerBox({double height = 20, double width = double.infinity}) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        height: height,
+        width: width,
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerProductList(bool isDesktop) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: isDesktop
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 64.0),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 24,
+                  mainAxisSpacing: 24,
+                ),
+                itemCount: 4,
+                itemBuilder: (context, index) =>
+                    _buildShimmerBox(height: 240, width: 200),
+              ),
+            )
+          : SizedBox(
+              height: 220,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: 4,
+                itemBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: _buildShimmerBox(height: 200, width: 140),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildShimmerStoreSection(bool isDesktop) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 64.0 : 16.0,
+        vertical: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: _buildShimmerBox(height: 28, width: 180),
+          ),
+          const SizedBox(height: 16),
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: isDesktop
+                ? GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: 24,
+                      mainAxisSpacing: 24,
+                    ),
+                    itemCount: 3,
+                    itemBuilder: (context, index) =>
+                        _buildShimmerBox(height: 140, width: 260),
+                  )
+                : SizedBox(
+                    height: isDesktop ? 200.0 : 180.0,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: 3,
+                      itemBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: _buildShimmerBox(
+                            height: isDesktop ? 200 : 180, width: 200),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProductsSection(BuildContext context) {
     return Consumer<ProductProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-                strokeWidth: 3,
-              ),
-            ),
-          );
+          return _buildShimmerProductList(ResponsiveLayout.isDesktop(context));
         }
 
         if (provider.errorMessage.isNotEmpty) {
@@ -264,10 +370,8 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        // Use ResponsiveLayout builder for different layouts
         return ResponsiveLayout.builder(
           context: context,
-          // Mobile layout - horizontal scrolling list with improved cards
           mobile: SizedBox(
             height: 220,
             child: ListView.builder(
@@ -277,12 +381,11 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 16),
-                  child: _buildEnhancedProductCard(provider.products[index]),
+                  child: ProductCard(product: provider.products[index]),
                 );
               },
             ),
           ),
-          // Tablet layout - 2 column grid with larger cards
           tablet: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: GridView.builder(
@@ -297,11 +400,10 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount:
                   provider.products.length > 6 ? 6 : provider.products.length,
               itemBuilder: (context, index) {
-                return _buildEnhancedProductCard(provider.products[index]);
+                return ProductCard(product: provider.products[index]);
               },
             ),
           ),
-          // Desktop layout - 4 column grid with animation effects
           desktop: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 64.0),
             child: GridView.builder(
@@ -316,12 +418,11 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount:
                   provider.products.length > 8 ? 8 : provider.products.length,
               itemBuilder: (context, index) {
-                // Add a subtle animation delay based on index
                 return AnimatedOpacity(
                   duration: const Duration(milliseconds: 500),
                   opacity: 1.0,
                   curve: Curves.easeInOut,
-                  child: _buildEnhancedProductCard(provider.products[index]),
+                  child: ProductCard(product: provider.products[index]),
                 );
               },
             ),
@@ -329,12 +430,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-  }
-
-  // This is a placeholder - you would need to modify your ProductCard or create a new enhanced version
-  Widget _buildEnhancedProductCard(dynamic product) {
-    // For now, we'll just use the existing ProductCard
-    return ProductCard(product: product);
   }
 
   Widget _buildStoresSection(BuildContext context) {
@@ -370,24 +465,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
                 ),
-                child: const Row(
-                  
-                ),
+                child: const Row(),
               ),
             ],
           ),
           const SizedBox(height: 16),
-
-          // Replace static store list with Consumer for ShopProvider
           Consumer<NormalMarketProvider>(
             builder: (context, provider, child) {
-              if (provider.isLoading) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                      strokeWidth: 3,
+              if (_isShimmer || provider.isLoading) {
+                return Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: SizedBox(
+                    height: storeHeight,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: 3,
+                      itemBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: _buildShimmerBox(
+                            height: storeHeight, width: 200),
+                      ),
                     ),
                   ),
                 );
@@ -452,10 +550,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
 
-              // Use ResponsiveLayout builder for different layouts
               return ResponsiveLayout.builder(
                 context: context,
-                // Mobile layout - horizontal scrolling list
                 mobile: SizedBox(
                   height: storeHeight,
                   child: ListView.builder(
@@ -471,7 +567,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 ),
-                // Tablet layout - 2 column grid
                 tablet: GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -487,7 +582,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     return _buildStoreCard(provider.markets[index]);
                   },
                 ),
-                // Desktop layout - 3 column grid
                 desktop: GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -498,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSpacing: 24,
                   ),
                   itemCount:
-                      provider.markets.length > 6 ? 6 : provider.markets.length,
+                      provider.markets.length ,
                   itemBuilder: (context, index) {
                     return _buildStoreCard(provider.markets[index]);
                   },
@@ -512,16 +606,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStoreCard(dynamic market) {
-    // Extract shop data from the shop object
     final String name = market.marketName ?? 'Unknown Shop';
     final String marketLocation = market.marketLocation ?? 'Unknown Location';
     final String marketPhone = market.marketPhone ?? 'Unknown Phone';
     final String marketEmail = market.marketEmail ?? 'Unknown Email';
     final String? imagePath = market.marketImage;
     final String imageUrl = '${ApiEndpoints.baseUrl}/$imagePath';
-    final List<String> products =
-        market.products; // Assuming products is a list
-    print(products);
+    final List<String> products = market.products;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -534,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> {
               marketPhone: marketPhone,
               marketEmail: marketEmail,
               imageUrl: imageUrl,
-              products: products, // Pass the actual products list
+              products: products,
             ),
           ),
         );
@@ -556,7 +647,6 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Store image
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
@@ -577,15 +667,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-
-            // Store details
             Padding(
               padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Store name and rating
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -611,7 +698,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             '2.1',
                             style: const TextStyle(
-                              // Removed 'const' keyword
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                               color: AppColors.black,
@@ -622,8 +708,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 6),
-
-                  // Delivery info
                   Row(
                     children: [
                       Container(

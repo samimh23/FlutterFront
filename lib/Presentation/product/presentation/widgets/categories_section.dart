@@ -12,12 +12,8 @@ class CategoriesSection extends StatelessWidget {
       'image': 'assets/icons/flame.png',
     },
     {
-      'title': 'Sweets',
-      'image': 'assets/icons/sweets.png',
-    },
-    {
-      'title': 'Drinks',
-      'image': 'assets/icons/drinks.png',
+      'title': 'Fruits',
+      'image': 'assets/icons/fruits.png',
     },
     {
       'title': 'Vegetables',
@@ -29,8 +25,8 @@ class CategoriesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 24.0, top: 16.0, bottom: 8.0),
+        const Padding(
+          padding: EdgeInsets.only(left: 24.0, top: 16.0, bottom: 8.0),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -51,13 +47,13 @@ class CategoriesSection extends StatelessWidget {
               // Calculate item width based on available width
               final availableWidth = constraints.maxWidth;
               final itemWidth = (availableWidth - 32) / categories.length;
-              
+
               return ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
-                  return Container(
+                  return SizedBox(
                     width: itemWidth,
                     child: Center(
                       child: CategoryItem(
@@ -121,7 +117,6 @@ class _CategoryItemState extends State<CategoryItem> {
               height: isHovered ? 75 : 70,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                
                 image: DecorationImage(
                   image: AssetImage(widget.image),
                   fit: BoxFit.cover,

@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../../Core/Utils/secure_storage.dart';
 import '../../../../Core/api/api_exceptions.dart';
-
 
 class SubscriptionService {
   final SecureStorageService _secureStorageService;
@@ -17,7 +16,6 @@ class SubscriptionService {
         _baseUrl = ApiEndpoints.baseUrl,
         _secureStorageService = secureStorageService ?? SecureStorageService();
 
-  // Enum to string converter for subscription types
   String _getSubscriptionTypeString(SubscriptionType type) {
     switch (type) {
       case SubscriptionType.farmer:
@@ -29,7 +27,7 @@ class SubscriptionService {
     }
   }
 
-  // Create checkout session
+  // For web
   Future<CheckoutSessionResponse> createCheckoutSession(SubscriptionType subscriptionType) async {
     final token = await _secureStorageService.getAccessToken();
 
@@ -71,16 +69,41 @@ class SubscriptionService {
     }
   }
 
-// You can add more methods here for verifying subscription status, etc.
+  // For mobile
+  Future<String?> createPaymentIntent(SubscriptionType subscriptionType) async {
+    final token = await _secureStorageService.getAccessToken();
+    final response = await http.post(
+      Uri.parse('$_baseUrl/payments/create-intent'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'subscriptionType': _getSubscriptionTypeString(subscriptionType),
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data['clientSecret'];
+    }
+    throw Exception('Failed to create PaymentIntent: ${response.body}');
+  }
+
+  Future<void> payWithCard(String clientSecret) async {
+    await Stripe.instance.confirmPayment(
+      paymentIntentClientSecret: clientSecret,
+      data: PaymentMethodParams.card(
+        paymentMethodData: PaymentMethodData(),
+      ),
+    );
+  }
 }
 
-// Subscription types
 enum SubscriptionType {
   farmer,
   merchant,
 }
 
-// Response model for checkout session
 class CheckoutSessionResponse {
   final String sessionId;
   final String? paymentIntentId;

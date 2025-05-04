@@ -14,8 +14,6 @@ import '../../../../Core/api/api_exceptions.dart';
 import '../../../Subscription/presentation/manager/subsservice.dart';
 import '../../data/models/user.dart';
 
-
-
 enum ProfileStatus {
   initial,
   loading,
@@ -24,9 +22,6 @@ enum ProfileStatus {
   error,
   subscribing,
 }
-
-
-
 
 class ProfileProvider extends ChangeNotifier {
   final ProfileService _profileService;
@@ -141,7 +136,7 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-// Helper method to get auth headers
+  // Helper method to get auth headers
   Future<Map<String, String>> _getAuthHeaders() async {
     final token = await SecureStorageService().getAccessToken();
     if (token == null) {
@@ -242,5 +237,12 @@ class ProfileProvider extends ChangeNotifier {
     _user = null;
     _errorMessage = null;
     notifyListeners();
+  }
+
+  // --- Add disconnect/logout method here ---
+  Future<void> logout() async {
+    // Optionally, clear tokens and user data from secure storage, and reset provider state
+    await SecureStorageService().clearAll();
+    reset();
   }
 }

@@ -13,13 +13,17 @@ import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_delete.
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_getall.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_getbyid.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_update.dart';
+import 'package:hanouty/hedera_api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
 import '../../../../Core/Utils/secure_storage.dart';
+import '../../../../hedera_api_service.dart';
 
 class NormalMarketProvider extends ChangeNotifier {
+
+
   final GetNormalMarkets getNormalMarkets;
   final GetMyNormalMarkets getMyNormalMarkets;
   final GetNormalMarketById getNormalMarketById;
@@ -99,6 +103,11 @@ class NormalMarketProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+
+
+
+
 
   // Method to load authenticated user's markets
   Future<void> loadMyMarkets() async {
@@ -527,6 +536,17 @@ class NormalMarketProvider extends ChangeNotifier {
     } catch (e) {
       print('Error picking image: $e');
       _setError('Failed to pick image: ${e.toString()}');
+    }
+  }
+  final HederaApiService hederaApi = HederaApiService();
+
+  void fetchMarketBalance( String marketId) async {
+    try {
+      // e.g., "12345"
+      final result = await hederaApi.getBalancebyMarket(marketId);
+      print('Market Balance: $result');
+    } catch (e) {
+      print('Failed to fetch market balance: $e');
     }
   }
 

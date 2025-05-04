@@ -1,106 +1,98 @@
 class Farm {
   final String? id;
+  final String? owner;
   final String farmName;
   final String farmLocation;
   final String? farmPhone;
   final String? farmEmail;
-  final String? marketImage;
-  final List<String>? crops;  // This should be ObjectIDs referencing FarmCrop documents
-
-  // Properties inherited from Markets schema
-  final String? marketName;
-  final String? marketLocation;
-  final String? marketDescription;
-  final String? marketCategory;
-  final double? marketRating;
+  final String? farmDescription;
+  final String? rate;
+  final String? farmImage;
+  final List<String>? sales;
+  final List<String>? crops;
 
   Farm({
     this.id,
+    this.owner,
     required this.farmName,
     required this.farmLocation,
     this.farmPhone,
     this.farmEmail,
-    this.marketImage,
+    this.farmImage,
+    this.sales,
     this.crops,
-    this.marketName,
-    this.marketLocation,
-    this.marketDescription,
-    this.marketCategory,
-    this.marketRating,
+    this.rate,
+    this.farmDescription,
   });
-
-
-
-// Other methods remain the same...
-
 
   factory Farm.fromJson(Map<String, dynamic> json) {
     return Farm(
       id: json['_id'] ?? json['id'],
+      owner: json['owner'],
       farmName: json['farmName'],
       farmLocation: json['farmLocation'],
       farmPhone: json['farmPhone'],
       farmEmail: json['farmEmail'],
-      marketImage: json['marketImage'],
+      farmImage: json['farmImage'],
+      sales: json['sales'] != null
+          ? List<String>.from(json['sales'])
+          : null,
       crops: json['crops'] != null
           ? List<String>.from(json['crops'])
           : null,
-      marketName: json['marketName'],
-      marketLocation: json['marketLocation'],
-      marketDescription: json['marketDescription'],
-      marketCategory: json['marketCategory'],
-      marketRating: json['marketRating'] != null
-          ? double.parse(json['marketRating'].toString())
-          : null,
+      farmDescription: json['farmDescription'],
+      rate: json['rate'],
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool forUpdate = false}) {
     final Map<String, dynamic> data = {
       'farmName': farmName,
       'farmLocation': farmLocation,
     };
 
-    if (id != null) data['_id'] = id;
+    // Only include ID if not for an update operation and if it exists
+    if (!forUpdate && id != null && id!.isNotEmpty && id != "null") {
+      data['_id'] = id;
+    }
+
+    if (owner != null) data['owner'] = owner;
     if (farmPhone != null) data['farmPhone'] = farmPhone;
     if (farmEmail != null) data['farmEmail'] = farmEmail;
-    if (marketImage != null) data['marketImage'] = marketImage;
-    if (crops != null) data['crops'] = crops;  // Should be a list of ObjectIDs
-    if (marketName != null) data['marketName'] = marketName;
-    if (marketLocation != null) data['marketLocation'] = marketLocation;
-    if (marketDescription != null) data['marketDescription'] = marketDescription;
-    if (marketCategory != null) data['marketCategory'] = marketCategory;
-    if (marketRating != null) data['marketRating'] = marketRating;
+    if (farmImage != null) data['farmImage'] = farmImage;
+    if (sales != null) data['sales'] = sales;
+    if (crops != null) data['crops'] = crops;
+    if (farmDescription != null) data['farmDescription'] = farmDescription;
+    if (rate != null) data['rate'] = rate;
 
     return data;
   }
+
   Farm copyWith({
     String? id,
+    String? owner,
     String? farmName,
     String? farmLocation,
     String? farmPhone,
     String? farmEmail,
-    String? marketImage,
+    String? farmDescription,
+    String? rate,
+    String? farmImage,
+    List<String>? sales,
     List<String>? crops,
-    String? marketName,
-    String? marketLocation,
-    String? marketDescription,
-    String? marketCategory,
-    double? marketRating,
   }) {
     return Farm(
       id: id ?? this.id,
+      owner: owner ?? this.owner,
       farmName: farmName ?? this.farmName,
       farmLocation: farmLocation ?? this.farmLocation,
       farmPhone: farmPhone ?? this.farmPhone,
       farmEmail: farmEmail ?? this.farmEmail,
-      marketImage: marketImage ?? this.marketImage,
+      farmDescription: farmDescription ?? this.farmDescription,
+      rate: rate ?? this.rate,
+      farmImage: farmImage ?? this.farmImage,
+      sales: sales ?? this.sales,
       crops: crops ?? this.crops,
-      marketName: marketName ?? this.marketName,
-      marketLocation: marketLocation ?? this.marketLocation,
-      marketDescription: marketDescription ?? this.marketDescription,
-      marketCategory: marketCategory ?? this.marketCategory,
-      marketRating: marketRating ?? this.marketRating,
     );
   }
 }

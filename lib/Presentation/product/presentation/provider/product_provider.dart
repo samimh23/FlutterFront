@@ -179,19 +179,27 @@ Future<bool> deleteProduct(String productId) async {
   }
   Future<String> _processImageFile(html.File file, {double quality = 0.7, int maxWidth = 800, int maxHeight = 800}) async {
     try {
-      print('[ProductProvider] Processing image file: ${file.name} (${file.size ~/ 1024} KB)');
-
-      // Create a Blob URL for the file
+      print('[ProductProvider] [DEBUG] Entered _processImageFile');
+      print('[ProductProvider] [DEBUG] Creating Blob URL...');
       final objectUrl = html.Url.createObjectUrl(file);
 
-      // Load the image to get its dimensions
-      final img = html.ImageElement();
-      await img.onLoad.first;
 
-      // Calculate new dimensions while maintaining aspect ratio
+      print('[ProductProvider] [DEBUG] Creating ImageElement...');
+      final img = html.ImageElement();
+      img.src = objectUrl;
+
+
+      print('[ProductProvider] [DEBUG] Waiting for image to load...');
+      await img.onLoad.first;
+      print('[ProductProvider] [DEBUG] Image loaded. Dimensions: ${img.width}x${img.height}');
+
+
       int targetWidth = img.width ?? 800;
       int targetHeight = img.height ?? 800;
+      print('[ProductProvider] [DEBUG] Original size: $targetWidth x $targetHeight');
 
+
+      // Calculate new dimensions while maintaining aspect ratio
       if (targetWidth > maxWidth || targetHeight > maxHeight) {
         if (targetWidth > targetHeight) {
           targetHeight = (maxWidth * targetHeight / targetWidth).round();
@@ -201,23 +209,27 @@ Future<bool> deleteProduct(String productId) async {
           targetHeight = maxHeight;
         }
       }
+      print('[ProductProvider] [DEBUG] Resized to: $targetWidth x $targetHeight');
 
-      // Create canvas and draw resized image
+
       final canvas = html.CanvasElement(width: targetWidth, height: targetHeight);
       final ctx = canvas.context2D;
       ctx.drawImageScaled(img, 0, 0, targetWidth, targetHeight);
+      print('[ProductProvider] [DEBUG] Image drawn on canvas');
 
-      // Convert to compressed JPEG data URL
+
       final mimeType = 'image/jpeg';
       final dataUrl = canvas.toDataUrl(mimeType, quality);
+      print('[ProductProvider] [DEBUG] Converted to dataUrl');
 
-      // Clean up
+
       html.Url.revokeObjectUrl(objectUrl);
 
-      // Calculate size reduction
+
       final base64String = dataUrl.split(',')[1];
       final compressedSize = base64String.length * 0.75 ~/ 1024;
       print('[ProductProvider] Image processed: ${targetWidth}x${targetHeight}, ~$compressedSize KB');
+
 
       return dataUrl;
     } catch (e) {
@@ -233,23 +245,32 @@ Future<bool> deleteProduct(String productId) async {
     print('[ProductProvider] - Name: ${productData['name']}');
     print('[ProductProvider] - Has new image: ${imageData != null}');
 
+
     _isSubmitting = true;
     _errorMessage = '';
     notifyListeners();
 
+
     try {
       // Get authentication token
+      print('[DEBUG-CREATE] Getting token...');
       final token = await getToken();
+      print('[DEBUG-CREATE] Token is: $token');
       if (token == null) {
+        print('[DEBUG-CREATE] ERROR: Token is null!');
         throw Exception("Authentication token not available");
       }
 
+
       // Create API client
+      print('[DEBUG-CREATE] Creating Dio client...');
       final dio = Dio();
       dio.options.headers['Authorization'] = 'Bearer $token';
       dio.options.headers['Content-Type'] = 'application/json';
 
+
       // Prepare product data with correct types
+      print('[DEBUG-CREATE] Preparing productJson...');
       final Map<String, dynamic> productJson = {
         'name': productData['name'],
         'description': productData['description'],
@@ -258,61 +279,77 @@ Future<bool> deleteProduct(String productId) async {
         'stock': int.parse(productData['stock'].toString()),
         'shop': productData['shop'],
       };
+      print('[DEBUG-CREATE] productJson: $productJson');
+
 
       // Process image if provided
       if (imageData != null) {
-        print('[ProductProvider] Processing image for upload');
+        print('[DEBUG-CREATE] Processing image for upload');
+
 
         try {
           final htmlFile = imageData['file'] as html.File;
 
+
           // Process and optimize the image
           final dataUrl = await _processImageFile(
               htmlFile,
-              quality: 0.7,  // 70% quality for good balance of size/quality
+              quality: 0.7,
               maxWidth: 800,
               maxHeight: 800
           );
+          print('[DEBUG-CREATE] Image processed. dataUrl length: ${dataUrl.length}');
+
 
           // Add the image data to the product JSON
           productJson['image'] = dataUrl;
-
-          print('[ProductProvider] Image processed and added to request data');
+          print('[DEBUG-CREATE] Image added to productJson');
         } catch (e) {
-          print('[ProductProvider] ERROR processing image: $e');
+          print('[DEBUG-CREATE] ERROR processing image: $e');
           throw Exception('Failed to process image: $e');
         }
       } else {
-        print('[ProductProvider] WARNING: No image data provided');
+        print('[DEBUG-CREATE] WARNING: No image data provided');
         throw Exception('Image is required for creating a product');
       }
 
+
       // Send request with product data
-      print('[ProductProvider] Sending product data to API at $apiUrl/product');
+      print('[DEBUG-CREATE] Sending product data to API at $apiUrl/product with payload:');
+      productJson.forEach((k, v) => print('[DEBUG-CREATE]   $k: ${(v is String && v.length > 100) ? v.substring(0,100) + "...(truncated)" : v}'));
+
+
       final response = await dio.post(
         '$apiUrl/product',
         data: productJson,
       );
 
-      print('[ProductProvider] API Response: ${response.statusCode}');
+
+      print('[DEBUG-CREATE] API Response: ${response.statusCode}');
+      print('[DEBUG-CREATE] API Response Data: ${response.data}');
+
 
       // Check response
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('[ProductProvider] Product created successfully!');
+        print('[DEBUG-CREATE] Product created successfully!');
         fetchProducts(); // Refresh product list
         _isSubmitting = false;
         notifyListeners();
         return true;
       } else {
+        print('[DEBUG-CREATE] Unexpected response status: ${response.statusCode}');
         throw Exception('Unexpected response status: ${response.statusCode}');
       }
-    } catch (e) {
-      print('[ProductProvider] ERROR adding product: $e');
+    } catch (e, stack) {
+      print('[DEBUG-CREATE] ERROR adding product: $e');
+      print('[DEBUG-CREATE] STACKTRACE: $stack');
+
 
       // Handle DioException specifically
       if (e is DioException) {
         if (e.response != null) {
-          print('[ProductProvider] Server response: ${e.response?.statusCode} - ${e.response?.data}');
+          print('[DEBUG-CREATE] Server response: ${e.response?.statusCode} - ${e.response?.data}');
+
 
           // Extract error message
           if (e.response?.data is Map && e.response?.data['message'] != null) {
@@ -329,6 +366,7 @@ Future<bool> deleteProduct(String productId) async {
       } else {
         _errorMessage = 'Error: ${e.toString()}';
       }
+
 
       _isSubmitting = false;
       notifyListeners();

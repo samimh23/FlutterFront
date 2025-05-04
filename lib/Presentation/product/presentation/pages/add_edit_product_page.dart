@@ -10,15 +10,19 @@ import 'package:hanouty/Core/network/apiconastant.dart'; // Import ApiConstants
 import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 
+
 class AddEditProductPage extends StatefulWidget {
   final Product? product; // Pass product for edit mode, null for add mode
   final String? marketId; // Optional market ID for new products
 
+
   const AddEditProductPage({Key? key, this.product, this.marketId}) : super(key: key);
+
 
   @override
   _AddEditProductPageState createState() => _AddEditProductPageState();
 }
+
 
 class _AddEditProductPageState extends State<AddEditProductPage> {
   final _formKey = GlobalKey<FormState>();
@@ -29,6 +33,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   final _stockController = TextEditingController();
   final _discountValueController = TextEditingController();
 
+
   bool _isLoading = false;
   bool _isDiscounted = false;
   bool _uploadingImage = false;
@@ -36,8 +41,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
   String? _networkImage; // Single network image
   Map<String, dynamic>? _localImage; // Single local image
 
+
   // Get instance of ProductProvider from the dependency injection container
   late final ProductProvider _productProvider = sl<ProductProvider>();
+
 
   @override
   void initState() {
@@ -46,6 +53,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     print("Market ID: ${widget.marketId}");
     _initializeFormData();
   }
+
 
   void _initializeFormData() {
     if (widget.product != null) {
@@ -59,12 +67,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       _isDiscounted = widget.product!.isDiscounted;
       _selectedCategory = widget.product!.category;
 
+
       // Get the existing image if available
       if (widget.product!.image != null && widget.product!.image!.isNotEmpty) {
         _networkImage = widget.product!.image;
       }
     }
   }
+
 
   @override
   void dispose() {
@@ -77,20 +87,44 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     super.dispose();
   }
 
+
   Future<void> _pickImage() async {
     try {
       setState(() {
         _uploadingImage = true;
       });
 
-      // Use your ImagePickerHelper to pick an image
+
       final imageData = await ImagePickerHelper.pickImage();
 
+
       if (imageData != null) {
-        // Store the picked image locally
+        final file = imageData['file'] as html.File;
+        final fileSizeMB = file.size / (1024 * 1024);
+
+
+        print('Picked image: ${file.name}, size: ${fileSizeMB.toStringAsFixed(2)} MB');
+
+
+        // Show error and abort if the image is too large (e.g., 5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Image is too large (${fileSizeMB.toStringAsFixed(2)} MB). Please select a file under 5MB.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+          setState(() {
+            _uploadingImage = false;
+          });
+          return;
+        }
+
+
         setState(() {
-          _localImage = imageData; // Set as single image
-          _networkImage = null; // Clear network image when local image is picked
+          _localImage = imageData;
+          _networkImage = null;
         });
       }
     } catch (e) {
@@ -107,6 +141,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     }
   }
 
+
   void _removeImage() {
     setState(() {
       _networkImage = null;
@@ -114,12 +149,15 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     });
   }
 
+
   Future<void> _submitForm() async {
     final now = DateTime.now().toUtc();
     final formattedDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} "
         "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
 
+
     print("\n===== SUBMIT FORM STARTED: $formattedDate =====");
+
 
     // Check if we have an image (either network or local)
     if (_networkImage == null && _localImage == null) {
@@ -133,17 +171,21 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       return;
     }
 
+
     if (!_formKey.currentState!.validate()) {
       print("Form validation failed");
       return;
     }
 
+
     setState(() {
       _isLoading = true;
     });
 
+
     try {
       bool success;
+
 
       if (widget.product == null) {
         // Creating a new product - use ONLY fields from CreateProductDto
@@ -155,6 +197,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           'stock': _stockController.text.trim(),
           'shop': widget.marketId?.trim() ?? '',
         };
+
 
         print("Calling addProductWithImageData on provider with fields: ${createProductData.keys.join(', ')}");
         success = await _productProvider.addProductWithImageData(createProductData, _localImage);
@@ -171,9 +214,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           'isDiscounted': _isDiscounted,
         };
 
+
         if (_isDiscounted) {
           updateProductData['DiscountValue'] = _discountValueController.text.trim();
         }
+
 
         print("Calling updateProductWithImageData on provider");
         success = await _productProvider.updateProductWithImageData(
@@ -183,6 +228,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
             _networkImage
         );
       }
+
 
       if (success) {
         print("Product operation succeeded, closing form");
@@ -201,6 +247,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
         final errorMsg = _productProvider.errorMessage.isNotEmpty
             ? _productProvider.errorMessage
             : 'Operation failed. Please try again.';
+
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -226,8 +273,10 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       }
     }
 
+
     print("===== SUBMIT FORM COMPLETED =====\n");
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -248,6 +297,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               _buildImageSection(),
               const SizedBox(height: 24),
 
+
               // Basic Info Section
               _buildSectionHeader('Basic Information'),
               _buildTextField(
@@ -264,9 +314,11 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
               const SizedBox(height: 16),
 
+
               // Category Dropdown
               _buildCategoryDropdown(),
               const SizedBox(height: 24),
+
 
               // Price & Stock Section
               _buildSectionHeader('Pricing & Inventory'),
@@ -315,6 +367,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
               const SizedBox(height: 24),
 
+
               // Discount Section - only shown in Edit mode since creating doesn't support these fields
               if (widget.product != null) ...[
                 _buildSectionHeader('Discount Settings'),
@@ -340,6 +393,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ],
               const SizedBox(height: 32),
 
+
               // Submit Button
               SizedBox(
                 height: 50,
@@ -364,6 +418,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
               ),
               const SizedBox(height: 24),
 
+
               // Error message display (for debugging)
               if (_productProvider.errorMessage.isNotEmpty)
                 Container(
@@ -386,12 +441,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+
   Widget _buildImageSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader('Product Image'),
         const SizedBox(height: 8),
+
 
         // Single image display or picker
         Container(
@@ -407,6 +464,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
           ),
         ),
 
+
         if (_networkImage == null && _localImage == null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -419,11 +477,13 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+
   // UPDATED: Network image display with ApiConstants
   Widget _buildNetworkImageItem(String imageUrl) {
     // Process the image URL using ApiConstants
     final String fullImageUrl = ApiConstants.getFullImageUrl(imageUrl);
     print('Loading product image from: $fullImageUrl');
+
 
     return Stack(
       children: [
@@ -501,12 +561,14 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+
   // UPDATED: Local image display with file info
   Widget _buildLocalImageItem(Map<String, dynamic> imageData) {
     // For preview, create an object URL
     final objectUrl = html.Url.createObjectUrl(imageData['file'] as html.Blob);
     final fileName = (imageData['file'] as html.File).name;
     final fileSize = ((imageData['file'] as html.File).size / 1024).toStringAsFixed(1) + ' KB';
+
 
     return Stack(
       children: [
@@ -580,6 +642,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+
   Widget _buildUploadingIndicator() {
     return Container(
       width: 200,
@@ -614,6 +677,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+
   Widget _buildAddImageButton() {
     return GestureDetector(
       onTap: _pickImage,
@@ -643,6 +707,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
     );
   }
+
 
   // Helper method for displaying detailed image errors
   void _showImageErrorDialog(BuildContext context, String processedUrl, String originalUrl, dynamic error) {
@@ -682,6 +747,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -695,6 +761,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       ),
     );
   }
+
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -723,6 +790,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
     );
   }
 
+
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<ProductCategory>(
       value: _selectedCategory,
@@ -748,6 +816,7 @@ class _AddEditProductPageState extends State<AddEditProductPage> {
       },
     );
   }
+
 
   Widget _buildDiscountSwitch() {
     return SwitchListTile(

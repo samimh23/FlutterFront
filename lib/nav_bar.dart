@@ -63,7 +63,7 @@ class _MainScreenState extends State<MainScreen>
     _screens = [
       const HomeScreen(),
       const CartScreen(),
-      WalletHomePage(),
+      WalletScreen(),
       const OrdersScreen(),
       const ProfilePage(),
       

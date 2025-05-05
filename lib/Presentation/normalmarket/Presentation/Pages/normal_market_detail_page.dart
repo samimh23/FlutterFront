@@ -5,6 +5,7 @@ import 'package:hanouty/Core/network/apiconastant.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/entities/normalmarket_entity.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Widgets/products_grid.dart';
+import 'package:hanouty/hedera_api_service.dart';
 import 'package:provider/provider.dart';
 
 import 'normal_market_form_page.dart';
@@ -24,6 +25,9 @@ class NormalMarketDetailsPage extends StatefulWidget {
 
 class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   final ScrollController _scrollController = ScrollController();
+  Map<String, dynamic>? _ownershipDistribution;
+  bool _loadingDistribution = false;
+  String? _distributionError;
 
   @override
   void initState() {
@@ -39,13 +43,48 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     super.dispose();
   }
 
+  Future<void> _fetchOwnershipDistribution(String? tokenId) async {
+    if (tokenId == null || tokenId == "PENDING_FUNDING_NEEDED") return;
+    setState(() {
+      _loadingDistribution = true;
+      _distributionError = null;
+    });
+    try {
+      final api = HederaApiService();
+      final data = await api.getTokenOwnership(tokenId);
+
+      // Filter out any ownership entries with 0% share
+      if (data != null && data['ownershipDistribution'] is List) {
+        data['ownershipDistribution'] = (data['ownershipDistribution'] as List)
+            .where((h) =>
+        (h['percentage'] is num ? h['percentage'] : 0) > 0)
+            .toList();
+      }
+
+      setState(() {
+        _ownershipDistribution = data;
+        _loadingDistribution = false;
+      });
+    } catch (e) {
+      setState(() {
+        _distributionError = 'Failed to load share distribution';
+        _loadingDistribution = false;
+      });
+    }
+  }
+
+  String? _lastFetchedTokenId;
+
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
+    final brightness = Theme
+        .of(context)
+        .brightness;
     final isDarkMode = brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3), // Dark or light background
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(
+          0xFFF9F7F3),
       body: Consumer<NormalMarketProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -55,54 +94,93 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
           } else if (provider.selectedMarket == null) {
             return _buildEmptyView(isDarkMode);
           }
-
           final market = provider.selectedMarket!;
           final String? imagePath = (market as dynamic).marketImage;
           final String? nftAddress = (market as dynamic).fractionalNFTAddress;
           final bool hasValidNft =
               nftAddress != null && nftAddress != "PENDING_FUNDING_NEEDED";
 
+
+          if (hasValidNft &&
+              nftAddress != null &&
+              nftAddress != _lastFetchedTokenId &&
+              !_loadingDistribution) {
+            _lastFetchedTokenId = nftAddress;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _fetchOwnershipDistribution(nftAddress);
+            });
+          }
           // Get screen size for responsive design
-          final screenSize = MediaQuery.of(context).size;
+          final screenSize = MediaQuery
+              .of(context)
+              .size;
           final isSmallScreen = screenSize.width < 360;
 
           return CustomScrollView(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // Sliver App Bar with expandable image
-              _buildSliverAppBar(market, imagePath, hasValidNft, isSmallScreen, isDarkMode),
-
-              // Market content
+              _buildSliverAppBar(market, imagePath, hasValidNft, MediaQuery
+                  .of(context)
+                  .size
+                  .width < 360, isDarkMode),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 12.0 : 20.0
+                      horizontal: MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360 ? 12.0 : 20.0
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: isSmallScreen ? 16 : 20),
-
-                      // Stats card
-                      _buildStatsCard(market, isSmallScreen, isDarkMode),
-
-                      SizedBox(height: isSmallScreen ? 20 : 24),
-
-                      // Market details card
-                      _buildDetailsCard(market, hasValidNft, nftAddress, isSmallScreen, isDarkMode),
-
-                      SizedBox(height: isSmallScreen ? 20 : 24),
-
-                      // Products section
-                      _buildProductsCard(market, isSmallScreen, isDarkMode),
-
-                      SizedBox(height: isSmallScreen ? 24 : 30),
-
-                      // Action buttons
-                      _buildActionButtons(market.id, hasValidNft, isSmallScreen, isDarkMode),
-
-                      SizedBox(height: isSmallScreen ? 30 : 40),
+                      SizedBox(height: MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360 ? 16 : 20),
+                      _buildStatsCard(market, MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360, isDarkMode),
+                      SizedBox(height: MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360 ? 20 : 24),
+                      // CHANGED: Pass ownership distribution to blockchain details card
+                      _buildDetailsCard(
+                        market,
+                        hasValidNft,
+                        nftAddress,
+                        MediaQuery
+                            .of(context)
+                            .size
+                            .width < 360,
+                        isDarkMode,
+                        ownershipDistribution: _ownershipDistribution,
+                        loadingDistribution: _loadingDistribution,
+                        distributionError: _distributionError,
+                      ),
+                      SizedBox(height: MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360 ? 20 : 24),
+                      _buildProductsCard(market, MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360, isDarkMode),
+                      SizedBox(height: MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360 ? 24 : 30),
+                      _buildActionButtons(market.id, hasValidNft, MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360, isDarkMode),
+                      SizedBox(height: MediaQuery
+                          .of(context)
+                          .size
+                          .width < 360 ? 30 : 40),
                     ],
                   ),
                 ),
@@ -115,8 +193,12 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   }
 
   Widget _buildLoadingView(bool isDarkMode) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 360;
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final isSmallScreen = MediaQuery
+        .of(context)
+        .size
+        .width < 360;
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
 
     return Container(
       decoration: BoxDecoration(
@@ -152,7 +234,9 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   }
 
   Widget _buildErrorView(NormalMarketProvider provider, bool isDarkMode) {
-    final screenSize = MediaQuery.of(context).size;
+    final screenSize = MediaQuery
+        .of(context)
+        .size;
     final isSmallScreen = screenSize.width < 360;
     final contentWidth = isSmallScreen
         ? screenSize.width - 40
@@ -163,7 +247,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
     final errorColor = isDarkMode ? Colors.redAccent.shade200 : Colors.red[700];
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
 
     return Container(
       decoration: BoxDecoration(
@@ -248,7 +333,9 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   }
 
   Widget _buildEmptyView(bool isDarkMode) {
-    final screenSize = MediaQuery.of(context).size;
+    final screenSize = MediaQuery
+        .of(context)
+        .size;
     final isSmallScreen = screenSize.width < 360;
     final contentWidth = isSmallScreen
         ? screenSize.width - 40
@@ -258,8 +345,10 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
 
     final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF555555);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(
+        0xFF555555);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
 
     return Container(
       decoration: BoxDecoration(
@@ -333,7 +422,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     );
   }
 
-  Widget _buildSliverAppBar(Markets market, String? imagePath, bool hasNft, bool isSmallScreen, bool isDarkMode) {
+  Widget _buildSliverAppBar(Markets market, String? imagePath, bool hasNft,
+      bool isSmallScreen, bool isDarkMode) {
     final expandedHeight = isSmallScreen ? 200.0 : 240.0;
     final appBarColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final appBarIconColor = isDarkMode ? Colors.white : const Color(0xFF4CAF50);
@@ -402,7 +492,9 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
                             vertical: isSmallScreen ? 4 : 5,
                           ),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
+                            color: isDarkMode
+                                ? const Color(0xFF81C784)
+                                : const Color(0xFF4CAF50),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
@@ -469,7 +561,10 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
 
             // Action buttons
             Positioned(
-              top: MediaQuery.of(context).padding.top + (isSmallScreen ? 4 : 8),
+              top: MediaQuery
+                  .of(context)
+                  .padding
+                  .top + (isSmallScreen ? 4 : 8),
               right: isSmallScreen ? 4 : 8,
               child: Row(
                 children: [
@@ -483,7 +578,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
                   _buildCircleButton(
                     icon: Icons.delete_outline,
                     color: Colors.white,
-                    onPressed: () => _deleteMarket(context, market.id, isDarkMode),
+                    onPressed: () =>
+                        _deleteMarket(context, market.id, isDarkMode),
                     isSmallScreen: isSmallScreen,
                   ),
                 ],
@@ -525,8 +621,10 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     );
   }
 
-  Widget _buildMarketBackgroundImage(String? imagePath, bool isSmallScreen, bool isDarkMode) {
-    if (imagePath == null || imagePath.isEmpty || imagePath == 'image_url_here') {
+  Widget _buildMarketBackgroundImage(String? imagePath, bool isSmallScreen,
+      bool isDarkMode) {
+    if (imagePath == null || imagePath.isEmpty ||
+        imagePath == 'image_url_here') {
       return Container(
         color: isDarkMode
             ? const Color(0xFF1A2E1A) // Dark green background for dark mode
@@ -611,13 +709,19 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
 
     final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[300] : const Color(0xFF666666);
-    final dividerColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.grey.withOpacity(0.2);
+    final subtitleColor = isDarkMode ? Colors.grey[300] : const Color(
+        0xFF666666);
+    final dividerColor = isDarkMode
+        ? Colors.grey.shade800.withOpacity(0.5)
+        : Colors.grey.withOpacity(0.2);
 
     // Define color schemes for each stat with dark mode support
-    final ownershipColor = isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3);
-    final productsColor = isDarkMode ? const Color(0xFFFFB74D) : const Color(0xFFFF9800);
-    final contactColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final ownershipColor = isDarkMode ? const Color(0xFF64B5F6) : const Color(
+        0xFF2196F3);
+    final productsColor = isDarkMode ? const Color(0xFFFFB74D) : const Color(
+        0xFFFF9800);
+    final contactColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
 
     return Container(
       decoration: BoxDecoration(
@@ -664,7 +768,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
                   textColor: textColor,
                   subtitleColor: subtitleColor,
                 ),
-                if ((market as dynamic).marketPhone != null || (market as dynamic).marketEmail != null)
+                if ((market as dynamic).marketPhone != null ||
+                    (market as dynamic).marketEmail != null)
                   _buildStatDivider(isSmallScreen, dividerColor),
                 if ((market as dynamic).marketPhone != null)
                   _buildContactItem(
@@ -679,19 +784,20 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
                     valueFontSize: labelFontSize,
                     bgColor: contactColor.withOpacity(isDarkMode ? 0.2 : 0.1),
                   )
-                else if ((market as dynamic).marketEmail != null)
-                  _buildContactItem(
-                    icon: Icons.email,
-                    value: (market as dynamic).marketEmail!,
-                    isSmallScreen: isSmallScreen,
-                    textColor: textColor,
-                    subtitleColor: subtitleColor,
-                    iconColor: contactColor,
-                    iconSize: iconSize,
-                    titleFontSize: valueFontSize,
-                    valueFontSize: labelFontSize,
-                    bgColor: contactColor.withOpacity(isDarkMode ? 0.2 : 0.1),
-                  ),
+                else
+                  if ((market as dynamic).marketEmail != null)
+                    _buildContactItem(
+                      icon: Icons.email,
+                      value: (market as dynamic).marketEmail!,
+                      isSmallScreen: isSmallScreen,
+                      textColor: textColor,
+                      subtitleColor: subtitleColor,
+                      iconColor: contactColor,
+                      iconSize: iconSize,
+                      titleFontSize: valueFontSize,
+                      valueFontSize: labelFontSize,
+                      bgColor: contactColor.withOpacity(isDarkMode ? 0.2 : 0.1),
+                    ),
               ],
             ),
           ),
@@ -822,8 +928,15 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     return '${text.substring(0, maxLength)}...';
   }
 
-  Widget _buildDetailsCard(Markets market, bool hasValidNft, String? nftAddress, bool isSmallScreen, bool isDarkMode) {
-    // Cast market to NormalMarket to access specific properties
+  Widget _buildDetailsCard(Markets market,
+      bool hasValidNft,
+      String? nftAddress,
+      bool isSmallScreen,
+      bool isDarkMode, {
+        Map<String, dynamic>? ownershipDistribution,
+        bool loadingDistribution = false,
+        String? distributionError,
+      }) {
     final normalMarket = market as NormalMarket;
     final padding = isSmallScreen ? 16.0 : 20.0;
     final headingFontSize = isSmallScreen ? 16.0 : 18.0;
@@ -833,10 +946,14 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
 
     final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF666666);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final fieldBgColor = isDarkMode ? Colors.grey.shade900 : const Color(0xFFEEF7ED);
-    final dividerColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200;
+    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(
+        0xFF666666);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
+    final fieldBgColor = isDarkMode ? Colors.grey.shade900 : const Color(
+        0xFFEEF7ED);
+    final dividerColor = isDarkMode ? Colors.grey.shade800 : Colors.grey
+        .shade200;
     final headingColor = isDarkMode ? Colors.white : const Color(0xFF2E7D32);
 
     return Container(
@@ -856,14 +973,16 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.fromLTRB(padding, padding, padding, isSmallScreen ? 4 : 6),
+            padding: EdgeInsets.fromLTRB(
+                padding, padding, padding, isSmallScreen ? 4 : 6),
             child: Row(
               children: [
                 Container(
                   padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                   decoration: BoxDecoration(
                     color: accentColor.withOpacity(isDarkMode ? 0.2 : 0.1),
-                    borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
+                    borderRadius: BorderRadius.circular(
+                        isSmallScreen ? 10 : 12),
                   ),
                   child: Icon(
                     Icons.account_balance_wallet_outlined,
@@ -929,7 +1048,230 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
               subtitleColor: subtitleColor,
             ),
 
-          SizedBox(height: isSmallScreen ? 12 : 16),
+          if (hasValidNft) ...[
+            Padding(
+              padding: EdgeInsets.only(
+                  left: padding,
+                  right: padding,
+                  top: isSmallScreen ? 8 : 12,
+                  bottom: isSmallScreen ? 8 : 12),
+              child: Text(
+                'Token Share Distribution',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: isSmallScreen ? 14 : 16,
+                  color: subtitleColor,
+                ),
+              ),
+            ),
+            if (loadingDistribution)
+              Padding(
+                padding: EdgeInsets.only(left: padding,
+                    right: padding,
+                    bottom: isSmallScreen ? 8 : 12),
+                child: Row(
+                  children: [
+                    SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: accentColor)),
+                    SizedBox(width: 10),
+                    Text('Loading distribution...', style: TextStyle(
+                        fontSize: valueFontSize, color: subtitleColor)),
+                  ],
+                ),
+              )
+            else
+              if (distributionError != null)
+                Padding(
+                  padding: EdgeInsets.only(
+                      left: padding,
+                      right: padding,
+                      bottom: isSmallScreen ? 8 : 12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: Colors.redAccent.withOpacity(0.22),
+                          width: 1.4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.redAccent.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_rounded, color: Colors.redAccent,
+                            size: isSmallScreen ? 22 : 26),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            distributionError!,
+                            style: TextStyle(
+                              color: Colors.redAccent.shade200,
+                              fontSize: valueFontSize + 1,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                if (ownershipDistribution != null &&
+                    ownershipDistribution!['ownershipDistribution'] != null &&
+                    (ownershipDistribution!['ownershipDistribution'] as List)
+                        .isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(
+                        left: padding,
+                        right: padding,
+                        bottom: isSmallScreen ? 8 : 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: fieldBgColor,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDarkMode
+                                ? 0.08
+                                : 0.03),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 14.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.account_circle_rounded,
+                                    color: accentColor,
+                                    size: isSmallScreen ? 16 : 20),
+                                SizedBox(width: 6),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    'Account ID',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: subtitleColor,
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    'Share %',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: subtitleColor,
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                      letterSpacing: 0.2,
+                                    ),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Divider(height: 1, color: dividerColor, thickness: 1),
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: (ownershipDistribution!['ownershipDistribution'] as List)
+                                .length,
+                            separatorBuilder: (context, idx) =>
+                                Divider(height: 1, color: dividerColor),
+                            itemBuilder: (context, idx) {
+                              final holder = ownershipDistribution!['ownershipDistribution'][idx];
+                              return Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 14.0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        holder['accountId'] ?? '',
+                                        style: TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: isSmallScreen ? 12 : 14,
+                                          color: textColor,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        '${holder['percentage']
+                                            ?.toStringAsFixed(2) ?? '0'}%',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: isSmallScreen ? 12 : 14,
+                                          color: accentColor,
+                                        ),
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  if (ownershipDistribution != null)
+                    Padding(
+                      padding: EdgeInsets.only(left: padding,
+                          right: padding,
+                          bottom: isSmallScreen ? 8 : 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: fieldBgColor,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: subtitleColor!.withOpacity(0.15)),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 12),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: subtitleColor,
+                                size: isSmallScreen ? 20 : 24),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'No share distribution data available.',
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: valueFontSize,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+          ],
         ],
       ),
     );
@@ -972,7 +1314,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
             decoration: BoxDecoration(
               color: fieldBgColor,
               borderRadius: BorderRadius.circular(12),
-              border: isDarkMode ? Border.all(color: Colors.grey.shade800, width: 1) : null,
+              border: isDarkMode ? Border.all(
+                  color: Colors.grey.shade800, width: 1) : null,
             ),
             child: Row(
               children: [
@@ -1042,7 +1385,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     );
   }
 
-  Widget _buildProductsCard(Markets market, bool isSmallScreen, bool isDarkMode) {
+  Widget _buildProductsCard(Markets market, bool isSmallScreen,
+      bool isDarkMode) {
     final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
 
     return Container(
@@ -1065,7 +1409,9 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
             products: market.products,
             marketName: (market as dynamic).marketName,
             marketId: market.id, // Pass the market ID here
-            onProductsUpdated: () => context.read<NormalMarketProvider>().loadMarketById(widget.marketId),
+            onProductsUpdated: () =>
+                context.read<NormalMarketProvider>().loadMarketById(
+                    widget.marketId),
           ),
         ],
       ),
@@ -1079,15 +1425,20 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     final buttonFontSize = isSmallScreen ? 12.0 : 14.0;
     final imageSize = isSmallScreen ? 80.0 : 100.0;
 
-    final backgroundColor = isDarkMode ? const Color(0xFF252525) : const Color(0xFFEEF7ED);
-    final borderColor = isDarkMode ? Colors.grey.shade800 : const Color(0xFF4CAF50).withOpacity(0.2);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final backgroundColor = isDarkMode ? const Color(0xFF252525) : const Color(
+        0xFFEEF7ED);
+    final borderColor = isDarkMode ? Colors.grey.shade800 : const Color(
+        0xFF4CAF50).withOpacity(0.2);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF666666);
+    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(
+        0xFF666666);
 
     return Container(
       margin: EdgeInsets.fromLTRB(padding, 0, padding, padding),
-      padding: EdgeInsets.symmetric(vertical: padding * 1.5, horizontal: padding),
+      padding: EdgeInsets.symmetric(
+          vertical: padding * 1.5, horizontal: padding),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
@@ -1101,7 +1452,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
           Icon(
             Icons.shopping_basket_outlined,
             size: imageSize,
-            color: isDarkMode ? Colors.white.withOpacity(0.2) : accentColor.withOpacity(0.3),
+            color: isDarkMode ? Colors.white.withOpacity(0.2) : accentColor
+                .withOpacity(0.3),
           ),
           SizedBox(height: isSmallScreen ? 16 : 20),
           Text(
@@ -1150,7 +1502,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     );
   }
 
-  Widget _buildProductItem(String productId, bool isSmallScreen, bool isDarkMode) {
+  Widget _buildProductItem(String productId, bool isSmallScreen,
+      bool isDarkMode) {
     final iconSize = isSmallScreen ? 20.0 : 24.0;
     final titleFontSize = isSmallScreen ? 13.0 : 15.0;
     final subtitleFontSize = isSmallScreen ? 10.0 : 12.0;
@@ -1160,12 +1513,17 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
         ? const EdgeInsets.symmetric(horizontal: 12, vertical: 6)
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
 
-    final itemBgColor = isDarkMode ? const Color(0xFF252525) : const Color(0xFFF5FAF5);
-    final borderColor = isDarkMode ? Colors.grey.shade800 : const Color(0xFFD8EBD8);
+    final itemBgColor = isDarkMode ? const Color(0xFF252525) : const Color(
+        0xFFF5FAF5);
+    final borderColor = isDarkMode ? Colors.grey.shade800 : const Color(
+        0xFFD8EBD8);
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[500] : const Color(0xFF777777);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final iconBgColor = isDarkMode ? accentColor.withOpacity(0.2) : accentColor.withOpacity(0.1);
+    final subtitleColor = isDarkMode ? Colors.grey[500] : const Color(
+        0xFF777777);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
+    final iconBgColor = isDarkMode ? accentColor.withOpacity(0.2) : accentColor
+        .withOpacity(0.1);
 
     return Container(
       decoration: BoxDecoration(
@@ -1224,7 +1582,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
                   SnackBar(
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: accentColor,
-                    content: Text('Product ID copied', style: TextStyle(color: Colors.white)),
+                    content: Text('Product ID copied',
+                        style: TextStyle(color: Colors.white)),
                   ),
                 );
               },
@@ -1239,7 +1598,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
               icon: Icon(
                 Icons.arrow_forward_ios,
                 size: arrowIconSize,
-                color: isDarkMode ? Colors.grey.shade400 : const Color(0xFF666666),
+                color: isDarkMode ? Colors.grey.shade400 : const Color(
+                    0xFF666666),
               ),
               onPressed: () {
                 // Navigate to product details
@@ -1248,7 +1608,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: accentColor,
                     content: Text(
-                        'Product details for ${_truncateKey(productId, isSmallScreen)}'
+                        'Product details for ${_truncateKey(
+                            productId, isSmallScreen)}'
                     ),
                   ),
                 );
@@ -1278,11 +1639,13 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     );
   }
 
-  Widget _buildActionButtons(String marketId, bool hasValidNft, bool isSmallScreen, bool isDarkMode) {
+  Widget _buildActionButtons(String marketId, bool hasValidNft,
+      bool isSmallScreen, bool isDarkMode) {
     final buttonHeight = isSmallScreen ? 48.0 : 56.0;
     final fontSize = isSmallScreen ? 14.0 : 16.0;
     final iconSize = isSmallScreen ? 18.0 : 24.0;
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1293,11 +1656,13 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
             margin: EdgeInsets.only(bottom: isSmallScreen ? 12 : 16),
             height: buttonHeight,
             child: ElevatedButton.icon(
-              onPressed: () => _showShareNFTDialog(context, marketId, isDarkMode),
+              onPressed: () =>
+                  _showShareNFTDialog(context, marketId, isDarkMode),
               icon: Icon(Icons.share, size: iconSize),
               label: Text(
                 'Share NFT Ownership',
-                style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: fontSize, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: accentColor,
@@ -1319,7 +1684,8 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
               icon: Icon(Icons.token, size: iconSize),
               label: Text(
                 'Create NFT for this Market',
-                style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: fontSize, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: accentColor,
@@ -1345,6 +1711,15 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     }
   }
 
+  void reloadMarketWithDelay({required int seconds}) {
+    Future.delayed(Duration(seconds: seconds), () {
+      if (mounted) {
+        context.read<NormalMarketProvider>().loadMarketById(widget.marketId);
+        setState(() {}); // To trigger UI rebuild if needed
+      }
+    });
+  }
+
   void _editMarket(BuildContext context, Markets market) {
     final provider = context.read<NormalMarketProvider>();
     Navigator.push(
@@ -1359,7 +1734,10 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   }
 
   void _createNFT(BuildContext context, String marketId, bool isDarkMode) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    final isSmallScreen = MediaQuery
+        .of(context)
+        .size
+        .width < 360;
     final iconSize = isSmallScreen ? 20.0 : 24.0;
     final titleFontSize = isSmallScreen ? 18.0 : 20.0;
     final textFontSize = isSmallScreen ? 14.0 : 16.0;
@@ -1370,188 +1748,195 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
 
     final backgroundColor = isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final infoBgColor = isDarkMode ? accentColor.withOpacity(0.2) : const Color(0xFFEEF7ED);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
+    final infoBgColor = isDarkMode ? accentColor.withOpacity(0.2) : const Color(
+        0xFFEEF7ED);
     final iconBgColor = isDarkMode ? Colors.grey.shade800 : Colors.white;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: backgroundColor,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14)),
-        contentPadding: EdgeInsets.all(isSmallScreen ? 16 : 24),
-        titlePadding: EdgeInsets.only(
-            left: isSmallScreen ? 16 : 24,
-            right: isSmallScreen ? 16 : 24,
-            top: isSmallScreen ? 16 : 24,
-            bottom: isSmallScreen ? 8 : 16
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.token,
-                color: accentColor, size: iconSize),
-            SizedBox(width: isSmallScreen ? 10 : 14),
-            Text('Create NFT',
-                style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: titleFontSize)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-              decoration: BoxDecoration(
-                color: infoBgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
-                    decoration: BoxDecoration(
-                      color: iconBgColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.info_outline,
-                      color: accentColor,
-                      size: isSmallScreen ? 18 : 24,
-                    ),
-                  ),
-                  SizedBox(width: isSmallScreen ? 8 : 12),
-                  Expanded(
-                    child: Text(
-                      'Creating an NFT will tokenize this market on the blockchain.',
-                      style: TextStyle(
+      builder: (context) =>
+          AlertDialog(
+            backgroundColor: backgroundColor,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+            contentPadding: EdgeInsets.all(isSmallScreen ? 16 : 24),
+            titlePadding: EdgeInsets.only(
+                left: isSmallScreen ? 16 : 24,
+                right: isSmallScreen ? 16 : 24,
+                top: isSmallScreen ? 16 : 24,
+                bottom: isSmallScreen ? 8 : 16
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.token,
+                    color: accentColor, size: iconSize),
+                SizedBox(width: isSmallScreen ? 10 : 14),
+                Text('Create NFT',
+                    style: TextStyle(
                         color: textColor,
-                        fontSize: textFontSize,
-                      ),
-                    ),
+                        fontWeight: FontWeight.bold,
+                        fontSize: titleFontSize)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  decoration: BoxDecoration(
+                    color: infoBgColor,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-              ),
-            ),
-            SizedBox(height: isSmallScreen ? 16 : 20),
-            Text(
-              'Are you sure you want to proceed?',
-              style: TextStyle(
-                fontSize: textFontSize,
-                fontWeight: FontWeight.w500,
-                color: isDarkMode ? Colors.grey[300] : const Color(0xFF555555),
-              ),
-            ),
-          ],
-        ),
-        actionsPadding: EdgeInsets.only(
-            left: isSmallScreen ? 16 : 24,
-            right: isSmallScreen ? 16 : 24,
-            bottom: isSmallScreen ? 16 : 24,
-            top: isSmallScreen ? 8 : 16
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: isDarkMode ? Colors.grey[300] : const Color(0xFF666666),
-              padding: buttonPadding,
-            ),
-            child: Text('Cancel',
-                style: TextStyle(fontSize: buttonFontSize)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final provider = context.read<NormalMarketProvider>();
-              Navigator.pop(context);
-
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => AlertDialog(
-                  backgroundColor: backgroundColor,
-                  content: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      CircularProgressIndicator(color: accentColor),
-                      SizedBox(width: isSmallScreen ? 16 : 24),
-                      Text('Creating NFT...',
+                      Container(
+                        padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                        decoration: BoxDecoration(
+                          color: iconBgColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.info_outline,
+                          color: accentColor,
+                          size: isSmallScreen ? 18 : 24,
+                        ),
+                      ),
+                      SizedBox(width: isSmallScreen ? 8 : 12),
+                      Expanded(
+                        child: Text(
+                          'Creating an NFT will tokenize this market on the blockchain.',
                           style: TextStyle(
-                              color: textColor,
-                              fontSize: textFontSize)),
+                            color: textColor,
+                            fontSize: textFontSize,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              );
-
-              try {
-                final success = await provider.createNFT(marketId);
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-
-                if (!context.mounted) return;
-
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: accentColor,
-                      content: Row(
-                        children: [
-                          Icon(Icons.check_circle,
-                              color: Colors.white,
-                              size: isSmallScreen ? 16 : 18
-                          ),
-                          SizedBox(width: isSmallScreen ? 8 : 10),
-                          Text(
-                            'NFT created successfully',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: textFontSize),
-                          ),
-                        ],
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.redAccent,
-                    content: Text(
-                      'Error creating NFT: ${e.toString()}',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: textFontSize),
-                    ),
-                    behavior: SnackBarBehavior.floating,
+                SizedBox(height: isSmallScreen ? 16 : 20),
+                Text(
+                  'Are you sure you want to proceed?',
+                  style: TextStyle(
+                    fontSize: textFontSize,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.grey[300] : const Color(
+                        0xFF555555),
                   ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accentColor,
-              foregroundColor: Colors.white,
-              padding: buttonPadding,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+                ),
+              ],
             ),
-            child: Text('Create NFT',
-                style: TextStyle(fontSize: buttonFontSize, fontWeight: FontWeight.bold)),
+            actionsPadding: EdgeInsets.only(
+                left: isSmallScreen ? 16 : 24,
+                right: isSmallScreen ? 16 : 24,
+                bottom: isSmallScreen ? 16 : 24,
+                top: isSmallScreen ? 8 : 16
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: isDarkMode ? Colors.grey[300] : const Color(
+                      0xFF666666),
+                  padding: buttonPadding,
+                ),
+                child: Text('Cancel',
+                    style: TextStyle(fontSize: buttonFontSize)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final provider = context.read<NormalMarketProvider>();
+                  Navigator.pop(context);
+
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) =>
+                        AlertDialog(
+                          backgroundColor: backgroundColor,
+                          content: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: accentColor),
+                              SizedBox(width: isSmallScreen ? 16 : 24),
+                              Text('Creating NFT...',
+                                  style: TextStyle(
+                                      color: textColor,
+                                      fontSize: textFontSize)),
+                            ],
+                          ),
+                        ),
+                  );
+
+                  try {
+                    final success = await provider.createNFT(marketId);
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+
+                    if (!context.mounted) return;
+
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: accentColor,
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle,
+                                  color: Colors.white,
+                                  size: isSmallScreen ? 16 : 18
+                              ),
+                              SizedBox(width: isSmallScreen ? 8 : 10),
+                              Text(
+                                'NFT created successfully',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: textFontSize),
+                              ),
+                            ],
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.redAccent,
+                        content: Text(
+                          'Error creating NFT: ${e.toString()}',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: textFontSize),
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  padding: buttonPadding,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text('Create NFT',
+                    style: TextStyle(
+                        fontSize: buttonFontSize, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -1562,7 +1947,10 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
     String? selectedRecipientType; // Will be null by default, 'user' or 'market'
     bool isLoading = false;
 
-    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    final isSmallScreen = MediaQuery
+        .of(context)
+        .size
+        .width < 360;
     final iconSize = isSmallScreen ? 20.0 : 24.0;
     final titleFontSize = isSmallScreen ? 18.0 : 20.0;
     final textFontSize = isSmallScreen ? 14.0 : 16.0;
@@ -1573,482 +1961,516 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
 
     final backgroundColor = isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final inputBgColor = isDarkMode ? Colors.grey.shade900 : const Color(0xFFEEF7ED);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800 : const Color(0xFFD8EBD8);
-    final hintColor = isDarkMode ? Colors.grey.shade500 : Colors.black.withOpacity(0.3);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF555555);
-    final sliderBgColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200;
-    final infoBgColor = isDarkMode ? Colors.blue.withOpacity(0.2) : Colors.blue.withOpacity(0.1);
-    final infoBorderColor = isDarkMode ? Colors.blue.withOpacity(0.4) : Colors.blue.withOpacity(0.3);
+    final inputBgColor = isDarkMode ? Colors.grey.shade900 : const Color(
+        0xFFEEF7ED);
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
+        0xFF4CAF50);
+    final borderColor = isDarkMode ? Colors.grey.shade800 : const Color(
+        0xFFD8EBD8);
+    final hintColor = isDarkMode ? Colors.grey.shade500 : Colors.black
+        .withOpacity(0.3);
+    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(
+        0xFF555555);
+    final sliderBgColor = isDarkMode ? Colors.grey.shade800 : Colors.grey
+        .shade200;
+    final infoBgColor = isDarkMode ? Colors.blue.withOpacity(0.2) : Colors.blue
+        .withOpacity(0.1);
+    final infoBorderColor = isDarkMode ? Colors.blue.withOpacity(0.4) : Colors
+        .blue.withOpacity(0.3);
 
     showDialog(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          contentPadding: EdgeInsets.all(isSmallScreen ? 16 : 24),
-          titlePadding: EdgeInsets.only(
-              left: isSmallScreen ? 16 : 24,
-              right: isSmallScreen ? 16 : 24,
-              top: isSmallScreen ? 16 : 24,
-              bottom: isSmallScreen ? 8 : 16
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.share, color: accentColor, size: iconSize),
-              SizedBox(width: isSmallScreen ? 10 : 14),
-              Expanded(
-                child: Text(
-                  'Share NFT Ownership',
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: titleFontSize,
+      builder: (dialogContext) =>
+          StatefulBuilder(
+            builder: (context, setState) =>
+                AlertDialog(
+                  backgroundColor: backgroundColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                ),
-              ),
-            ],
-          ),
-          content: isLoading
-              ? Container(
-            constraints: BoxConstraints(maxWidth: dialogWidth),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: accentColor),
-                SizedBox(height: isSmallScreen ? 16 : 24),
-                Text(
-                  'Processing share request...',
-                  style: TextStyle(color: textColor, fontSize: textFontSize),
-                ),
-              ],
-            ),
-          )
-              : SingleChildScrollView(
-            child: Container(
-              width: dialogWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Recipient Type Selection
-                  Text(
-                    'Recipient Type',
-                    style: TextStyle(
-                      color: subtitleColor,
-                      fontSize: labelFontSize,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  contentPadding: EdgeInsets.all(isSmallScreen ? 16 : 24),
+                  titlePadding: EdgeInsets.only(
+                      left: isSmallScreen ? 16 : 24,
+                      right: isSmallScreen ? 16 : 24,
+                      top: isSmallScreen ? 16 : 24,
+                      bottom: isSmallScreen ? 8 : 16
                   ),
-                  SizedBox(height: isSmallScreen ? 8 : 10),
-                  Container(
-                    height: inputHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: inputBgColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: borderColor,
-                        width: 1,
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: selectedRecipientType,
-                        hint: Text(
-                          'Select recipient type',
+                  title: Row(
+                    children: [
+                      Icon(Icons.share, color: accentColor, size: iconSize),
+                      SizedBox(width: isSmallScreen ? 10 : 14),
+                      Expanded(
+                        child: Text(
+                          'Share NFT Ownership',
                           style: TextStyle(
-                            color: hintColor,
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: titleFontSize,
                           ),
-                        ),
-                        items: [
-                          DropdownMenuItem<String>(
-                            value: null,
-                            child: Text('Auto-detect',
-                              style: TextStyle(color: textColor),
-                            ),
-                          ),
-                          DropdownMenuItem<String>(
-                            value: 'user',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.person,
-                                  color: accentColor,
-                                  size: isSmallScreen ? 16 : 18,
-                                ),
-                                SizedBox(width: isSmallScreen ? 6 : 8),
-                                Text('User',
-                                  style: TextStyle(color: textColor),
-                                ),
-                              ],
-                            ),
-                          ),
-                          DropdownMenuItem<String>(
-                            value: 'market',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.store,
-                                  color: accentColor,
-                                  size: isSmallScreen ? 16 : 18,
-                                ),
-                                SizedBox(width: isSmallScreen ? 6 : 8),
-                                Text('Market',
-                                  style: TextStyle(color: textColor),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedRecipientType = value;
-                          });
-                        },
-                        underline: Container(),
-                        dropdownColor: backgroundColor,
-                        icon: Icon(Icons.arrow_drop_down, color: accentColor),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: isSmallScreen ? 16 : 20),
-
-                  // Recipient Address
-                  Text(
-                    'Recipient Address',
-                    style: TextStyle(
-                      color: subtitleColor,
-                      fontSize: labelFontSize,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: isSmallScreen ? 8 : 10),
-                  SizedBox(
-                    height: inputHeight,
-                    child: TextFormField(
-                      controller: recipientController,
-                      style: TextStyle(color: textColor, fontSize: textFontSize),
-                      decoration: InputDecoration(
-                        hintText: 'Enter wallet address or ID',
-                        hintStyle: TextStyle(
-                          color: hintColor,
-                          fontSize: textFontSize,
-                        ),
-                        filled: true,
-                        fillColor: inputBgColor,
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: borderColor, width: 1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: borderColor, width: 1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: accentColor, width: 1.5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: isSmallScreen ? 16 : 18,
-                            vertical: isSmallScreen ? 12 : 16
-                        ),
-                        prefixIcon: Icon(
-                          Icons.account_balance_wallet_outlined,
-                          color: accentColor,
-                          size: isSmallScreen ? 18 : 22,
                         ),
                       ),
-                    ),
+                    ],
                   ),
-
-                  SizedBox(height: isSmallScreen ? 20 : 24),
-
-                  // Percentage to Share
-                  Text(
-                    'Percentage to Share',
-                    style: TextStyle(
-                      color: subtitleColor,
-                      fontSize: labelFontSize,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: isSmallScreen ? 12 : 16),
-                  Container(
-                    padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                    decoration: BoxDecoration(
-                      color: inputBgColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: borderColor,
-                        width: 1,
-                      ),
-                    ),
+                  content: isLoading
+                      ? Container(
+                    constraints: BoxConstraints(maxWidth: dialogWidth),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '$percentageToShare%',
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: isSmallScreen ? 16 : 18,
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: isSmallScreen ? 10 : 12,
-                                  vertical: isSmallScreen ? 4 : 6
-                              ),
-                              decoration: BoxDecoration(
-                                color: accentColor,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'You keep ${100 - percentageToShare}%',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 12 : 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: isSmallScreen ? 12 : 16),
-                        SliderTheme(
-                          data: SliderThemeData(
-                            activeTrackColor: accentColor,
-                            inactiveTrackColor: sliderBgColor,
-                            thumbColor: Colors.white,
-                            overlayColor: accentColor.withOpacity(0.2),
-                            thumbShape: RoundSliderThumbShape(enabledThumbRadius: isSmallScreen ? 12 : 14),
-                            overlayShape: RoundSliderOverlayShape(overlayRadius: isSmallScreen ? 20 : 24),
-                            trackHeight: isSmallScreen ? 4 : 6,
-                          ),
-                          child: Slider(
-                            value: percentageToShare.toDouble(),
-                            min: 1,
-                            max: 100,
-                            divisions: 99,
-                            onChanged: (value) {
-                              setState(() {
-                                percentageToShare = value.round();
-                              });
-                            },
-                          ),
+                        CircularProgressIndicator(color: accentColor),
+                        SizedBox(height: isSmallScreen ? 16 : 24),
+                        Text(
+                          'Processing share request...',
+                          style: TextStyle(
+                              color: textColor, fontSize: textFontSize),
                         ),
                       ],
                     ),
-                  ),
-
-                  // Information about recipient type
-                  if (selectedRecipientType != null)
-                    Container(
-                      margin: EdgeInsets.only(top: isSmallScreen ? 12 : 16),
-                      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
-                      decoration: BoxDecoration(
-                        color: infoBgColor,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: infoBorderColor,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
+                  )
+                      : SingleChildScrollView(
+                    child: Container(
+                      width: dialogWidth,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.blue[700],
-                            size: isSmallScreen ? 18 : 20,
+                          // Recipient Type Selection
+                          Text(
+                            'Recipient Type',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: labelFontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          SizedBox(width: isSmallScreen ? 6 : 8),
-                          Expanded(
-                            child: Text(
-                              selectedRecipientType == 'user'
-                                  ? 'You selected "User". Enter a user ID or Hedera account.'
-                                  : 'You selected "Market". Enter a market ID or Hedera account.',
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.blue[200] : Colors.blue[700],
-                                fontSize: isSmallScreen ? 11 : 13,
+                          SizedBox(height: isSmallScreen ? 8 : 10),
+                          Container(
+                            height: inputHeight,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: inputBgColor,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: borderColor,
+                                width: 1,
+                              ),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: selectedRecipientType,
+                                hint: Text(
+                                  'Select recipient type',
+                                  style: TextStyle(
+                                    color: hintColor,
+                                  ),
+                                ),
+                                items: [
+                                  DropdownMenuItem<String>(
+                                    value: null,
+                                    child: Text('Auto-detect',
+                                      style: TextStyle(color: textColor),
+                                    ),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: 'user',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.person,
+                                          color: accentColor,
+                                          size: isSmallScreen ? 16 : 18,
+                                        ),
+                                        SizedBox(width: isSmallScreen ? 6 : 8),
+                                        Text('User',
+                                          style: TextStyle(color: textColor),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: 'market',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.store,
+                                          color: accentColor,
+                                          size: isSmallScreen ? 16 : 18,
+                                        ),
+                                        SizedBox(width: isSmallScreen ? 6 : 8),
+                                        Text('Market',
+                                          style: TextStyle(color: textColor),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedRecipientType = value;
+                                  });
+                                },
+                                underline: Container(),
+                                dropdownColor: backgroundColor,
+                                icon: Icon(
+                                    Icons.arrow_drop_down, color: accentColor),
                               ),
                             ),
                           ),
+
+                          SizedBox(height: isSmallScreen ? 16 : 20),
+
+                          // Recipient Address
+                          Text(
+                            'Recipient Address',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: labelFontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: isSmallScreen ? 8 : 10),
+                          SizedBox(
+                            height: inputHeight,
+                            child: TextFormField(
+                              controller: recipientController,
+                              style: TextStyle(color: textColor,
+                                  fontSize: textFontSize),
+                              decoration: InputDecoration(
+                                hintText: 'Enter wallet address or ID',
+                                hintStyle: TextStyle(
+                                  color: hintColor,
+                                  fontSize: textFontSize,
+                                ),
+                                filled: true,
+                                fillColor: inputBgColor,
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: borderColor, width: 1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: borderColor, width: 1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: accentColor, width: 1.5),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: isSmallScreen ? 16 : 18,
+                                    vertical: isSmallScreen ? 12 : 16
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.account_balance_wallet_outlined,
+                                  color: accentColor,
+                                  size: isSmallScreen ? 18 : 22,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 20 : 24),
+
+                          // Percentage to Share
+                          Text(
+                            'Percentage to Share',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: labelFontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: isSmallScreen ? 12 : 16),
+                          Container(
+                            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                            decoration: BoxDecoration(
+                              color: inputBgColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: borderColor,
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment
+                                      .spaceBetween,
+                                  children: [
+                                    Text(
+                                      '$percentageToShare%',
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: isSmallScreen ? 16 : 18,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: isSmallScreen ? 10 : 12,
+                                          vertical: isSmallScreen ? 4 : 6
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: accentColor,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'You keep ${100 - percentageToShare}%',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: isSmallScreen ? 12 : 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: isSmallScreen ? 12 : 16),
+                                SliderTheme(
+                                  data: SliderThemeData(
+                                    activeTrackColor: accentColor,
+                                    inactiveTrackColor: sliderBgColor,
+                                    thumbColor: Colors.white,
+                                    overlayColor: accentColor.withOpacity(0.2),
+                                    thumbShape: RoundSliderThumbShape(
+                                        enabledThumbRadius: isSmallScreen
+                                            ? 12
+                                            : 14),
+                                    overlayShape: RoundSliderOverlayShape(
+                                        overlayRadius: isSmallScreen ? 20 : 24),
+                                    trackHeight: isSmallScreen ? 4 : 6,
+                                  ),
+                                  child: Slider(
+                                    value: percentageToShare.toDouble(),
+                                    min: 1,
+                                    max: 100,
+                                    divisions: 99,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        percentageToShare = value.round();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Information about recipient type
+                          if (selectedRecipientType != null)
+                            Container(
+                              margin: EdgeInsets.only(top: isSmallScreen
+                                  ? 12
+                                  : 16),
+                              padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+                              decoration: BoxDecoration(
+                                color: infoBgColor,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: infoBorderColor,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Colors.blue[700],
+                                    size: isSmallScreen ? 18 : 20,
+                                  ),
+                                  SizedBox(width: isSmallScreen ? 6 : 8),
+                                  Expanded(
+                                    child: Text(
+                                      selectedRecipientType == 'user'
+                                          ? 'You selected "User". Enter a user ID or Hedera account.'
+                                          : 'You selected "Market". Enter a market ID or Hedera account.',
+                                      style: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.blue[200]
+                                            : Colors.blue[700],
+                                        fontSize: isSmallScreen ? 11 : 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                ],
-              ),
-            ),
-          ),
-          actions: isLoading
-              ? []
-              : [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              style: TextButton.styleFrom(
-                foregroundColor: isDarkMode ? Colors.grey[300] : const Color(0xFF666666),
-                padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 12 : 16,
-                    vertical: isSmallScreen ? 8 : 10
-                ),
-              ),
-              child: Text('Cancel',
-                  style: TextStyle(fontSize: buttonFontSize)
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (recipientController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.redAccent,
-                      content: Text(
-                        'Please enter recipient address',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isSmallScreen ? 14 : 16
+                  ),
+                  actions: isLoading
+                      ? []
+                      : [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      style: TextButton.styleFrom(
+                        foregroundColor: isDarkMode
+                            ? Colors.grey[300]
+                            : const Color(0xFF666666),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 12 : 16,
+                            vertical: isSmallScreen ? 8 : 10
                         ),
                       ),
-                      behavior: SnackBarBehavior.floating,
+                      child: Text('Cancel',
+                          style: TextStyle(fontSize: buttonFontSize)
+                      ),
                     ),
-                  );
-                  return;
-                }
-
-                // Set loading state
-                setState(() {
-                  isLoading = true;
-                });
-
-                // Get provider and call shareNFT
-                final provider = context.read<NormalMarketProvider>();
-
-                // Store important data in local variables
-                final String recipient = recipientController.text;
-                final int percentage = percentageToShare;
-                final String? recipientType = selectedRecipientType;
-
-                try {
-                  Map<String, dynamic> result = await provider.shareNFT(
-                    marketId,
-                    recipient,
-                    percentage,
-                    recipientType: recipientType,
-                  );
-
-                  if (context.mounted) {
-                    Navigator.pop(dialogContext);
-                  }
-
-                  if (!context.mounted) return;
-
-                  // Reload market data
-                  provider.loadMarketById(marketId);
-
-                  // Show success or error message
-                  if (result['success'] == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: accentColor,
-                        content: Row(
-                          children: [
-                            Icon(
-                                Icons.check_circle,
-                                color: Colors.white,
-                                size: isSmallScreen ? 16 : 18
-                            ),
-                            SizedBox(width: isSmallScreen ? 8 : 10),
-                            Text(
-                              'NFT shared successfully',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 14 : 16
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (recipientController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.redAccent,
+                              content: Text(
+                                'Please enter recipient address',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isSmallScreen ? 14 : 16
+                                ),
                               ),
+                              behavior: SnackBarBehavior.floating,
                             ),
-                          ],
+                          );
+                          return;
+                        }
+
+                        // Set loading state
+                        setState(() {
+                          isLoading = true;
+                        });
+
+                        // Get provider and call shareNFT
+                        final provider = context.read<NormalMarketProvider>();
+
+                        // Store important data in local variables
+                        final String recipient = recipientController.text;
+                        final int percentage = percentageToShare;
+                        final String? recipientType = selectedRecipientType;
+
+                        try {
+                          Map<String, dynamic> result = await provider.shareNFT(
+                            marketId,
+                            recipient,
+                            percentage,
+                            recipientType: recipientType,
+                          );
+
+                          if (context.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+
+                          if (!context.mounted) return;
+
+                          // Reload market data
+                          provider.loadMarketById(marketId);
+
+                          // Show success or error message
+                          if (result['success'] == true) {
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: accentColor,
+                                content: Row(
+                                  children: [
+                                    Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                        size: isSmallScreen ? 16 : 18
+                                    ),
+                                    SizedBox(width: isSmallScreen ? 8 : 10),
+                                    Text(
+                                      'NFT shared successfully',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: isSmallScreen ? 14 : 16
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          } else {
+                            // Show error message from the response
+                            String errorMessage = result['message'] ??
+                                'Failed to share NFT';
+
+                            // Check if it's a token association error
+                            if (errorMessage.contains(
+                                'TOKEN_NOT_ASSOCIATED_TO_ACCOUNT') ||
+                                errorMessage.contains(
+                                    'token association required')) {
+                              errorMessage =
+                              'Token association required. The recipient must associate with the token first.';
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: Colors.redAccent,
+                                content: Text(
+                                  errorMessage,
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isSmallScreen ? 14 : 16
+                                  ),
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+
+                          if (!context.mounted) return;
+
+                          // Show error message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.redAccent,
+                              content: Text(
+                                'Error sharing NFT: ${e.toString()}',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isSmallScreen ? 14 : 16
+                                ),
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 16 : 20,
+                            vertical: isSmallScreen ? 10 : 12
                         ),
-                        behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  } else {
-                    // Show error message from the response
-                    String errorMessage = result['message'] ?? 'Failed to share NFT';
-
-                    // Check if it's a token association error
-                    if (errorMessage.contains('TOKEN_NOT_ASSOCIATED_TO_ACCOUNT') ||
-                        errorMessage.contains('token association required')) {
-                      errorMessage = 'Token association required. The recipient must associate with the token first.';
-                    }
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.redAccent,
-                        content: Text(
-                          errorMessage,
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isSmallScreen ? 14 : 16
-                          ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              isSmallScreen ? 8 : 10),
                         ),
-                        behavior: SnackBarBehavior.floating,
                       ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    Navigator.pop(dialogContext);
-                  }
-
-                  if (!context.mounted) return;
-
-                  // Show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.redAccent,
-                      content: Text(
-                        'Error sharing NFT: ${e.toString()}',
+                      child: Text(
+                        'Share NFT',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isSmallScreen ? 14 : 16
+                            fontSize: buttonFontSize,
+                            fontWeight: FontWeight.bold
                         ),
                       ),
-                      behavior: SnackBarBehavior.floating,
                     ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 16 : 20,
-                    vertical: isSmallScreen ? 10 : 12
+                  ],
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
-                ),
-              ),
-              child: Text(
-                'Share NFT',
-                style: TextStyle(
-                    fontSize: buttonFontSize,
-                    fontWeight: FontWeight.bold
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     ).then((_) {
       // Dispose of controller when dialog is closed
       recipientController.dispose();
@@ -2058,7 +2480,10 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   }
 
   void _deleteMarket(BuildContext context, String marketId, bool isDarkMode) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    final isSmallScreen = MediaQuery
+        .of(context)
+        .size
+        .width < 360;
     final iconSize = isSmallScreen ? 20.0 : 24.0;
     final titleFontSize = isSmallScreen ? 18.0 : 20.0;
     final textFontSize = isSmallScreen ? 14.0 : 16.0;
@@ -2071,228 +2496,238 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
 
     final backgroundColor = isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final warningColor = isDarkMode ? Colors.redAccent.shade200 : Colors.redAccent;
-    final warningBgColor = isDarkMode ? warningColor.withOpacity(0.2) : warningColor.withOpacity(0.1);
-    final warningBorderColor = isDarkMode ? warningColor.withOpacity(0.4) : warningColor.withOpacity(0.3);
-    final subtitleColor = isDarkMode ? Colors.grey[300] : const Color(0xFF555555);
+    final warningColor = isDarkMode ? Colors.redAccent.shade200 : Colors
+        .redAccent;
+    final warningBgColor = isDarkMode
+        ? warningColor.withOpacity(0.2)
+        : warningColor.withOpacity(0.1);
+    final warningBorderColor = isDarkMode
+        ? warningColor.withOpacity(0.4)
+        : warningColor.withOpacity(0.3);
+    final subtitleColor = isDarkMode ? Colors.grey[300] : const Color(
+        0xFF555555);
     final iconBgColor = isDarkMode ? Colors.grey.shade800 : Colors.white;
-    final cancelButtonColor = isDarkMode ? Colors.grey[300] : const Color(0xFF666666);
+    final cancelButtonColor = isDarkMode ? Colors.grey[300] : const Color(
+        0xFF666666);
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: backgroundColor,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14)
-        ),
-        contentPadding: contentPadding,
-        titlePadding: EdgeInsets.only(
-            left: isSmallScreen ? 16 : 24,
-            right: isSmallScreen ? 16 : 24,
-            top: isSmallScreen ? 16 : 24,
-            bottom: isSmallScreen ? 8 : 16
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded,
-                color: warningColor, size: iconSize),
-            SizedBox(width: isSmallScreen ? 10 : 14),
-            Expanded(
-              child: Text('Delete Market',
-                  style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: titleFontSize
-                  )
-              ),
+      builder: (dialogContext) =>
+          AlertDialog(
+            backgroundColor: backgroundColor,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)
             ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-              decoration: BoxDecoration(
-                color: warningBgColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: warningBorderColor,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
-                    decoration: BoxDecoration(
-                      color: iconBgColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.delete_forever,
-                      color: warningColor,
-                      size: isSmallScreen ? 20 : 24,
-                    ),
-                  ),
-                  SizedBox(width: isSmallScreen ? 10 : 12),
-                  Expanded(
-                    child: Text(
-                      'This action cannot be undone. All market data will be permanently deleted.',
+            contentPadding: contentPadding,
+            titlePadding: EdgeInsets.only(
+                left: isSmallScreen ? 16 : 24,
+                right: isSmallScreen ? 16 : 24,
+                top: isSmallScreen ? 16 : 24,
+                bottom: isSmallScreen ? 8 : 16
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    color: warningColor, size: iconSize),
+                SizedBox(width: isSmallScreen ? 10 : 14),
+                Expanded(
+                  child: Text('Delete Market',
                       style: TextStyle(
-                        color: textColor,
-                        fontSize: textFontSize,
-                      ),
+                          color: textColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: titleFontSize
+                      )
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  decoration: BoxDecoration(
+                    color: warningBgColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: warningBorderColor,
+                      width: 1,
                     ),
                   ),
-                ],
-              ),
-            ),
-            SizedBox(height: isSmallScreen ? 16 : 20),
-            Text(
-              'Are you sure you want to delete this market?',
-              style: TextStyle(
-                fontSize: textFontSize,
-                fontWeight: FontWeight.w500,
-                color: subtitleColor,
-              ),
-            ),
-          ],
-        ),
-        actionsPadding: EdgeInsets.only(
-            left: isSmallScreen ? 16 : 24,
-            right: isSmallScreen ? 16 : 24,
-            bottom: isSmallScreen ? 16 : 24,
-            top: isSmallScreen ? 8 : 16
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: cancelButtonColor,
-              padding: buttonPadding,
-            ),
-            child: Text('Cancel',
-                style: TextStyle(fontSize: buttonFontSize)
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final provider = context.read<NormalMarketProvider>();
-              Navigator.pop(context);
-
-              // Show loading dialog
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => AlertDialog(
-                  backgroundColor: backgroundColor,
-                  content: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      CircularProgressIndicator(
-                        color: warningColor,
-                        strokeWidth: isSmallScreen ? 2.5 : 3,
+                      Container(
+                        padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                        decoration: BoxDecoration(
+                          color: iconBgColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.delete_forever,
+                          color: warningColor,
+                          size: isSmallScreen ? 20 : 24,
+                        ),
                       ),
-                      SizedBox(width: isSmallScreen ? 16 : 24),
-                      Text('Deleting market...',
+                      SizedBox(width: isSmallScreen ? 10 : 12),
+                      Expanded(
+                        child: Text(
+                          'This action cannot be undone. All market data will be permanently deleted.',
                           style: TextStyle(
-                              color: textColor,
-                              fontSize: textFontSize
-                          )
+                            color: textColor,
+                            fontSize: textFontSize,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              );
+                SizedBox(height: isSmallScreen ? 16 : 20),
+                Text(
+                  'Are you sure you want to delete this market?',
+                  style: TextStyle(
+                    fontSize: textFontSize,
+                    fontWeight: FontWeight.w500,
+                    color: subtitleColor,
+                  ),
+                ),
+              ],
+            ),
+            actionsPadding: EdgeInsets.only(
+                left: isSmallScreen ? 16 : 24,
+                right: isSmallScreen ? 16 : 24,
+                bottom: isSmallScreen ? 16 : 24,
+                top: isSmallScreen ? 8 : 16
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: cancelButtonColor,
+                  padding: buttonPadding,
+                ),
+                child: Text('Cancel',
+                    style: TextStyle(fontSize: buttonFontSize)
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(dialogContext)
+                      .pop(); // Close confirmation dialog
 
-              try {
-                final success = await provider.removeMarket(marketId);
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-
-                if (!context.mounted) return;
-
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
-                      content: Row(
-                        children: [
-                          Icon(Icons.check_circle,
-                              color: Colors.white,
-                              size: isSmallScreen ? 16 : 18
+                  // Show loading dialog
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (ctx) =>
+                        AlertDialog(
+                          backgroundColor: backgroundColor,
+                          content: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(
+                                color: warningColor,
+                                strokeWidth: isSmallScreen ? 2.5 : 3,
+                              ),
+                              SizedBox(width: isSmallScreen ? 16 : 24),
+                              Text('Deleting market...',
+                                  style: TextStyle(
+                                      color: textColor,
+                                      fontSize: textFontSize
+                                  )
+                              ),
+                            ],
                           ),
-                          SizedBox(width: isSmallScreen ? 8 : 10),
-                          Text(
-                            'Market deleted successfully',
+                        ),
+                  );
+
+                  try {
+                    final provider = context.read<NormalMarketProvider>();
+                    final success = await provider.removeMarket(marketId);
+
+                    if (mounted) Navigator.of(context, rootNavigator: true)
+                        .pop(); // Close loading dialog
+
+                    if (!mounted) return;
+
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: isDarkMode
+                              ? const Color(0xFF81C784)
+                              : const Color(0xFF4CAF50),
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle,
+                                  color: Colors.white,
+                                  size: isSmallScreen ? 16 : 18
+                              ),
+                              SizedBox(width: isSmallScreen ? 8 : 10),
+                              Text(
+                                'Market deleted successfully',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isSmallScreen ? 14 : 16
+                                ),
+                              ),
+                            ],
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      // Go back to markets list after deletion
+                      Navigator.of(context).pop();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: Colors.redAccent,
+                          content: Text(
+                            'Failed to delete market',
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: isSmallScreen ? 14 : 16
                             ),
                           ),
-                        ],
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  Navigator.pop(context); // Go back to markets list
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.redAccent,
-                      content: Text(
-                        'Failed to delete market',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isSmallScreen ? 14 : 16
+                          behavior: SnackBarBehavior.floating,
                         ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) Navigator.of(context, rootNavigator: true)
+                        .pop();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.redAccent,
+                        content: Text(
+                          'Error deleting market: ${e.toString()}',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 14 : 16
+                          ),
+                        ),
+                        behavior: SnackBarBehavior.floating,
                       ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.redAccent,
-                    content: Text(
-                      'Error deleting market: ${e.toString()}',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isSmallScreen ? 14 : 16
-                      ),
-                    ),
-                    behavior: SnackBarBehavior.floating,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: warningColor,
+                  foregroundColor: Colors.white,
+                  padding: buttonPadding,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
                   ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: warningColor,
-              foregroundColor: Colors.white,
-              padding: buttonPadding,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                ),
+                child: Text('Delete',
+                    style: TextStyle(
+                        fontSize: buttonFontSize,
+                        fontWeight: FontWeight.bold
+                    )
+                ),
               ),
-            ),
-            child: Text('Delete',
-                style: TextStyle(
-                    fontSize: buttonFontSize,
-                    fontWeight: FontWeight.bold
-                )
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

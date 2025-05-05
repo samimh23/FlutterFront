@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -252,6 +253,45 @@ class HederaApiService {
       }
     } catch (e) {
       //('Error unlocking tokens: $e');
+      rethrow;
+    }
+  }
+  Future<Map<String, dynamic>> getTokenOwnership(String tokenId) async {
+    try {
+      print('[getTokenOwnership] Called with tokenId: $tokenId');
+
+      final headers = await _getAuthHeaders();
+      print('[getTokenOwnership] Got headers: $headers');
+
+      final uri = Uri.parse('$baseUrl/hedera/check-all')
+          .replace(queryParameters: {'tokenId': tokenId});
+      print('[getTokenOwnership] Built URI: $uri');
+
+      final response = await http.get(
+        uri,
+        headers: headers,
+      ).timeout(Duration(seconds: 30));
+
+      print('[getTokenOwnership] HTTP status: ${response.statusCode}');
+      print('[getTokenOwnership] HTTP body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isNotEmpty) {
+          final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+          print('[getTokenOwnership] Decoded response: $decoded');
+          return decoded;
+        } else {
+          print('[getTokenOwnership] Empty response body.');
+          return {};
+        }
+      } else {
+        print('[getTokenOwnership] Non-200 status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to fetch token ownership: ${response.statusCode}');
+      }
+    } catch (e, stack) {
+      print('[getTokenOwnership] Error fetching token ownership: $e');
+      print('[getTokenOwnership] Stacktrace: $stack');
       rethrow;
     }
   }

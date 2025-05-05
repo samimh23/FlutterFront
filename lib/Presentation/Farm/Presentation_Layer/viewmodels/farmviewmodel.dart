@@ -9,6 +9,7 @@ import '../../Domain_Layer/usescases/delete_farm_market.dart';
 import '../../Domain_Layer/usescases/get_all_farm_markets.dart';
 import '../../Domain_Layer/usescases/get_farm_by_owner.dart';
 import '../../Domain_Layer/usescases/get_farm_market_by_id.dart';
+import '../../Domain_Layer/usescases/get_farm_products.dart';
 import '../../Domain_Layer/usescases/update_farm_market.dart';
 
 class FarmMarketViewModel extends ChangeNotifier {
@@ -19,6 +20,7 @@ class FarmMarketViewModel extends ChangeNotifier {
   final DeleteFarmMarket deleteFarmMarket;
   final GetSalesByFarmMarketId getSalesByFarmMarketId;
   final GetFarmsByOwner getFarmsByOwner;
+  final GetFarmProducts getFarmProducts;
 
   FarmMarketViewModel({
     required this.getAllFarmMarkets,
@@ -28,11 +30,16 @@ class FarmMarketViewModel extends ChangeNotifier {
     required this.deleteFarmMarket,
     required this.getSalesByFarmMarketId,
     required this.getFarmsByOwner,
+    required this.getFarmProducts,
 
 
   }) {
     fetchAllFarmMarkets();
   }
+
+
+  List<dynamic> _farmProducts = [];
+  List<dynamic> get farmProducts => _farmProducts;
 
   List<Farm> _farmMarkets = [];
   List<Farm> get farmMarkets => _farmMarkets;
@@ -184,13 +191,29 @@ class FarmMarketViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
+  Future<void> fetchFarmProducts(String farmId) async {
+    _setLoading(true);
+    final result = await getFarmProducts(farmId);
+    result.fold(
+          (failure) => _setError(failure.toString()),
+          (products) {
+        _farmProducts = products;
+        _setError(null);
+        notifyListeners();
+      },
+    );
+    _setLoading(false);
+  }
+
   void selectFarmMarket(String id) {
     fetchFarmMarketById(id);
+    fetchFarmProducts(id);
   }
 
   void clearSelectedFarmMarket() {
     _selectedFarmMarket = null;
     _farmSales = [];
+    _farmProducts = [];
     notifyListeners();
   }
 }

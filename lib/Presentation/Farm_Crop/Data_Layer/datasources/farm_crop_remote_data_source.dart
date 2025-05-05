@@ -1,10 +1,10 @@
 //Data_Layer/datasources/farm_crop_remote_data_source.dart
 import 'dart:convert';
-import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
 import 'dart:math' as Math;
+import '../../../../Core/Utils/Api_EndPoints.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
 
 class FarmCropRemoteDataSource {
@@ -206,6 +206,76 @@ class FarmCropRemoteDataSource {
     } catch (e) {
       print("🔥 FarmCropRemoteDataSource: Error deleting crop: $e");
       throw ServerException(message: 'Failed to delete crop: $e');
+    }
+  }
+
+  // New methods for farm crop conversion
+  Future<Map<String, dynamic>> convertToProduct(String cropId) async {
+    try {
+      final headers = await _getHeaders();
+
+      print("📡 FarmCropRemoteDataSource: Sending POST request to $baseUrl/$cropId/convert-to-product");
+      final response = await client.post(
+        Uri.parse('$baseUrl/$cropId/convert-to-product'),
+        headers: headers,
+      );
+
+
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resultJson = json.decode(response.body);
+        return resultJson;
+      } else {
+        throw ServerException(message: 'Failed to convert crop to product. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw ServerException(message: 'Failed to convert crop to product: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmAndConvert(String cropId, String auditReport) async {
+    try {
+      final headers = await _getHeaders();
+
+      final requestBody = json.encode({'auditReport': auditReport});
+
+      final response = await client.post(
+        Uri.parse('$baseUrl/$cropId/confirm-and-convert'),
+        headers: headers,
+        body: requestBody,
+      );
+
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resultJson = json.decode(response.body);
+        return resultJson;
+      } else {
+        throw ServerException(message: 'Failed to confirm and convert crop. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw ServerException(message: 'Failed to confirm and convert crop: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> processAllConfirmed() async {
+    try {
+      final headers = await _getHeaders();
+
+      final response = await client.post(
+        Uri.parse('$baseUrl/process-confirmed'),
+        headers: headers,
+      );
+
+
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resultJson = json.decode(response.body);
+        return resultJson;
+      } else {
+        throw ServerException(message: 'Failed to process confirmed crops. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw ServerException(message: 'Failed to process confirmed crops: $e');
     }
   }
 

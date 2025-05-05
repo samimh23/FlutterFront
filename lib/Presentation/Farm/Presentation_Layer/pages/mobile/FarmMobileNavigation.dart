@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../Auth/presentation/pages/profilepage.dart';
 import '../../../../Farm_Crop/Presentation_Layer/pages/FarmCropListScreen.dart';
 import '../../viewmodels/farmviewmodel.dart';
 import 'FarmMobileDetailScreen.dart';
@@ -25,6 +26,7 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
     const MobileProductDetectDisease(),
     // const DiseaseDetectionMobileScreen(),
     const FarmCropsListScreen(),
+    const ProfilePage(),
   ];
 
   @override
@@ -61,6 +63,10 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
           BottomNavigationBarItem(
             icon: Icon(Icons.nature),
             label: 'Crop',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),

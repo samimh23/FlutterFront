@@ -106,19 +106,26 @@ class FarmCrop extends Equatable {
   factory FarmCrop.fromJson(Map<String, dynamic> json) {
     return FarmCrop(
       id: json['_id'] as String? ?? json['id'] as String?,
-      farmMarketId: json['farmMarketId'] as String,
-      productName: json['productName'] as String,
-      type: json['type'] as String,
-      implantDate: DateTime.parse(json['implantDate'] as String),
-      harvestedDay: json['harvestedDay'] != null ? DateTime.parse(json['harvestedDay'] as String) : null,
+      farmMarketId: json['farmMarketId'] as String? ?? '',
+      productName: json['productName'] as String? ?? '',
+      type: json['type'] as String? ?? '',
+      implantDate: DateTime.parse(json['implantDate'] as String? ?? DateTime.now().toIso8601String()),
+      harvestedDay: json['harvestedDay'] != null && json['harvestedDay'] is String
+          ? DateTime.tryParse(json['harvestedDay'])
+          : null,
       expenses: (json['expenses'] as List<dynamic>?)
           ?.map((e) => Expense.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
-      quantity: json['quantity'] as int?,
-      auditStatus: json['auditStatus'] as String?,
-      auditReport: json['auditReport'] as String?,
-      auditProofImage: json['auditProofImage'] as String?,
-      picture: json['picture'] as String?,
+          .toList() ??
+          [],
+      quantity: json['quantity'] is int
+          ? json['quantity'] as int
+          : (json['quantity'] is String && (json['quantity'] as String).isNotEmpty)
+          ? int.tryParse(json['quantity'])
+          : 0,
+      auditStatus: json['auditStatus'] as String? ?? '',
+      auditReport: json['auditReport'] as String? ?? '',
+      auditProofImage: json['auditProofImage'] as String? ?? '',
+      picture: json['picture'] as String? ?? '',
     );
   }
 

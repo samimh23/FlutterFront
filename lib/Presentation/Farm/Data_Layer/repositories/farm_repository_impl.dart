@@ -41,6 +41,18 @@ class FarmMarketRepositoryImpl implements FarmMarketRepository {
     }
   }
 
+
+// 3. Implement the method in the repository implementation (farm_repository_impl.dart):
+  @override
+  Future<Either<Failure, List<dynamic>>> getFarmProducts(String farmId) async {
+    try {
+      final products = await remoteDataSource.getFarmProducts(farmId);
+      return Right(products);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   @override
   Future<Either<Failure, void>> addFarmMarket(Farm farmMarket) async {
     try {

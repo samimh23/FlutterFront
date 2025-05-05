@@ -181,6 +181,32 @@ class FarmMarketRemoteDataSource {
     }
   }
 
+  Future<List<dynamic>> getFarmProducts(String farmId) async {
+    try {
+      print("🔍 FarmMarketRemoteDataSource: Getting products for farm ID: $farmId");
+      final headers = await _getHeaders();
+
+      final response = await client.get(
+        Uri.parse('$baseUrl/$farmId/products'),
+        headers: headers,
+      );
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final List<dynamic> productsList = json.decode(response.body);
+        print("✅ FarmMarketRemoteDataSource: Retrieved ${productsList.length} products");
+        return productsList;
+      } else {
+        print("❌ FarmMarketRemoteDataSource: Failed to fetch farm products. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to fetch farm products. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("🔥 FarmMarketRemoteDataSource: Error getting farm products: $e");
+      throw ServerException(message: 'Failed to fetch farm products: $e');
+    }
+  }
+
   Future<void> deleteFarmMarket(String id) async {
     try {
       print("🗑️ FarmMarketRemoteDataSource: Deleting farm market ID: $id");

@@ -4,8 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../Farm_Crop/Domain_Layer/entities/farm_crop.dart';
-import '../../../../Sales/Domain_Layer/entities/sale.dart';
-import '../../../../Sales/Presentation_Layer/viewmodels/sale_viewmodel.dart';
 import '../../../Domain_Layer/entity/farm.dart';
 import '../../viewmodels/farmviewmodel.dart';
 import 'FarmMobileManageScreen.dart';
@@ -23,11 +21,11 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Load sales related to this farm when screen initializes
+    // Load products related to this farm when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.farm.id != null) {
-        Provider.of<SaleViewModel>(context, listen: false)
-            .setCurrentFarmMarketId(widget.farm.id!);
+        Provider.of<FarmMarketViewModel>(context, listen: false)
+            .fetchFarmProducts(widget.farm.id!);
       }
     });
   }
@@ -35,7 +33,6 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final farmViewModel = Provider.of<FarmMarketViewModel>(context);
-    final saleViewModel = Provider.of<SaleViewModel>(context);
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
 
@@ -45,7 +42,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
           : RefreshIndicator(
         onRefresh: () async {
           if (widget.farm.id != null) {
-            await saleViewModel.fetchSalesByFarmMarket(widget.farm.id!);
+            await farmViewModel.fetchFarmProducts(widget.farm.id!);
           }
         },
         child: CustomScrollView(
@@ -101,7 +98,6 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                 ),
               ),
               actions: [
-
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     if (value == 'delete') {
@@ -337,68 +333,22 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Available Items Section
-                    if (widget.farm.sales != null && widget.farm.sales!.isNotEmpty)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionTitle(context, 'Available Items'),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: widget.farm.sales!
-                                .map((item) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(color: Colors.green.shade200),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.eco, size: 16, color: Colors.green.shade700),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    item,
-                                    style: TextStyle(
-                                      color: Colors.green.shade800,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ))
-                                .toList(),
-                          ),
-                        ],
-                      ),
-
-                    const SizedBox(height: 24),
-
-                    // Products For Sale Section
-                    _buildSectionTitle(context, 'Products For Sale'),
+                    // Available Products Section
+                    _buildSectionTitle(context, 'Available Products'),
                     const SizedBox(height: 12),
 
-                    // Sales List
-                    saleViewModel.isLoading
+                    // Products List
+                    farmViewModel.isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : saleViewModel.sales.isEmpty
+                        : farmViewModel.farmProducts.isEmpty
                         ? _buildEmptyProductList()
                         : ListView.builder(
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
-                      itemCount: saleViewModel.sales.length,
+                      itemCount: farmViewModel.farmProducts.length,
                       itemBuilder: (context, index) {
-                        final sale = saleViewModel.sales[index];
-                        return FutureBuilder<FarmCrop?>(
-                          future: saleViewModel.getCropForSale(sale.farmCropId),
-                          builder: (context, snapshot) {
-                            final cropName = snapshot.data?.productName ?? 'Product';
-                            return _buildProductCard(context, sale, cropName);
-                          },
-                        );
+                        final product = farmViewModel.farmProducts[index];
+                        return _buildProductCard(context, product);
                       },
                     ),
 
@@ -509,7 +459,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              "No products listed for sale at the moment",
+              "No products listed for this farm at the moment",
               style: TextStyle(
                 color: Colors.grey.shade600,
                 fontSize: 16,
@@ -521,9 +471,13 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Sale sale, String cropName) {
-    // Format currency
-    final formatter = NumberFormat.currency(symbol: '\$');
+  Widget _buildProductCard(BuildContext context, dynamic product) {
+    // Get product details based on the actual API response structure
+    final productName = product['name'] ?? 'Unknown Product';
+    final productPrice = product['price'] != null ? NumberFormat.currency(symbol: '\$').format(product['price']) : 'Price not available';
+    final productQuantity = product['stock'] != null ? product['stock'].toString() : 'N/A';
+    final productNotes = product['description'];
+
     final primaryColor = Theme.of(context).primaryColor;
 
     return Card(
@@ -558,7 +512,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        cropName,
+                        productName,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -566,7 +520,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${formatter.format(sale.pricePerUnit)} per unit',
+                        productPrice,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -576,12 +530,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                       const SizedBox(height: 8),
                       _buildInfoRow(
                           Icons.inventory_2,
-                          'Available: ${sale.quantity.toStringAsFixed(1)} units'
-                      ),
-                      const SizedBox(height: 4),
-                      _buildInfoRow(
-                          Icons.shopping_basket,
-                          'Min. Order: ${sale.quantityMin.toStringAsFixed(1)} units'
+                          'Available: $productQuantity units'
                       ),
                     ],
                   ),
@@ -591,7 +540,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
           ),
 
           // Notes Section
-          if (sale.notes != null && sale.notes!.isNotEmpty)
+          if (productNotes != null && productNotes.isNotEmpty)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               padding: const EdgeInsets.all(12),
@@ -607,7 +556,7 @@ class _FarmMobileDetailScreenState extends State<FarmMobileDetailScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      sale.notes!,
+                      productNotes,
                       style: TextStyle(
                         color: Colors.amber.shade900,
                         fontSize: 14,

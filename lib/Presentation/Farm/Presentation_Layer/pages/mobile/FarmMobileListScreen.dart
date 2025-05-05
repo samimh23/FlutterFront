@@ -6,6 +6,7 @@ import '../../../Domain_Layer/entity/farm.dart';
 import '../../viewmodels/farmviewmodel.dart';
 import 'FarmMobileDetailScreen.dart';
 import 'FarmMobileManageScreen.dart';
+import 'FarmMobileProductScreen.dart';
 
 class FarmListScreen extends StatefulWidget {
   const FarmListScreen({Key? key}) : super(key: key);
@@ -502,7 +503,9 @@ class _FarmListScreenState extends State<FarmListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => FarmMobileDetailScreen(farm: farm),
+              builder: (context) => FarmProductsScreen(
+                farmId: farm.id!,
+              ),
             ),
           ).then((_) {
             if (owner != null) {

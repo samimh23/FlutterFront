@@ -186,12 +186,13 @@ class FarmCropViewModel extends ChangeNotifier {
         _setError(failure.toString());
         print("Error converting crop to product: ${failure.toString()}");
       },
-          (data) {
+          (data) async {
         _setError(null);
         _setConversionResult(data);
         conversionData = data;
-        // Refresh the crop list to reflect changes
-        fetchAllCrops();
+
+        // Delete the crop after successful conversion
+        await removeFarmCrop(cropId);
       },
     );
 
@@ -212,12 +213,13 @@ class FarmCropViewModel extends ChangeNotifier {
         _setError(failure.toString());
         print("Error confirming and converting crop: ${failure.toString()}");
       },
-          (data) {
+          (data) async {
         _setError(null);
         _setConversionResult(data);
         conversionData = data;
-        // Refresh the crop list to reflect changes
-        fetchAllCrops();
+
+        // Delete the crop after successful confirmation and conversion
+        await removeFarmCrop(cropId);
       },
     );
 
@@ -242,7 +244,10 @@ class FarmCropViewModel extends ChangeNotifier {
         _setError(null);
         _setConversionResult(data);
         processData = data;
-        // Refresh the crop list to reflect changes
+
+        // Note: The ProcessAllConfirmedFarmCrops use case should handle deleting
+        // all processed crops internally, or return their IDs so we can delete them here
+        // For now, we'll just refresh the crop list, assuming they're deleted on the backend
         fetchAllCrops();
       },
     );

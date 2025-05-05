@@ -53,6 +53,7 @@ import 'Presentation/Auth/presentation/pages/wholesalerscrren.dart';
 import 'Presentation/DiseaseDetection/Presentation_Layer/viewmodels/productVM.dart' show DiseaseDetectionViewModel;
 import 'Presentation/Farm/Domain_Layer/usescases/GetSalesByFarmMarketId.dart' show GetSalesByFarmMarketId;
 import 'Presentation/Farm/Domain_Layer/usescases/get_farm_by_owner.dart';
+import 'Presentation/Farm/Domain_Layer/usescases/get_farm_products.dart';
 import 'Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
 import 'Presentation/Farm_Crop/Data_Layer/datasources/farm_crop_remote_data_source.dart';
 import 'Presentation/Farm_Crop/Data_Layer/repositories/farm_crop_repository_impl.dart';
@@ -263,6 +264,9 @@ class MyApp extends StatelessWidget {
         Provider<GetFarmsByOwner>(
           create: (context) => GetFarmsByOwner(context.read<FarmMarketRepositoryImpl>()),
         ),
+        Provider<GetFarmProducts>(
+          create: (context) => GetFarmProducts(context.read<FarmMarketRepositoryImpl>()),
+        ),
         ChangeNotifierProvider<FarmMarketViewModel>(
           create: (context) => FarmMarketViewModel(
             getAllFarmMarkets: context.read<GetAllFarmMarkets>(),
@@ -272,6 +276,7 @@ class MyApp extends StatelessWidget {
             deleteFarmMarket: context.read<DeleteFarmMarket>(),
             getSalesByFarmMarketId: context.read<GetSalesByFarmMarketId>(),
             getFarmsByOwner: context.read<GetFarmsByOwner>(),
+            getFarmProducts: context.read<GetFarmProducts>(),
 
 
           ),

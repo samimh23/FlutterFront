@@ -17,6 +17,7 @@
   import 'package:hanouty/Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
   import 'package:hanouty/Presentation/Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
   import 'package:hanouty/Presentation/Sales/Domain_Layer/usecases/getSalesByFarmMarket.dart';
+import 'package:hanouty/Presentation/auction/presentation/provider/auction_provider.dart';
   import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote_datasources.dart';
   import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
   import 'package:hanouty/Presentation/normalmarket/Domain/repositories/normamarket_domain_repository.dart';
@@ -38,7 +39,11 @@
   import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
   import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
   import 'Presentation/Farm/Domain_Layer/usescases/get_farm_by_owner.dart';
-  import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart';
+  import 'Presentation/Farm/Domain_Layer/usescases/get_farm_products.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConfirmAndConvertFarmCrop.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConvertFarmCropToProduct.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ProcessAllConfirmedFarmCrops.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart';
   import 'package:hanouty/nav_bar.dart';
   import 'package:provider/provider.dart';
   import 'Core/Utils/Api_EndPoints.dart';
@@ -240,6 +245,9 @@
             create: (_) => di.sl<ReviewProvider>(),
           ),
 
+          ChangeNotifierProvider(
+            create: (_) => di.sl<AuctionProvider>(),
+          ),
           // oussema
 
           //ahmed
@@ -268,6 +276,9 @@
             create: (context) =>
                 UpdateFarmMarket(context.read<FarmMarketRepositoryImpl>()),
           ),
+          Provider<GetFarmProducts>(
+            create: (context) => GetFarmProducts(context.read<FarmMarketRepositoryImpl>()),
+          ),
           Provider<DeleteFarmMarket>(
             create: (context) =>
                 DeleteFarmMarket(context.read<FarmMarketRepositoryImpl>()),
@@ -287,6 +298,7 @@
               deleteFarmMarket: context.read<DeleteFarmMarket>(),
               getSalesByFarmMarketId: context.read<GetSalesByFarmMarketId>(),
               getFarmsByOwner: context.read<GetFarmsByOwner>(),
+              getFarmProducts: context.read<GetFarmProducts>(),
 
 
             ),
@@ -333,6 +345,15 @@
           Provider<CalculateTotalExpenses>(
             create: (context) => CalculateTotalExpenses(),
           ),
+          Provider<ProcessAllConfirmedFarmCrops>(
+            create: (context) => ProcessAllConfirmedFarmCrops(context.read<FarmCropRepositoryImpl>()),
+          ),
+          Provider<ConvertFarmCropToProduct>(
+            create: (context) => ConvertFarmCropToProduct(context.read<FarmCropRepositoryImpl>()),
+          ),
+          Provider<ConfirmAndConvertFarmCrop>(
+            create: (context) => ConfirmAndConvertFarmCrop(context.read<FarmCropRepositoryImpl>()),
+          ),
           ChangeNotifierProvider<FarmCropViewModel>(
             create: (context) => FarmCropViewModel(
               getAllFarmCrops: context.read<GetAllFarmCrops>(),
@@ -341,6 +362,9 @@
               updateFarmCrop: context.read<UpdateFarmCrop>(),
               deleteFarmCrop: context.read<DeleteFarmCrop>(),
               getFarmCropsByFarmMarketId: context.read<GetFarmCropsByFarmMarketId>(),
+              confirmAndConvertFarmCrop: context.read<ConfirmAndConvertFarmCrop>(),
+              convertFarmCropToProduct: context.read<ConvertFarmCropToProduct>(),
+              processAllConfirmedFarmCrops: context.read<ProcessAllConfirmedFarmCrops>(),
               // calculateTotalExpenses: context.read<CalculateTotalExpenses>(),
             ),
             lazy: false,

@@ -306,42 +306,12 @@ class _NormalMarketFormPageState extends State<NormalMarketFormPage> {
               fontSize: isSmallScreen ? 18 : 22,
             ),
           ),
-          actions: [
-            Container(
-              margin: EdgeInsets.only(right: isSmallScreen ? 8 : 16),
-              child: TextButton.icon(
-                onPressed: provider.isSubmitting ? null : _submitForm,
-                icon: Container(
-                  padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                  decoration: BoxDecoration(
-                    color: headerIconBgColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _isEditing ? Icons.update : Icons.check_circle_outline,
-                    color: accentColor,
-                    size: isSmallScreen ? 16 : 20,
-                  ),
-                ),
-                label: Text(
-                  _isEditing ? 'Update' : 'Save',
-                  style: TextStyle(
-                    color: accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: isSmallScreen ? 14 : 16,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  disabledForegroundColor: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade400,
-                ),
-              ),
-            ),
-          ],
+
         ),
         body: Container(
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: const AssetImage('assets/images/fruits_pattern_light.png'),
+              image: const AssetImage('assets/icons/fruits_pattern_light.png'),
               opacity: isDarkMode ? 0.03 : 0.05,
               repeat: ImageRepeat.repeat,
             ),

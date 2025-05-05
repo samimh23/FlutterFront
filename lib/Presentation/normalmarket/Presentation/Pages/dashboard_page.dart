@@ -1,57 +1,148 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileMarketSceen.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/Setting_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_market_page.dart';
+import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
+import 'package:hanouty/wallet_screen.dart';
 import 'package:provider/provider.dart';
-
+import '../../../Auth/presentation/controller/profilep^rovider.dart';
+import '../../../Auth/presentation/pages/login_page.dart';
 import '../../../order/presentation/pages/orderpage.dart';
+import 'auction_market_screen.dart' show MarketOwnerAuctionsScreen;
+
+// RouteObserver to be provided to MaterialApp if needed
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
+
+  // Helper for child widgets to trigger reload
+  static _DashboardPageState? of(BuildContext context) =>
+      context.findAncestorStateOfType<_DashboardPageState>();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
-  final List<Widget> _pages = [
-    const NormalMarketsPage(),
-    const SettingsPage(),
-    const OrdersPage(),
+
+  final GlobalKey<_NormalMarketsPageWrapperState> _marketsKey = GlobalKey();
+  final GlobalKey<_SettingsPageWrapperState> _settingsKey = GlobalKey();
+  final GlobalKey<_OrdersPageWrapperState> _ordersKey = GlobalKey();
+  final GlobalKey<_FarmPageWrapperState> _farmKey = GlobalKey();
+
+
+  late final List<Widget> _pages = [
+    NormalMarketsPageWrapper(key: _marketsKey),
+    MarketOwnerAuctionsScreen(),
+    SettingsPageWrapper(key: _settingsKey),
+    OrdersPageWrapper(key: _ordersKey),
+    FarmMarketplaceScreen(key: _farmKey),
+    WalletScreen(),
+
   ];
 
-  final List<String> _titles = ['Fresh Markets', 'Settings','Market Orders'];
-  final List<IconData> _pageIcons = [Icons.storefront_outlined, Icons.settings, Icons.receipt_long];
+  final List<String> _titles = ['Fresh Markets', 'Auctions' ,'Settings', 'Market Orders','Farms','My Wallet'];
+  final List<IconData> _pageIcons = [
+    Icons.storefront_outlined,
+    Icons.gavel,
+    Icons.settings,
+    Icons.receipt_long,
+    Icons.storefront,
+    Icons.wallet
+  ];
+
+  void _reloadCurrentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        _marketsKey.currentState?.reload();
+        break;
+      case 1:
+        _settingsKey.currentState?.reload();
+        break;
+      case 2:
+        _ordersKey.currentState?.reload();
+        break;
+      case 3:
+        _farmKey.currentState?.reload();
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F5EC), // Warm cream background
+      backgroundColor: const Color(0xFFF9F5EC),
       appBar: _buildAppBar(),
       drawer: _buildDrawer(),
       body: _pages[_selectedIndex],
+
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    const List<Color> veggieMarketGradient = [
+      Color(0xFFFDF6ED),
+      Color(0xFFE2C79E),
+      Color(0xFFA8CF6A),
+    ];
+    final bool showGradient = _selectedIndex == 0;
+
     return AppBar(
-      backgroundColor: _selectedIndex == 0 ? Colors.transparent : Colors.white,
-      elevation: _selectedIndex == 0 ? 0 : 2,
+      backgroundColor: showGradient ? Colors.transparent : const Color(0xFFFDF6ED),
+      elevation: showGradient ? 0 : 2,
       scrolledUnderElevation: 0,
+      flexibleSpace: showGradient
+          ? Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: veggieMarketGradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      )
+          : null,
       title: _selectedIndex == 0
-          ? null // Hide title on markets page since we have a custom header
+          ? Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFA8CF6A).withOpacity(0.16),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.eco_rounded,
+              size: 28,
+              color: Color(0xFFA8CF6A),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            "Tokenized Veg Markets",
+            style: TextStyle(
+              color: Color(0xFF6A4D24),
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      )
           : Row(
         children: [
           Icon(
             _pageIcons[_selectedIndex],
-            color: const Color(0xFF43A047), // Green accent
+            color: const Color(0xFFA8CF6A),
             size: 24,
           ),
           const SizedBox(width: 12),
           Text(
             _titles[_selectedIndex],
             style: const TextStyle(
-              color: Color(0xFF2E7D32),
+              color: Color(0xFF6A4D24),
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
@@ -59,20 +150,19 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       iconTheme: IconThemeData(
-        color: _selectedIndex == 0 ? Colors.white : const Color(0xFF2E7D32),
+        color: showGradient ? const Color(0xFF6A4D24) : const Color(0xFFA8CF6A),
       ),
       actions: [
-        if (_selectedIndex == 1) // Only show on settings page
+        if (_selectedIndex == 1)
           IconButton(
             icon: const Icon(Icons.account_circle, size: 28),
             tooltip: 'Profile',
-            onPressed: () {
-              // Navigate to profile
-            },
-            color: const Color(0xFF43A047),
+            onPressed: () {},
+            color: const Color(0xFFA8CF6A),
           ),
         const SizedBox(width: 8),
       ],
+      shadowColor: showGradient ? Colors.transparent : null,
     );
   }
 
@@ -87,10 +177,12 @@ class _DashboardPageState extends State<DashboardPage> {
           _buildDrawerHeader(),
           const SizedBox(height: 8),
           _buildNavItem(0, 'Markets', Icons.storefront_outlined, 'Manage your produce markets'),
-          _buildNavItem(1, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
-          _buildNavItem(2, 'Orders', Icons.receipt_long, 'View Current orders'),
-          const SizedBox(height: 8),
-          _buildCategorySection(),
+          _buildNavItem(1, 'Auctions', Icons.gavel, 'All auctions'),
+          _buildNavItem(2, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
+          _buildNavItem(3, 'Orders', Icons.receipt_long, 'View Current orders'),
+          _buildNavItem(4, 'Farms', Icons.receipt_long, 'View Current Farms'),
+          _buildNavItem(5, 'My Wallet', Icons.wallet, 'View Your Funds'),
+
           const SizedBox(height: 8),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -99,7 +191,6 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 8),
           _buildLogoutItem(),
           const SizedBox(height: 24),
-          // App version info
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -108,18 +199,18 @@ class _DashboardPageState extends State<DashboardPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF43A047).withOpacity(0.1),
+                    color: const Color(0xFFA8CF6A).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.eco, size: 14, color: Color(0xFF43A047)),
+                      Icon(Icons.eco, size: 14, color: Color(0xFFA8CF6A)),
                       SizedBox(width: 6),
                       Text(
                         'FreshToken v1.0.0',
                         style: TextStyle(
-                          color: Color(0xFF43A047),
+                          color: Color(0xFFA8CF6A),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -142,9 +233,9 @@ class _DashboardPageState extends State<DashboardPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF2E7D32), // Dark green
-            Color(0xFF4CAF50), // Medium green
-            Color(0xFF66BB6A), // Light green
+            Color(0xFFA8CF6A),
+            Color(0xFFE2C79E),
+            Color(0xFFF9F5EC),
           ],
         ),
       ),
@@ -162,7 +253,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: const CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.eco, size: 32, color: Color(0xFF43A047)),
+                  child: Icon(Icons.eco, size: 32, color: Color(0xFFA8CF6A)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -173,7 +264,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(
                     '',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF6A4D24),
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -181,7 +272,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(
                     'Market Owner',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF6A4D24),
                       fontSize: 14,
                       fontWeight: FontWeight.w300,
                     ),
@@ -202,14 +293,14 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Icon(
                   Icons.verified,
-                  color: Colors.white,
+                  color: Color(0xFFA8CF6A),
                   size: 16,
                 ),
                 SizedBox(width: 6),
                 Text(
-                  'FreshToken Marketplace',
+                  'Tokenized Marketplace',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF6A4D24),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -230,19 +321,19 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: isSelected
-            ? const Color(0xFF43A047).withOpacity(0.1)
+            ? const Color(0xFFA8CF6A).withOpacity(0.08)
             : Colors.transparent,
       ),
       child: ListTile(
         leading: Icon(
           icon,
-          color: isSelected ? const Color(0xFF43A047) : Colors.grey[700],
+          color: isSelected ? const Color(0xFFA8CF6A) : Colors.grey[700],
           size: 26,
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF2E7D32) : Colors.black87,
+            color: isSelected ? const Color(0xFF6A4D24) : Colors.black87,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 16,
           ),
@@ -260,79 +351,13 @@ class _DashboardPageState extends State<DashboardPage> {
           borderRadius: BorderRadius.circular(12),
         ),
         onTap: () {
-          _selectPage(index);
+          setState(() {
+            _selectedIndex = index;
+          });
           Navigator.pop(context);
+          _reloadCurrentPage();
         },
       ),
-    );
-  }
-
-  Widget _buildCategorySection() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Market Types',
-            style: TextStyle(
-              color: Color(0xFF2E7D32),
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildCategoryItem('Vegetables', Icons.eco, 12),
-          _buildCategoryItem('Fruits', Icons.apple, 8),
-          _buildCategoryItem('Tokenized Markets', Icons.token, 5),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryItem(String title, IconData icon, int count) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF43A047).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          icon,
-          color: const Color(0xFF43A047),
-          size: 20,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      dense: true,
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.black87,
-        ),
-      ),
-      trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          count.toString(),
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black54,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-      onTap: () {
-        // Filter markets by category
-        Navigator.pop(context);
-      },
     );
   }
 
@@ -366,87 +391,65 @@ class _DashboardPageState extends State<DashboardPage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        onTap: () => _handleLogout(context),
+        onTap: () async {
+          // --- Show Confirmation Dialog ---
+          final shouldLogout = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog( // Use dialogContext
+              title: const Text("Log out"),
+              content: const Text("Are you sure you want to disconnect?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false), // Use dialogContext
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true), // Use dialogContext
+                  child: const Text(
+                    "Disconnect",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          // --- Proceed if confirmed ---
+          // Check if the widget is still mounted before proceeding after the dialog
+          if (shouldLogout == true && mounted) {
+            // Capture the provider and navigator using the current context
+            // before the async gap, in case the context becomes invalid.
+            final profileProvider = context.read<ProfileProvider>();
+            final navigator = Navigator.of(context);
+            final scaffoldMessenger = ScaffoldMessenger.of(context); // Capture ScaffoldMessenger
+
+            try {
+              // --- Call Logout Logic ---
+              await profileProvider.logout(); // Clears state and tokens
+
+              // --- Navigate AFTER logout ---
+              // Check if the navigator is still mounted before navigation
+              if (navigator.mounted) {
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                      (route) => false, // Remove all previous routes
+                );
+              }
+            } catch (e) {
+              // --- Handle Logout Errors ---
+              // Check if the scaffoldMessenger's context is still valid
+              if (scaffoldMessenger.mounted) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('Error during logout: ${e.toString()}')),
+                );
+              }
+              // Optionally print the error for debugging
+              print('Logout error: $e');
+            }
+          }
+        },
       ),
     );
-  }
-
-
-  Widget _buildNavBarItem(int index, String label, IconData icon) {
-    final isSelected = _selectedIndex == index;
-
-    return GestureDetector(
-      onTap: () => _selectPage(index),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          color: isSelected
-              ? const Color(0xFF43A047).withOpacity(0.1)
-              : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? const Color(0xFF43A047) : Colors.grey[400],
-              size: 26,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? const Color(0xFF2E7D32) : Colors.grey[400],
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddMarketButton() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, '/add-market');
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFF2E7D32),
-              Color(0xFF43A047),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF43A047).withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 28,
-        ),
-      ),
-    );
-  }
-
-  void _selectPage(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 
   void _handleLogout(BuildContext context) {
@@ -507,5 +510,155 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
     );
+  }
+}
+
+// --- Wrappers for each main page to support reload on reentry ---
+
+class NormalMarketsPageWrapper extends StatefulWidget {
+  const NormalMarketsPageWrapper({Key? key}) : super(key: key);
+  @override
+  State<NormalMarketsPageWrapper> createState() => _NormalMarketsPageWrapperState();
+}
+
+class _NormalMarketsPageWrapperState extends State<NormalMarketsPageWrapper> with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
+    reload();
+  }
+
+
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const NormalMarketsPage();
+
+  @override
+  void didPopNext() {
+    reload();
+  }
+  @override
+  void didPush() {
+    reload();
+  }
+  @override
+  void didPop() {}
+  @override
+  void didPushNext() {}
+
+  void reload() {
+    final provider = Provider.of<NormalMarketProvider>(context, listen: false);
+    provider.loadMarkets();
+  }
+}
+class FarmPageWrapper extends StatefulWidget {
+  const FarmPageWrapper({Key? key}) : super(key: key);
+
+  @override
+  State<FarmPageWrapper> createState() => _FarmPageWrapperState();
+}
+
+class _FarmPageWrapperState extends State<FarmPageWrapper> {
+  // Optional: Add any state variables here
+
+  void reload() {
+    setState(() {
+      // Trigger rebuild, optionally reset data
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const FarmMarketplaceScreen();
+  }
+}
+
+
+class SettingsPageWrapper extends StatefulWidget {
+  const SettingsPageWrapper({Key? key}) : super(key: key);
+  @override
+  State<SettingsPageWrapper> createState() => _SettingsPageWrapperState();
+}
+
+class _SettingsPageWrapperState extends State<SettingsPageWrapper> with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
+    reload();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SettingsPage();
+
+  @override
+  void didPopNext() {
+    reload();
+  }
+  @override
+  void didPush() {
+    reload();
+  }
+  @override
+  void didPop() {}
+  @override
+  void didPushNext() {}
+  void reload() {
+    setState(() {});
+  }
+}
+
+class OrdersPageWrapper extends StatefulWidget {
+  const OrdersPageWrapper({Key? key}) : super(key: key);
+  @override
+  State<OrdersPageWrapper> createState() => _OrdersPageWrapperState();
+}
+
+class _OrdersPageWrapperState extends State<OrdersPageWrapper> with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
+    reload();
+  }
+
+
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const OrdersPage();
+
+  @override
+  void didPopNext() {
+    reload();
+  }
+  @override
+  void didPush() {
+    reload();
+  }
+  @override
+  void didPop() {}
+  @override
+  void didPushNext() {}
+  void reload() {
+    setState(() {});
   }
 }

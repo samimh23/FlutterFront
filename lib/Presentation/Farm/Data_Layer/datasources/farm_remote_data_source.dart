@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
 import 'dart:math' as Math;
 
-import '../../../../Core/Utils/Api_EndPoints.dart';
 import '../../../Sales/Domain_Layer/entities/sale.dart';
 import '../../Domain_Layer/entity/farm.dart';
 
@@ -179,6 +179,32 @@ class FarmMarketRemoteDataSource {
     } catch (e) {
       print("🔥 FarmMarketRemoteDataSource: Error updating farm market: $e");
       throw ServerException(message: 'Failed to update farm market: $e');
+    }
+  }
+
+  Future<List<dynamic>> getFarmProducts(String farmId) async {
+    try {
+      print("🔍 FarmMarketRemoteDataSource: Getting products for farm ID: $farmId");
+      final headers = await _getHeaders();
+
+      final response = await client.get(
+        Uri.parse('$baseUrl/$farmId/products'),
+        headers: headers,
+      );
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final List<dynamic> productsList = json.decode(response.body);
+        print("✅ FarmMarketRemoteDataSource: Retrieved ${productsList.length} products");
+        return productsList;
+      } else {
+        print("❌ FarmMarketRemoteDataSource: Failed to fetch farm products. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to fetch farm products. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("🔥 FarmMarketRemoteDataSource: Error getting farm products: $e");
+      throw ServerException(message: 'Failed to fetch farm products: $e');
     }
   }
 

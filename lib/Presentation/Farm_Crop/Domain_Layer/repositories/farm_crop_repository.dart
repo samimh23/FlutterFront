@@ -10,4 +10,8 @@ abstract class FarmCropRepository {
   Future<Either<Failure, void>> updateFarmCrop(FarmCrop farmCrop);
   Future<Either<Failure, void>> deleteFarmCrop(String id);
   Future<Either<Failure, List<FarmCrop>>> getFarmCropsByFarmMarketId(String farmMarketId);
+
+  Future<Either<Failure, Map<String, dynamic>>> convertFarmCropToProduct(String cropId);
+  Future<Either<Failure, Map<String, dynamic>>> confirmAndConvertFarmCrop(String cropId, String auditReport);
+  Future<Either<Failure, Map<String, dynamic>>> processAllConfirmedFarmCrops();
 }

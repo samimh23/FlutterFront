@@ -11,4 +11,5 @@ abstract class FarmMarketRepository {
   Future<Either<Failure, void>> deleteFarmMarket(String id);
   Future<Either<Failure, List<Sale>>> getSalesByFarmMarketId(String farmMarketId);
   Future<Either<Failure, List<Farm>>> getFarmsByOwner(String owner);
+  Future<Either<Failure, List<dynamic>>> getFarmProducts(String farmId);
 }

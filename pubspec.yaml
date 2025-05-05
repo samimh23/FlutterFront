@@ -76,6 +76,8 @@ dependencies:
   flutter_image_compress: ^2.0.0
   local_auth: ^2.3.0
   shimmer: ^2.0.0
+  socket_io_client: ^3.1.2
+
 
 
 

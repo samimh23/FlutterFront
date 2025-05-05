@@ -44,7 +44,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   // Platform-agnostic image processing method
   Future<MultipartFile> _processImage(String imagePath) async {
     try {
-      print('📸 Processing image path: $imagePath');
+      //('📸 Processing image path: $imagePath');
 
       // Handle Data URLs (works on both platforms)
       if (imagePath.startsWith('data:')) {
@@ -66,7 +66,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
         return _processMobileImage(imagePath);
       }
     } catch (e) {
-      print('❌ Error processing image: $e');
+      //('❌ Error processing image: $e');
       throw Exception('Failed to process image: $e');
     }
   }
@@ -117,7 +117,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   Future<NormalMarketModel> createNormalMarket(
       NormalMarketModel market, String imagePath) async {
     try {
-      print('📸 Image path: $imagePath');
+      //('📸 Image path: $imagePath');
 
       // Create form data for multipart request
       FormData formData = FormData.fromMap({
@@ -141,7 +141,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
 
       // Get auth headers
       final headers = await _getAuthHeaders();
-      print('🔐 Adding auth headers: ${headers.toString()}');
+      //('🔐 Adding auth headers: ${headers.toString()}');
 
       final response = await dio.post(
         '',
@@ -156,8 +156,8 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
         ),
       );
 
-      print('✅ Market creation response status: ${response.statusCode}');
-      print('📄 Response data: ${response.data}');
+      //('✅ Market creation response status: ${response.statusCode}');
+      //('📄 Response data: ${response.data}');
 
       if (response.data == null) {
         throw Exception('Server returned null response after market creation');
@@ -167,7 +167,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
     } on DioException catch (e) {
       throw _handleDioException(e, 'Failed to create market');
     } catch (e) {
-      print('❌ Error creating market: $e');
+      //('❌ Error creating market: $e');
       throw Exception('Failed to create market: $e');
     }
   }
@@ -176,7 +176,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   Future<NormalMarketModel> updateNormalMarket(
       String id, NormalMarketModel market, String? imagePath) async {
     try {
-      print('🔄 Updating market with ID: $id');
+      //('🔄 Updating market with ID: $id');
 
       // Create form data for multipart request with only the updatable fields
       Map<String, dynamic> formDataMap = {
@@ -218,7 +218,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
     } on DioException catch (e) {
       throw _handleDioException(e, 'Failed to update market');
     } catch (e) {
-      print('❌ Error updating market: $e');
+      //('❌ Error updating market: $e');
       throw Exception('Failed to update market: $e');
     }
   }
@@ -229,17 +229,17 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   @override
   Future<List<NormalMarketModel>> getNormalMarkets() async {
     try {
-      print('🔍 DataSource: Fetching all markets');
+      //('🔍 DataSource: Fetching all markets');
       final response = await dio.get('');
-      print('✅ DataSource: API Response received: ${response.statusCode}');
+      //('✅ DataSource: API Response received: ${response.statusCode}');
 
       if (response.data == null) {
-        print('❌ DataSource: API returned null data');
+        //('❌ DataSource: API returned null data');
         return [];
       }
 
       final List<dynamic> marketList = response.data;
-      print('📊 DataSource: Processing ${marketList.length} markets');
+      //('📊 DataSource: Processing ${marketList.length} markets');
 
       final markets = <NormalMarketModel>[];
 
@@ -248,19 +248,19 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
           final market = NormalMarketModel.fromJson(marketJson);
           markets.add(market);
         } catch (e) {
-          print('❌ Error parsing market: $e');
-          print('🧩 Problematic market data: $marketJson');
+          //('❌ Error parsing market: $e');
+          //('🧩 Problematic market data: $marketJson');
         }
       }
 
-      print('✅ DataSource: Successfully processed ${markets.length} markets');
+      //('✅ DataSource: Successfully processed ${markets.length} markets');
       return markets;
     } on DioException catch (e) {
       _logDioError('getNormalMarkets', e);
       throw Exception('Network error: ${e.message}');
     } catch (e, stackTrace) {
-      print('❌ General error: $e');
-      print('📚 Stack trace: $stackTrace');
+      //('❌ General error: $e');
+      //('📚 Stack trace: $stackTrace');
       throw Exception('Failed to fetch markets: ${e.toString()}');
     }
   }
@@ -268,7 +268,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   @override
   Future<NormalMarketModel> getNormalMarketById(String id) async {
     try {
-      print('🔍 DataSource: Fetching market with ID: $id');
+      //('🔍 DataSource: Fetching market with ID: $id');
       final headers = await _getAuthHeaders();
 
       final response = await dio.get(
@@ -276,7 +276,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
         options: Options(headers: headers),
       );
 
-      print('✅ DataSource: Market fetched successfully');
+      //('✅ DataSource: Market fetched successfully');
 
       if (response.data == null) {
         throw Exception('Server returned null response');
@@ -287,7 +287,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       _logDioError('getNormalMarketById', e);
       throw _handleDioException(e, 'Failed to fetch market');
     } catch (e) {
-      print('❌ Error fetching market by ID: $e');
+      //('❌ Error fetching market by ID: $e');
       throw Exception('Failed to fetch market: ${e.toString()}');
     }
   }
@@ -295,7 +295,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   @override
   Future<NormalMarketModel> deleteNormalMarket(String id) async {
     try {
-      print('🗑️ Deleting market with ID: $id');
+      //('🗑️ Deleting market with ID: $id');
       final headers = await _getAuthHeaders();
 
       final response = await dio.delete(
@@ -303,8 +303,8 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
         options: Options(headers: headers),
       );
 
-      print('✅ Market deletion successful');
-      print('📊 Response data: ${response.data}');
+      //('✅ Market deletion successful');
+      //('📊 Response data: ${response.data}');
 
       if (response.data == null) {
         throw Exception('Server returned null response after market deletion');
@@ -315,7 +315,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       _logDioError('deleteNormalMarket', e);
       throw _handleDioException(e, 'Failed to delete market');
     } catch (e) {
-      print('❌ Error deleting market: $e');
+      //('❌ Error deleting market: $e');
       throw Exception('Failed to delete market: ${e.toString()}');
     }
   }
@@ -323,7 +323,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   @override
   Future<NormalMarketModel> createNFTForMarket(String id) async {
     try {
-      print('🖼️ Creating NFT for market with ID: $id');
+      //('🖼️ Creating NFT for market with ID: $id');
       final headers = await _getAuthHeaders();
 
       final response = await dio.post(
@@ -331,8 +331,8 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
         options: Options(headers: headers),
       );
 
-      print('✅ NFT creation successful');
-      print('📊 Response data: ${response.data}');
+      //('✅ NFT creation successful');
+      //('📊 Response data: ${response.data}');
 
       if (response.data == null) {
         throw Exception('Server returned null response after NFT creation');
@@ -343,7 +343,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       _logDioError('createNFTForMarket', e);
       throw _handleDioException(e, 'Failed to create NFT');
     } catch (e) {
-      print('❌ Error creating NFT: $e');
+      //('❌ Error creating NFT: $e');
       throw Exception('Failed to create NFT: ${e.toString()}');
     }
   }
@@ -351,7 +351,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   @override
   Future<List<NormalMarketModel>> getMyNormalMarkets() async {
     try {
-      print('🔍 DataSource: Fetching markets for authenticated user');
+      //('🔍 DataSource: Fetching markets for authenticated user');
       final headers = await _getAuthHeaders();
 
       final response = await dio.get(
@@ -359,15 +359,15 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
         options: Options(headers: headers),
       );
 
-      print('✅ DataSource: API Response received: ${response.statusCode}');
+      //('✅ DataSource: API Response received: ${response.statusCode}');
 
       if (response.data == null) {
-        print('❌ DataSource: API returned null data');
+        //('❌ DataSource: API returned null data');
         return [];
       }
 
       final List<dynamic> marketList = response.data;
-      print('📊 DataSource: Processing ${marketList.length} markets owned by user');
+      //('📊 DataSource: Processing ${marketList.length} markets owned by user');
 
       final markets = <NormalMarketModel>[];
 
@@ -376,19 +376,19 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
           final market = NormalMarketModel.fromJson(marketJson);
           markets.add(market);
         } catch (e) {
-          print('❌ Error parsing market: $e');
-          print('🧩 Problematic market data: $marketJson');
+          //('❌ Error parsing market: $e');
+          //('🧩 Problematic market data: $marketJson');
         }
       }
 
-      print('✅ DataSource: Successfully processed ${markets.length} markets owned by user');
+      //('✅ DataSource: Successfully processed ${markets.length} markets owned by user');
       return markets;
     } on DioException catch (e) {
       _logDioError('getMyNormalMarkets', e);
       throw _handleDioException(e, 'Failed to fetch your markets');
     } catch (e, stackTrace) {
-      print('❌ General error in getMyNormalMarkets: $e');
-      print('📚 Stack trace: $stackTrace');
+      //('❌ General error in getMyNormalMarkets: $e');
+      //('📚 Stack trace: $stackTrace');
       throw Exception('Failed to fetch your markets: ${e.toString()}');
     }
   }
@@ -397,8 +397,8 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
   Future<Map<String, dynamic>> shareFractionalNFT(
       String id, ShareFractionRequestModel requestModel) async {
     try {
-      print('🔄 Sharing fractional NFT for market with ID: $id');
-      print('📦 Share data: ${requestModel.toJson()}');
+      //('🔄 Sharing fractional NFT for market with ID: $id');
+      //('📦 Share data: ${requestModel.toJson()}');
 
       final headers = await _getAuthHeaders();
       headers['Content-Type'] = 'application/json';
@@ -415,8 +415,8 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
 
       );
 
-      print('✅ NFT sharing API call completed');
-      print('📊 Response data: ${response.data}');
+      //('✅ NFT sharing API call completed');
+      //('📊 Response data: ${response.data}');
 
       if (response.data == null) {
         throw Exception('Server returned null response after sharing NFT');
@@ -448,7 +448,7 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
 
       throw _handleDioException(e, 'Failed to share fractional NFT');
     } catch (e) {
-      print('❌ Error sharing fractional NFT: $e');
+      //('❌ Error sharing fractional NFT: $e');
       throw Exception('Failed to share fractional NFT: ${e.toString()}');
     }
   }
@@ -516,32 +516,32 @@ class NormalMarketRemoteDataSourceImpl implements NormalMarketRemoteDataSource {
       }
     }
 
-    print('🚫 Error: $errorMessage');
+    //('🚫 Error: $errorMessage');
     return Exception(errorMessage);
   }
 
   // Helper method to log Dio errors in a structured way
   void _logDioError(String method, DioException e) {
-    print('❌ DIO ERROR in $method:');
-    print('  Type: ${e.type}');
-    print('  Message: ${e.message}');
+    //('❌ DIO ERROR in $method:');
+    //('  Type: ${e.type}');
+    //('  Message: ${e.message}');
 
     if (e.response != null) {
-      print('  Status: ${e.response?.statusCode}');
-      print('  Response data: ${e.response?.data}');
-      print('  Headers: ${e.response?.headers}');
+      //('  Status: ${e.response?.statusCode}');
+      //('  Response data: ${e.response?.data}');
+      //('  Headers: ${e.response?.headers}');
     }
 
     if (e.requestOptions != null) {
-      print('  Request path: ${e.requestOptions.path}');
-      print('  Request method: ${e.requestOptions.method}');
-      print('  Request headers: ${e.requestOptions.headers}');
-      print('  Request data: ${e.requestOptions.data}');
+      //('  Request path: ${e.requestOptions.path}');
+      //('  Request method: ${e.requestOptions.method}');
+      //('  Request headers: ${e.requestOptions.headers}');
+      //('  Request data: ${e.requestOptions.data}');
     }
 
     // Log stack trace if available
     if (e.stackTrace != null) {
-      print('  Stack trace: ${e.stackTrace}');
+      //('  Stack trace: ${e.stackTrace}');
     }
   }
 }

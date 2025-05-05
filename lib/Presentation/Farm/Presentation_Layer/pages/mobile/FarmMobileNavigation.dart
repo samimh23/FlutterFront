@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/auction/presentation/pages/auction_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../Farm_Crop/Presentation_Layer/pages/FarmCropListScreen.dart';
@@ -22,6 +23,7 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
   final List<Widget> _screens = [
     const FarmMarketplaceScreen(),
     const FarmListScreen(),
+    const FarmerAuctionsScreen(),
     const MobileProductDetectDisease(),
     const FarmCropsListScreen(),
   ];
@@ -52,6 +54,10 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: 'Manage Farms',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.gavel),
+            label: 'Auction',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),

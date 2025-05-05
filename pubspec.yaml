@@ -77,6 +77,8 @@ dependencies:
   local_auth: ^2.3.0
   shimmer: ^2.0.0
 
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -17,6 +17,7 @@
   import 'package:hanouty/Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileNavigation.dart';
   import 'package:hanouty/Presentation/Farm/Presentation_Layer/viewmodels/farmviewmodel.dart';
   import 'package:hanouty/Presentation/Sales/Domain_Layer/usecases/getSalesByFarmMarket.dart';
+import 'package:hanouty/Presentation/auction/presentation/provider/auction_provider.dart';
   import 'package:hanouty/Presentation/normalmarket/Data/datasources/market_remote_datasources.dart';
   import 'package:hanouty/Presentation/normalmarket/Data/repositories/normalmarket_data_repository.dart';
   import 'package:hanouty/Presentation/normalmarket/Domain/repositories/normamarket_domain_repository.dart';
@@ -244,6 +245,9 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart'
             create: (_) => di.sl<ReviewProvider>(),
           ),
 
+          ChangeNotifierProvider(
+            create: (_) => di.sl<AuctionProvider>(),
+          ),
           // oussema
 
           //ahmed

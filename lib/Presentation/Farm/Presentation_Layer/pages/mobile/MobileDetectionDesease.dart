@@ -162,7 +162,7 @@ class _DiseaseDetectionMobileScreenState extends State<DiseaseDetectionMobileScr
       // Create multipart request
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://localhost:8000/predict'),
+        Uri.parse('http://192.168.251.201:8000/predict'),
       );
 
       // Add file to request using bytes

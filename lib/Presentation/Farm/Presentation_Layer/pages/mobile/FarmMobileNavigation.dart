@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/auction/presentation/pages/auction_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../Auth/presentation/pages/profilepage.dart';
@@ -21,10 +22,10 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const FarmMarketplaceScreen(),
+    const FarmerAuctionsScreen(),
     const FarmListScreen(),
-    const MobileProductDetectDisease(),
-    // const DiseaseDetectionMobileScreen(),
+    //const MobileProductDetectDisease(),
+    const DiseaseDetectionMobileScreen(),
     const FarmCropsListScreen(),
     const ProfilePage(),
   ];
@@ -49,8 +50,8 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.storefront),
-            label: 'Marketplace',
+            icon: Icon(Icons.gavel),
+            label: 'Auction',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),

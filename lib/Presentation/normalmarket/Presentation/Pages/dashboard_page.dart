@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:hanouty/Presentation/Farm/Presentation_Layer/pages/mobile/FarmMobileMarketSceen.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/Setting_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_market_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
+import 'package:hanouty/wallet_screen.dart';
 import 'package:provider/provider.dart';
+import '../../../Auth/presentation/controller/profilep^rovider.dart';
+import '../../../Auth/presentation/pages/login_page.dart';
 import '../../../order/presentation/pages/orderpage.dart';
+import 'auction_market_screen.dart' show MarketOwnerAuctionsScreen;
 
 // RouteObserver to be provided to MaterialApp if needed
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -25,18 +30,27 @@ class _DashboardPageState extends State<DashboardPage> {
   final GlobalKey<_NormalMarketsPageWrapperState> _marketsKey = GlobalKey();
   final GlobalKey<_SettingsPageWrapperState> _settingsKey = GlobalKey();
   final GlobalKey<_OrdersPageWrapperState> _ordersKey = GlobalKey();
+  final GlobalKey<_FarmPageWrapperState> _farmKey = GlobalKey();
+
 
   late final List<Widget> _pages = [
     NormalMarketsPageWrapper(key: _marketsKey),
+    MarketOwnerAuctionsScreen(),
     SettingsPageWrapper(key: _settingsKey),
     OrdersPageWrapper(key: _ordersKey),
+    FarmMarketplaceScreen(key: _farmKey),
+    WalletScreen(),
+
   ];
 
-  final List<String> _titles = ['Fresh Markets', 'Settings', 'Market Orders'];
+  final List<String> _titles = ['Fresh Markets', 'Auctions' ,'Settings', 'Market Orders','Farms','My Wallet'];
   final List<IconData> _pageIcons = [
     Icons.storefront_outlined,
+    Icons.gavel,
     Icons.settings,
-    Icons.receipt_long
+    Icons.receipt_long,
+    Icons.storefront,
+    Icons.wallet
   ];
 
   void _reloadCurrentPage() {
@@ -49,6 +63,9 @@ class _DashboardPageState extends State<DashboardPage> {
         break;
       case 2:
         _ordersKey.currentState?.reload();
+        break;
+      case 3:
+        _farmKey.currentState?.reload();
         break;
     }
   }
@@ -160,8 +177,12 @@ class _DashboardPageState extends State<DashboardPage> {
           _buildDrawerHeader(),
           const SizedBox(height: 8),
           _buildNavItem(0, 'Markets', Icons.storefront_outlined, 'Manage your produce markets'),
-          _buildNavItem(1, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
-          _buildNavItem(2, 'Orders', Icons.receipt_long, 'View Current orders'),
+          _buildNavItem(1, 'Auctions', Icons.gavel, 'All auctions'),
+          _buildNavItem(2, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
+          _buildNavItem(3, 'Orders', Icons.receipt_long, 'View Current orders'),
+          _buildNavItem(4, 'Farms', Icons.receipt_long, 'View Current Farms'),
+          _buildNavItem(5, 'My Wallet', Icons.wallet, 'View Your Funds'),
+
           const SizedBox(height: 8),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -370,7 +391,63 @@ class _DashboardPageState extends State<DashboardPage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        onTap: () => _handleLogout(context),
+        onTap: () async {
+          // --- Show Confirmation Dialog ---
+          final shouldLogout = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog( // Use dialogContext
+              title: const Text("Log out"),
+              content: const Text("Are you sure you want to disconnect?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false), // Use dialogContext
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true), // Use dialogContext
+                  child: const Text(
+                    "Disconnect",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          // --- Proceed if confirmed ---
+          // Check if the widget is still mounted before proceeding after the dialog
+          if (shouldLogout == true && mounted) {
+            // Capture the provider and navigator using the current context
+            // before the async gap, in case the context becomes invalid.
+            final profileProvider = context.read<ProfileProvider>();
+            final navigator = Navigator.of(context);
+            final scaffoldMessenger = ScaffoldMessenger.of(context); // Capture ScaffoldMessenger
+
+            try {
+              // --- Call Logout Logic ---
+              await profileProvider.logout(); // Clears state and tokens
+
+              // --- Navigate AFTER logout ---
+              // Check if the navigator is still mounted before navigation
+              if (navigator.mounted) {
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                      (route) => false, // Remove all previous routes
+                );
+              }
+            } catch (e) {
+              // --- Handle Logout Errors ---
+              // Check if the scaffoldMessenger's context is still valid
+              if (scaffoldMessenger.mounted) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('Error during logout: ${e.toString()}')),
+                );
+              }
+              // Optionally print the error for debugging
+              print('Logout error: $e');
+            }
+          }
+        },
       ),
     );
   }
@@ -452,6 +529,8 @@ class _NormalMarketsPageWrapperState extends State<NormalMarketsPageWrapper> wit
     reload();
   }
 
+
+
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
@@ -479,6 +558,28 @@ class _NormalMarketsPageWrapperState extends State<NormalMarketsPageWrapper> wit
     provider.loadMarkets();
   }
 }
+class FarmPageWrapper extends StatefulWidget {
+  const FarmPageWrapper({Key? key}) : super(key: key);
+
+  @override
+  State<FarmPageWrapper> createState() => _FarmPageWrapperState();
+}
+
+class _FarmPageWrapperState extends State<FarmPageWrapper> {
+  // Optional: Add any state variables here
+
+  void reload() {
+    setState(() {
+      // Trigger rebuild, optionally reset data
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const FarmMarketplaceScreen();
+  }
+}
+
 
 class SettingsPageWrapper extends StatefulWidget {
   const SettingsPageWrapper({Key? key}) : super(key: key);
@@ -533,6 +634,8 @@ class _OrdersPageWrapperState extends State<OrdersPageWrapper> with RouteAware {
     routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
     reload();
   }
+
+
 
   @override
   void dispose() {

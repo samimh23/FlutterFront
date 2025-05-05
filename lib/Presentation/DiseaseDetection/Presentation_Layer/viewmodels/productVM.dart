@@ -20,7 +20,7 @@ class DiseaseDetectionViewModel extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   
   // TODO: Configure your Flask API endpoint here
-  final String _apiUrl = 'http://your-flask-api-endpoint:5000/predict';
+  final String _apiUrl = 'http://127.0.0.1:8002/audit';
   
   // Reset state
   void resetState() {

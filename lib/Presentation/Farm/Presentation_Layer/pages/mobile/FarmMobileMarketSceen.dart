@@ -19,6 +19,11 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
+  // Theme colors as in DashboardPage
+  static const Color _backgroundColor = Color(0xFFF9F5EC);
+  static const Color _accentGreen = Color(0xFFA8CF6A);
+  static const Color _deepBrown = Color(0xFF6A4D24);
+
   @override
   void initState() {
     super.initState();
@@ -46,10 +51,9 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.primaryColor;
-
+    // Use the custom theme colors
     return Scaffold(
+      backgroundColor: _backgroundColor,
       body: Consumer<FarmMarketViewModel>(
         builder: (context, viewModel, child) {
           return NestedScrollView(
@@ -57,76 +61,78 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
                 SliverAppBar(
-                  expandedHeight: 180.0,
+                  expandedHeight: 170.0,
                   pinned: true,
-                  floating: false,
-                  backgroundColor: primaryColor,
-                  elevation: _isScrolled ? 4 : 0,
+                  backgroundColor: _accentGreen,
+                  elevation: _isScrolled ? 2 : 0,
                   flexibleSpace: FlexibleSpaceBar(
                     titlePadding: const EdgeInsets.only(left: 16, bottom: 16, right: 16),
                     title: _isScrolled
                         ? const Text(
                       'Farm Marketplace',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        color: _deepBrown,
+                        letterSpacing: 0.2,
                       ),
                     )
                         : null,
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Background image or gradient
+                        // Gradient background to match DashboardPage
                         Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                               colors: [
-                                Colors.green.shade700,
-                                primaryColor,
+                                Color(0xFFFDF6ED),
+                                Color(0xFFE2C79E),
+                                Color(0xFFA8CF6A),
                               ],
                             ),
                           ),
                         ),
-
-                        // Decorative elements
+                        // Decorative icon
                         Positioned(
-                          right: -50,
-                          top: -20,
+                          right: -30,
+                          top: -10,
                           child: Opacity(
-                            opacity: 0.2,
+                            opacity: 0.13,
                             child: Icon(
                               Icons.eco,
-                              size: 180,
-                              color: Colors.white,
+                              size: 150,
+                              color: _accentGreen,
                             ),
                           ),
                         ),
-
                         // Header content
                         Positioned(
-                          left: 20,
-                          bottom: 70,
-                          right: 20,
+                          left: 24,
+                          bottom: 60,
+                          right: 24,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
+                              const Text(
                                 'Farm Marketplace',
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                                  color: _deepBrown,
+                                  fontWeight: FontWeight.w700,
                                   fontSize: 26,
+                                  letterSpacing: 0.2,
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Text(
                                 'Discover local farms and fresh produce',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.brown[300],
                                   fontSize: 14,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],
@@ -138,30 +144,24 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                   bottom: PreferredSize(
                     preferredSize: const Size.fromHeight(60),
                     child: Container(
-                      height: 60,
+                      height: 56,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                      decoration: BoxDecoration(
-                        color: primaryColor,
-                        boxShadow: _isScrolled ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ] : null,
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
                       ),
                       child: TextField(
                         decoration: InputDecoration(
                           hintText: 'Search farms, products, locations...',
+                          hintStyle: TextStyle(color: Colors.grey[600]),
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                             borderSide: BorderSide.none,
                           ),
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                          prefixIcon: Icon(Icons.search, color: _accentGreen),
                           suffixIcon: IconButton(
-                            icon: Icon(Icons.filter_list, color: primaryColor),
+                            icon: Icon(Icons.filter_list, color: _accentGreen),
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("Filters coming soon!")),
@@ -185,14 +185,13 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
           );
         },
       ),
-
     );
   }
 
   Widget _buildContent(FarmMarketViewModel viewModel, BuildContext context) {
     if (viewModel.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(color: _accentGreen),
       );
     }
 
@@ -240,7 +239,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
             Icon(
               Icons.error_outline,
               size: 60,
-              color: Colors.red.shade300,
+              color: _accentGreen,
             ),
             const SizedBox(height: 16),
             Text(
@@ -248,7 +247,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
+                color: _deepBrown,
               ),
               textAlign: TextAlign.center,
             ),
@@ -267,7 +266,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
+                backgroundColor: _accentGreen,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -291,17 +290,17 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
             Icon(
               _searchQuery.isEmpty ? Icons.eco_outlined : Icons.search_off,
               size: 80,
-              color: Colors.grey.shade400,
+              color: _accentGreen.withOpacity(0.3),
             ),
             const SizedBox(height: 24),
             Text(
               _searchQuery.isEmpty
                   ? 'No farms available yet'
                   : 'No farms match your search',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
+                color: _deepBrown,
               ),
               textAlign: TextAlign.center,
             ),
@@ -330,7 +329,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                 icon: const Icon(Icons.add),
                 label: const Text('Add Your Farm'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: _accentGreen,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -402,7 +401,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                   height: 140,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: _accentGreen.withOpacity(0.12),
                   ),
                   child: farm.farmImage != null && farm.farmImage!.isNotEmpty
                       ? Image.network(
@@ -410,11 +409,11 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: Colors.grey.shade200,
+                        color: _accentGreen.withOpacity(0.08),
                         child: Center(
                           child: Icon(
                             Icons.image_not_supported,
-                            color: Colors.grey.shade400,
+                            color: _accentGreen,
                             size: 40,
                           ),
                         ),
@@ -424,7 +423,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                       : Center(
                     child: Icon(
                       Icons.landscape,
-                      color: Colors.grey.shade400,
+                      color: _accentGreen.withOpacity(0.6),
                       size: 40,
                     ),
                   ),
@@ -438,7 +437,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade700,
+                        color: _accentGreen,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -467,7 +466,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
+                        color: _deepBrown.withOpacity(0.82),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -501,6 +500,8 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: _deepBrown,
+                        letterSpacing: 0.1,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -510,10 +511,10 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     // Location
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.location_on,
                           size: 14,
-                          color: Theme.of(context).primaryColor,
+                          color: _accentGreen,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -521,7 +522,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                             farm.farmLocation,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade700,
+                              color: Colors.brown[400],
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -538,7 +539,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                         farm.farmDescription ?? 'No description available',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade800,
+                          color: Colors.grey[800],
                           height: 1.3,
                         ),
                         maxLines: 3,

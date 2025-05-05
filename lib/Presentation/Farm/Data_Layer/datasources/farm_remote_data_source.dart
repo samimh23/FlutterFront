@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
@@ -8,7 +9,7 @@ import '../../../Sales/Domain_Layer/entities/sale.dart';
 import '../../Domain_Layer/entity/farm.dart';
 
 class FarmMarketRemoteDataSource {
-  final String baseUrl = 'http://localhost:3000/farm';
+  final String baseUrl = '${ApiEndpoints.baseUrl}/farm';
   final http.Client client;
   final SecureStorageService authService;
 

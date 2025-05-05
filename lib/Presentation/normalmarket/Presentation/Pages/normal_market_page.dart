@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 
 class NormalMarketsPage extends StatefulWidget {
+
   const NormalMarketsPage({Key? key}) : super(key: key);
 
   @override
@@ -30,6 +31,16 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
   // Animation for screen transitions
   final Tween<double> _fadeInTween = Tween<double>(begin: 0.0, end: 1.0);
 
+  static void reloadMarkets(BuildContext context) {
+    final state = context.findAncestorStateOfType<_NormalMarketsPageState>();
+    state?._reloadMarkets();
+  }
+
+  void _reloadMarkets() {
+    setState(() {});
+    _provider.loadMyMarkets();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -37,14 +48,11 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _provider = Provider.of<NormalMarketProvider>(context, listen: false);
       _provider.loadMyMarkets();
       _animationController.forward();
     });
-
-    // Set preferred orientation for better experience
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -54,13 +62,19 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _provider = Provider.of<NormalMarketProvider>(context, listen: false);
+    // don't double reload every dependency change, just rely on initState for initial load
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     _animationController.dispose();
     _searchController.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -69,21 +83,15 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     final isLargeScreen = screenSize.width >= 900;
     final isWebPlatform = kIsWeb;
 
-    // Use appropriate theme data based on platform
     final brightness = Theme.of(context).brightness;
     final isDarkMode = brightness == Brightness.dark;
 
-    // Background color based on theme mode
-    final backgroundColor = isDarkMode
-        ? const Color(0xFF121212)
-        : const Color(0xFFF9F7F3);
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3);
 
-    // Automatically switch to list view on very small screens
     if (isSmallScreen && _isGridView) {
       _isGridView = false;
     }
 
-    // Dynamic grid layout based on screen size
     final crossAxisCount = screenSize.width > 1200
         ? 4
         : screenSize.width > 900
@@ -105,10 +113,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
             } else if (provider.markets.isEmpty) {
               return _buildEmptyView(isSmallScreen, isMediumScreen, isDarkMode);
             }
-
-            // Filter markets if search or filter is active
             final markets = _filterMarkets(provider.myMarkets);
-
             return _buildMarketplaceView(
                 provider,
                 markets,
@@ -126,11 +131,8 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
       floatingActionButton: Builder(
           builder: (context) {
             return FloatingActionButton.extended(
-              onPressed: () {
-                // Add haptic feedback for better UX
+              onPressed: () async {
                 HapticFeedback.mediumImpact();
-
-                // Add button press animation
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text('Creating new market...'),
@@ -142,10 +144,12 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                     ),
                   ),
                 );
-
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  _navigateToAddMarket();
-                });
+                await Future.delayed(const Duration(milliseconds: 300));
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const NormalMarketFormPage()),
+                );
+                // After returning from form, force reload
+                _reloadMarkets();
               },
               backgroundColor: const Color(0xFF4CAF50),
               foregroundColor: Colors.white,

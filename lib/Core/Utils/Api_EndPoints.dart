@@ -1,5 +1,5 @@
 class ApiEndpoints {
-  static const String baseUrl = 'http://192.168.40.19:3000';
+  static const String baseUrl = 'http://192.168.251.4:3000';
 
 
 

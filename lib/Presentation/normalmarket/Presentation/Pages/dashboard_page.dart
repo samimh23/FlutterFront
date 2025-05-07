@@ -32,7 +32,6 @@ class _DashboardPageState extends State<DashboardPage> {
   final GlobalKey<_OrdersPageWrapperState> _ordersKey = GlobalKey();
   final GlobalKey<_FarmPageWrapperState> _farmKey = GlobalKey();
 
-
   late final List<Widget> _pages = [
     NormalMarketsPageWrapper(key: _marketsKey),
     MarketOwnerAuctionsScreen(),
@@ -40,10 +39,16 @@ class _DashboardPageState extends State<DashboardPage> {
     OrdersPageWrapper(key: _ordersKey),
     FarmMarketplaceScreen(key: _farmKey),
     WalletScreen(),
-
   ];
 
-  final List<String> _titles = ['Fresh Markets', 'Auctions' ,'Settings', 'Market Orders','Farms','My Wallet'];
+  final List<String> _titles = [
+    'Fresh Markets',
+    'Auctions',
+    'Settings',
+    'Market Orders',
+    'Farms',
+    'My Wallet'
+  ];
   final List<IconData> _pageIcons = [
     Icons.storefront_outlined,
     Icons.gavel,
@@ -58,13 +63,13 @@ class _DashboardPageState extends State<DashboardPage> {
       case 0:
         _marketsKey.currentState?.reload();
         break;
-      case 1:
+      case 2: // Updated index to match Settings
         _settingsKey.currentState?.reload();
         break;
-      case 2:
+      case 3: // Updated index to match Orders
         _ordersKey.currentState?.reload();
         break;
-      case 3:
+      case 4: // Updated index to match Farms
         _farmKey.currentState?.reload();
         break;
     }
@@ -76,8 +81,32 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: const Color(0xFFF9F5EC),
       appBar: _buildAppBar(),
       drawer: _buildDrawer(),
+      // Direct content without SingleChildScrollView wrapper
       body: _pages[_selectedIndex],
+      // Add bottom navigation for easier access on mobile
+      bottomNavigationBar: MediaQuery.of(context).size.width < 600 ?
+      _buildBottomNav() : null,
+    );
+  }
 
+  Widget _buildBottomNav() {
+    return BottomNavigationBar(
+      currentIndex: _selectedIndex,
+      selectedItemColor: const Color(0xFF4CAF50),
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
+      items: [
+        BottomNavigationBarItem(icon: Icon(_pageIcons[0]), label: _titles[0]),
+        BottomNavigationBarItem(icon: Icon(_pageIcons[1]), label: _titles[1]),
+        BottomNavigationBarItem(icon: Icon(_pageIcons[2]), label: _titles[2]),
+        BottomNavigationBarItem(icon: Icon(_pageIcons[3]), label: _titles[3]),
+      ],
+      onTap: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+        _reloadCurrentPage();
+      },
     );
   }
 
@@ -88,6 +117,8 @@ class _DashboardPageState extends State<DashboardPage> {
       Color(0xFFA8CF6A),
     ];
     final bool showGradient = _selectedIndex == 0;
+    final Size screenSize = MediaQuery.of(context).size;
+    final bool isSmallScreen = screenSize.width < 600;
 
     return AppBar(
       backgroundColor: showGradient ? Colors.transparent : const Color(0xFFFDF6ED),
@@ -105,33 +136,43 @@ class _DashboardPageState extends State<DashboardPage> {
       )
           : null,
       title: _selectedIndex == 0
-          ? Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFA8CF6A).withOpacity(0.16),
-              shape: BoxShape.circle,
+          ? Visibility(
+        visible: !isSmallScreen,
+        replacement: const Icon(
+          Icons.eco_rounded,
+          size: 28,
+          color: Color(0xFFA8CF6A),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFA8CF6A).withOpacity(0.16),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.eco_rounded,
+                size: 28,
+                color: Color(0xFFA8CF6A),
+              ),
             ),
-            child: const Icon(
-              Icons.eco_rounded,
-              size: 28,
-              color: Color(0xFFA8CF6A),
+            const SizedBox(width: 12),
+            const Text(
+              "Tokenized Veg Markets",
+              style: TextStyle(
+                color: Color(0xFF6A4D24),
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            "Tokenized Veg Markets",
-            style: TextStyle(
-              color: Color(0xFF6A4D24),
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ],
+          ],
+        ),
       )
           : Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             _pageIcons[_selectedIndex],
@@ -146,6 +187,7 @@ class _DashboardPageState extends State<DashboardPage> {
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -171,57 +213,59 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: Colors.white,
       elevation: 2,
       surfaceTintColor: Colors.transparent,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _buildDrawerHeader(),
-          const SizedBox(height: 8),
-          _buildNavItem(0, 'Markets', Icons.storefront_outlined, 'Manage your produce markets'),
-          _buildNavItem(1, 'Auctions', Icons.gavel, 'All auctions'),
-          _buildNavItem(2, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
-          _buildNavItem(3, 'Orders', Icons.receipt_long, 'View Current orders'),
-          _buildNavItem(4, 'Farms', Icons.receipt_long, 'View Current Farms'),
-          _buildNavItem(5, 'My Wallet', Icons.wallet, 'View Your Funds'),
-
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(color: Colors.black12),
-          ),
-          const SizedBox(height: 8),
-          _buildLogoutItem(),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFA8CF6A).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.eco, size: 14, color: Color(0xFFA8CF6A)),
-                      SizedBox(width: 6),
-                      Text(
-                        'FreshToken v1.0.0',
-                        style: TextStyle(
-                          color: Color(0xFFA8CF6A),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      child: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            _buildDrawerHeader(),
+            const SizedBox(height: 8),
+            for (int i = 0; i < _titles.length; i++)
+              _buildNavItem(
+                i,
+                _titles[i],
+                _pageIcons[i],
+                'Navigate to ${_titles[i]}',
+              ),
+            const SizedBox(height: 8),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(color: Colors.black12),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            _buildLogoutItem(),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFA8CF6A).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.eco, size: 14, color: Color(0xFFA8CF6A)),
+                        SizedBox(width: 6),
+                        Text(
+                          'FreshToken v1.0.0',
+                          style: TextStyle(
+                            color: Color(0xFFA8CF6A),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -257,55 +301,62 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               const SizedBox(width: 16),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '',
-                    style: TextStyle(
-                      color: Color(0xFF6A4D24),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '',
+                      style: TextStyle(
+                        color: Color(0xFF6A4D24),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Text(
-                    'Market Owner',
-                    style: TextStyle(
-                      color: Color(0xFF6A4D24),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
+                    Text(
+                      'Market Owner',
+                      style: TextStyle(
+                        color: Color(0xFF6A4D24),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w300,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.verified,
-                  color: Color(0xFFA8CF6A),
-                  size: 16,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'Tokenized Marketplace',
-                  style: TextStyle(
-                    color: Color(0xFF6A4D24),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.verified,
+                    color: Color(0xFFA8CF6A),
+                    size: 16,
                   ),
-                ),
-              ],
+                  SizedBox(width: 6),
+                  Text(
+                    'Tokenized Marketplace',
+                    style: TextStyle(
+                      color: Color(0xFF6A4D24),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -337,6 +388,7 @@ class _DashboardPageState extends State<DashboardPage> {
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 16,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
           subtitle,
@@ -344,6 +396,7 @@ class _DashboardPageState extends State<DashboardPage> {
             color: Colors.grey[600],
             fontSize: 12,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
         selected: isSelected,
         selectedTileColor: Colors.transparent,
@@ -395,16 +448,16 @@ class _DashboardPageState extends State<DashboardPage> {
           // --- Show Confirmation Dialog ---
           final shouldLogout = await showDialog<bool>(
             context: context,
-            builder: (dialogContext) => AlertDialog( // Use dialogContext
+            builder: (dialogContext) => AlertDialog(
               title: const Text("Log out"),
               content: const Text("Are you sure you want to disconnect?"),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false), // Use dialogContext
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
                   child: const Text("Cancel"),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true), // Use dialogContext
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
                   child: const Text(
                     "Disconnect",
                     style: TextStyle(color: Colors.red),
@@ -414,106 +467,29 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           );
 
-          // --- Proceed if confirmed ---
-          // Check if the widget is still mounted before proceeding after the dialog
           if (shouldLogout == true && mounted) {
-            // Capture the provider and navigator using the current context
-            // before the async gap, in case the context becomes invalid.
-            final profileProvider = context.read<ProfileProvider>();
-            final navigator = Navigator.of(context);
-            final scaffoldMessenger = ScaffoldMessenger.of(context); // Capture ScaffoldMessenger
-
             try {
-              // --- Call Logout Logic ---
-              await profileProvider.logout(); // Clears state and tokens
-
-              // --- Navigate AFTER logout ---
-              // Check if the navigator is still mounted before navigation
+              final navigator = Navigator.of(context);
+              await context.read<ProfileProvider>().logout();
               if (navigator.mounted) {
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const LoginPage()),
-                      (route) => false, // Remove all previous routes
+                      (route) => false,
                 );
               }
             } catch (e) {
-              // --- Handle Logout Errors ---
-              // Check if the scaffoldMessenger's context is still valid
-              if (scaffoldMessenger.mounted) {
-                scaffoldMessenger.showSnackBar(
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error during logout: ${e.toString()}')),
                 );
               }
-              // Optionally print the error for debugging
-              print('Logout error: $e');
             }
           }
         },
       ),
     );
   }
-
-  void _handleLogout(BuildContext context) {
-    Navigator.pop(context); // Close the drawer
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.logout, color: Colors.redAccent),
-            SizedBox(width: 12),
-            Text('Logout', style: TextStyle(color: Colors.black87)),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to logout?',
-              style: TextStyle(color: Colors.black87),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'You will need to sign in again to access your markets.',
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[700],
-            ),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              // Add your logout logic here
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }
-
-// --- Wrappers for each main page to support reload on reentry ---
 
 class NormalMarketsPageWrapper extends StatefulWidget {
   const NormalMarketsPageWrapper({Key? key}) : super(key: key);

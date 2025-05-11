@@ -21,9 +21,8 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const FarmMarketplaceScreen(),
-    const FarmListScreen(),
     const FarmerAuctionsScreen(),
+    const FarmListScreen(),
     const MobileProductDetectDisease(),
     const FarmCropsListScreen(),
   ];
@@ -48,17 +47,14 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.storefront),
-            label: 'Marketplace',
+            icon: Icon(Icons.gavel),
+            label: 'Auction',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: 'Manage Farms',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.gavel),
-            label: 'Auction',
-          ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: 'Product IA',

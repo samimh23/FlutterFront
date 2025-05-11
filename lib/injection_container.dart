@@ -44,6 +44,18 @@ import 'package:hanouty/Presentation/review/presentation/provider/review_provide
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Presentation/auction/data/datasource/auction_remote_datasource.dart';
+import 'Presentation/auction/data/repositories/auction_repository_impl.dart';
+import 'Presentation/auction/domain/repository/auction_repository.dart';
+import 'Presentation/auction/domain/usecases/create_auction_usecase.dart';
+import 'Presentation/auction/domain/usecases/get_active_auction_usecase.dart';
+import 'Presentation/auction/domain/usecases/get_auction_by_bidder_id_usecase.dart';
+import 'Presentation/auction/domain/usecases/get_auction_by_farmer_id_usecase.dart';
+import 'Presentation/auction/domain/usecases/get_auction_by_id_usecase.dart';
+import 'Presentation/auction/domain/usecases/get_bidders_by_auction_id_usecase.dart';
+import 'Presentation/auction/domain/usecases/place_bid_usecase.dart';
+import 'Presentation/auction/domain/usecases/update_auction_status_usecase.dart';
+import 'Presentation/auction/presentation/provider/auction_provider.dart';
 import 'Presentation/order/domain/usecases/FindOrderByShopId.dart';
 import 'Presentation/order/domain/usecases/send_package.dart';
 
@@ -109,7 +121,37 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateReviewUsecase(sl()));
   sl.registerLazySingleton(() => UpdateReviewUsecase(sl()));
   sl.registerLazySingleton(() => GetReviewsByUserId(sl()));
-   sl.registerFactory<ReviewProvider>(
+  sl.registerLazySingleton<AuctionRemoteDataSource>(
+        () => AuctionRemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerLazySingleton<AuctionRepository>(
+        () => AuctionRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+  sl.registerLazySingleton(() => CreateAuction(sl()));
+  sl.registerLazySingleton(() => GetActiveAuctions(sl()));
+  sl.registerLazySingleton(() => GetAuctionById(sl()));
+  sl.registerLazySingleton(() => PlaceBid(sl()));
+  sl.registerLazySingleton(() => UpdateAuctionStatus(sl()));
+  sl.registerLazySingleton(() => GetAuctionsByBidderId(sl()));
+  sl.registerLazySingleton(() => GetAuctionsByFarmerId(sl()));
+  sl.registerLazySingleton(() => GetBiddersByAuctionId(sl()));
+
+  sl.registerFactory<AuctionProvider>(
+        () => AuctionProvider(
+      createAuctionUseCase: sl(),
+      getActiveAuctionsUseCase: sl(),
+      getAuctionByIdUseCase: sl(),
+      placeBidUseCase: sl(),
+      updateAuctionStatusUseCase: sl(),
+      getAuctionsByBidderIdUseCase: sl(),
+      getBiddersByAuctionIdUseCase: sl(),
+      getAuctionsByFarmerIdUseCase: sl(),
+    ),
+  );
+
+  sl.registerFactory<ReviewProvider>(
     () => ReviewProvider(
       createReviewUsecase: sl(),
       updateReviewUsecase: sl(),

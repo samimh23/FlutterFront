@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../Domain_Layer/entities/farm_crop.dart';
 import '../../Presentation_Layer/viewmodels/farm_crop_viewmodel.dart';
 import 'FarmCropFormScreen.dart';
+import 'FarmCropTransformScreen.dart';
+import 'LiveAuditImage.dart';
 
 class FarmCropDetailScreen extends StatefulWidget {
   final String cropId;
@@ -173,6 +178,20 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                   ),
                 ),
                 actions: [
+                  // Add this button as the first action
+                  if (crop.harvestedDay != null) // Only show for harvested crops
+                    IconButton(
+                      icon: const Icon(Icons.transform),
+                      tooltip: 'Transform to Product',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
+                          ),
+                        );
+                      },
+                    ),
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
@@ -191,9 +210,45 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                     onSelected: (value) {
                       if (value == 'delete') {
                         _showDeleteConfirmationDialog(context, viewModel, crop);
+                      } else if (value == 'transform') {
+
+                        // Navigate to transform screen
+
+                        Navigator.push(
+
+                          context,
+
+                          MaterialPageRoute(
+
+                            builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
+
+                          ),
+
+                        );
                       }
                     },
                     itemBuilder: (context) => [
+                      if (crop.harvestedDay != null) // Only show for harvested crops
+
+                        const PopupMenuItem(
+
+                          value: 'transform',
+
+                          child: Row(
+
+                            children: [
+
+                              Icon(Icons.transform, color: Colors.blue),
+
+                              SizedBox(width: 8),
+
+                              Text('Transform to Product'),
+
+                            ],
+
+                          ),
+
+                        ),
                       const PopupMenuItem(
                         value: 'delete',
                         child: Row(
@@ -441,13 +496,61 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                          Row(
+
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                          children: [
+
                             const Text(
+
                               'Harvest Information',
+
                               style: TextStyle(
+
                                 fontSize: 18,
+
                                 fontWeight: FontWeight.bold,
+
                               ),
+
                             ),
+
+                            // Add Transform to Product button in harvest section
+
+                            ElevatedButton.icon(
+
+                              onPressed: () {
+
+                                Navigator.push(
+
+                                  context,
+
+                                  MaterialPageRoute(
+
+                                    builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
+
+                                  ),
+
+                                );
+
+                              },
+
+                              icon: const Icon(Icons.transform),
+
+                              label: const Text('Transform to Product'),
+
+                              style: ElevatedButton.styleFrom(
+
+                                backgroundColor: Colors.blue,
+
+                                foregroundColor: Colors.white,
+
+                              ),
+
+                            ),
+
+                          ],),
                             const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.all(16),
@@ -839,82 +942,229 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Record Harvest'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(
-                'Harvest Date: ${DateFormat('MMM d, yyyy').format(harvestDate)}',
-              ),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: () async {
-                final DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: harvestDate,
-                  firstDate: crop.implantDate,
-                  lastDate: DateTime.now(),
-                );
-                if (pickedDate != null && pickedDate != harvestDate) {
-                  harvestDate = pickedDate;
-                  (context as Element).markNeedsBuild();
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          bool isAuditing = false;
+          double progress = 0;
+          int total = 0;
+          int current = 0;
+          List<String> auditResults = [];
+          CancelAuditController? cancelController;
+          bool retryMode = false;
+
+          Future<void> startAudit(FarmCrop initialCrop, int quantity, {List<int>? indexesToRetry}) async {
+            setState(() {
+              isAuditing = true;
+              total = indexesToRetry?.length ?? quantity;
+              current = 0;
+              progress = 0;
+              if (!retryMode) auditResults.clear();
+              cancelController = CancelAuditController();
+            });
+
+            // Initial or retry audit
+            if (indexesToRetry == null) {
+              auditResults = await viewModel.auditHarvestedTomatoes(
+                crop: initialCrop,
+                quantityToCheck: quantity,
+                onProgress: (cur, tot) {
+                  setState(() {
+                    current = cur;
+                    total = tot;
+                    progress = tot > 0 ? cur / tot : 0;
+                  });
+                },
+                onResult: (status) {
+                  setState(() {
+                    auditResults.add(status);
+                  });
+                },
+                cancelController: cancelController,
+              );
+            } else {
+              // Retry only unknown indexes
+              for (int idx in indexesToRetry) {
+                if (cancelController!.isCancelled) break;
+                String status = 'unknown';
+                int attempts = 0;
+                while (attempts < 2) {
+                  attempts++;
+                  try {
+                    final response = await http.get(Uri.parse('http://127.0.0.1:8002/audit'));
+                    if (response.statusCode == 200) {
+                      final data = json.decode(response.body);
+                      final statusRaw = data['audit_status'];
+                      status = (statusRaw is String) ? statusRaw.trim().toLowerCase() : '';
+                      if (status == 'fresh' || status == 'rotten') break;
+                    }
+                  } catch (_) {}
+                  await Future.delayed(const Duration(milliseconds: 200));
                 }
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: quantityController,
-              decoration: const InputDecoration(
-                labelText: 'Quantity Harvested',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.inventory_2),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: notesController,
-              decoration: const InputDecoration(
-                labelText: 'Harvest Notes (Optional)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.note),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (quantityController.text.isNotEmpty) {
-                try {
-                  final quantity = int.parse(quantityController.text);
-                  final updatedCrop = crop.copyWith(
-                    harvestedDay: harvestDate,
-                    quantity: quantity,
-                    auditReport: notesController.text.isNotEmpty
-                        ? notesController.text
-                        : null,
-                  );
-                  viewModel.modifyFarmCrop(updatedCrop);
-                  Navigator.of(context).pop();
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a valid quantity'),
-                    ),
-                  );
-                }
+                setState(() {
+                  auditResults[idx] = status;
+                  current++;
+                  progress = total > 0 ? current / total : 0;
+                });
               }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+            }
+
+            setState(() {
+              isAuditing = false;
+              progress = 1;
+            });
+
+            // Always update crop audit status after initial and retry audits.
+            await viewModel.updateCropAuditFromResults(
+              crop: viewModel.selectedCrop ?? initialCrop,
+              auditResults: auditResults,
+              notes: notesController.text,
+              harvestedDay: harvestDate,
+            );
+
+            // Show summary dialog
+            int fresh = auditResults.where((s) => s == 'fresh').length;
+            int rotten = auditResults.where((s) => s == 'rotten').length;
+            int unknown = auditResults.where((s) => s == 'unknown').length;
+
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text('Audit Finished!'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('✔️: $fresh   ❌: $rotten   ❓: $unknown'),
+                    SizedBox(height: 10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: auditResults.map((s) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                          child: Text(
+                            s == 'fresh'
+                                ? '✔️'
+                                : s == 'rotten'
+                                ? '❌'
+                                : '❓',
+                            style: const TextStyle(fontSize: 20),
+                          ),
+                        )).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  if (unknown > 0)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        setState(() => retryMode = true);
+                        List<int> unknownIndexes = [];
+                        for (int i = 0; i < auditResults.length; i++) {
+                          if (auditResults[i] == 'unknown') unknownIndexes.add(i);
+                        }
+                        startAudit(
+                          viewModel.selectedCrop ?? initialCrop,
+                          unknownIndexes.length,
+                          indexesToRetry: unknownIndexes,
+                        ).then((_) => setState(() => retryMode = false));
+                      },
+                      child: Text('Retry Unknown'),
+                    ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // close summary dialog
+                      Navigator.of(context).pop(); // close harvest dialog
+                    },
+                    child: Text('Close'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          Widget buildAuditResultsRow() => SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: auditResults.map((s) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                child: Text(
+                  s == 'fresh'
+                      ? '✔️'
+                      : s == 'rotten'
+                      ? '❌'
+                      : '❓',
+                  style: const TextStyle(fontSize: 20),
+                ),
+              )).toList(),
+            ),
+          );
+
+          return AlertDialog(
+            title: Text('Harvest & Audit Tomatoes'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LiveAuditImage(imageUrl: 'http://192.168.251.62/capture'),
+                SizedBox(height: 16),
+                TextField(
+                  controller: quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: 'Enter quantity to audit'),
+                ),
+                TextField(
+                  controller: notesController,
+                  maxLines: 2,
+                  decoration: InputDecoration(labelText: 'Notes (optional)'),
+                ),
+                SizedBox(height: 12),
+                if (isAuditing)
+                  LinearProgressIndicator(value: progress),
+                SizedBox(height: 8),
+                buildAuditResultsRow(),
+              ],
+            ),
+            actions: [
+              if (!isAuditing && auditResults.isEmpty)
+                ElevatedButton.icon(
+                  icon: Icon(Icons.agriculture),
+                  label: Text('Harvest & Audit'),
+                  onPressed: () async {
+                    final qty = int.tryParse(quantityController.text) ?? 0;
+                    if (qty > 0) {
+                      final updatedCrop = crop.copyWith(
+                        harvestedDay: harvestDate,
+                        quantity: qty,
+                        auditReport: notesController.text.isNotEmpty ? notesController.text : null,
+                      );
+                      await viewModel.modifyFarmCrop(updatedCrop);
+                      await viewModel.fetchCropById(crop.id!);
+                      final auditTarget = viewModel.selectedCrop ?? updatedCrop;
+                      await startAudit(auditTarget, qty);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Enter a valid quantity')),
+                      );
+                    }
+                  },
+                ),
+              if (isAuditing)
+                TextButton(
+                  onPressed: () {
+                    cancelController?.cancel();
+                    setState(() => isAuditing = false);
+                  },
+                  child: Text('Cancel'),
+                ),
+              if (!isAuditing)
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Close'),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

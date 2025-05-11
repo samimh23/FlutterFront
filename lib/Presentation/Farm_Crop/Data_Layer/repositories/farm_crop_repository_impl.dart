@@ -30,6 +30,16 @@ class FarmCropRepositoryImpl implements FarmCropRepository {
   }
 
   @override
+  Future<Either<Failure, List<FarmCrop>>> getFarmCropsByFarmMarketId(String farmMarketId) async {
+    try {
+      final crops = await remoteDataSource.getCropsByFarmMarketId(farmMarketId);
+      return Right(crops);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> addFarmCrop(FarmCrop farmCrop) async {
     try {
       await remoteDataSource.addCrop(farmCrop);
@@ -59,4 +69,37 @@ class FarmCropRepositoryImpl implements FarmCropRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  //farm-crop convert
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> convertFarmCropToProduct(String cropId) async {
+    try {
+      final result = await remoteDataSource.convertToProduct(cropId);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> confirmAndConvertFarmCrop(String cropId, String auditReport) async {
+    try {
+      final result = await remoteDataSource.confirmAndConvert(cropId, auditReport);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> processAllConfirmedFarmCrops() async {
+    try {
+      final result = await remoteDataSource.processAllConfirmed();
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
 }

@@ -1,151 +1,264 @@
 import 'dart:convert';
+import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
+import 'package:hanouty/Core/Utils/secure_storage.dart';
+import 'package:hanouty/Core/errors/exceptions.dart';
+import 'dart:math' as Math;
 
-import '../../../../Core/Utils/Api_EndPoints.dart';
-import '../../../../Core/Utils/secure_storage.dart';
 import '../../../Sales/Domain_Layer/entities/sale.dart';
 import '../../Domain_Layer/entity/farm.dart';
 
 class FarmMarketRemoteDataSource {
   final String baseUrl = '${ApiEndpoints.baseUrl}/farm';
   final http.Client client;
-  final SecureStorageService _secureStorageService;
+  final SecureStorageService authService;
 
-  FarmMarketRemoteDataSource(this._secureStorageService,{http.Client? client}) : client = client ?? http.Client();
+  FarmMarketRemoteDataSource({
+    http.Client? client,
+    required this.authService,
+  }) : client = client ?? http.Client();
+
+  // Helper method to get authentication headers
+  Future<Map<String, String>> _getHeaders() async {
+    try {
+      final token = await authService.getAccessToken();
+      if (token == null || token.isEmpty) {
+        print("⚠️ FarmMarketRemoteDataSource: No access token found!");
+      } else {
+        print("✅ FarmMarketRemoteDataSource: Token found");
+      }
+
+      final headers = {
+        "Content-Type": "application/json",
+        if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
+      };
+
+      return headers;
+    } catch (e, stackTrace) {
+      print("⚠️ Error in _getHeaders: ${e.toString()}");
+      print(stackTrace);
+      return {"Content-Type": "application/json"};
+    }
+  }
 
   Future<List<Farm>> getAllFarmMarkets() async {
     try {
+      print("📋 FarmMarketRemoteDataSource: Getting all farm markets");
+      final headers = await _getHeaders();
+
       final response = await client.get(
-        Uri.parse('$baseUrl'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(baseUrl),
+        headers: headers,
       );
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final List<dynamic> farmMarketList = json.decode(response.body);
+        print("✅ FarmMarketRemoteDataSource: Retrieved ${farmMarketList.length} farm markets");
         return farmMarketList.map((json) => Farm.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to fetch farm markets. Status: ${response.statusCode}');
+        print("❌ FarmMarketRemoteDataSource: Failed to fetch farm markets. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to fetch farm markets. Status: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Failed to fetch farm markets: $e');
+      print("🔥 FarmMarketRemoteDataSource: Error getting farm markets: $e");
+      throw ServerException(message: 'Failed to fetch farm markets: $e');
+    }
+  }
+
+  Future<List<Farm>> getFarmsByOwner(String owner) async {
+    try {
+      print("🔍 FarmMarketRemoteDataSource: Getting farms for owner ID: $owner");
+      final headers = await _getHeaders();
+
+      final response = await client.get(
+        Uri.parse('$baseUrl/farmer/$owner'),
+        headers: headers,
+      );
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final List<dynamic> farmMarketList = json.decode(response.body);
+        print("✅ FarmMarketRemoteDataSource: Retrieved ${farmMarketList.length} farms");
+        return farmMarketList.map((json) => Farm.fromJson(json)).toList();
+      } else {
+        print("❌ FarmMarketRemoteDataSource: Failed to fetch farms by farmer ID. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to fetch farms by farmer ID. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("🔥 FarmMarketRemoteDataSource: Error getting farms by owner: $e");
+      throw ServerException(message: 'Failed to fetch farms by farmer ID: $e');
     }
   }
 
   Future<Farm> getFarmMarketById(String id) async {
     try {
+      print("🔍 FarmMarketRemoteDataSource: Getting farm market ID: $id");
+      final headers = await _getHeaders();
+
       final response = await client.get(
         Uri.parse('$baseUrl/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
       );
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final farmMarketJson = json.decode(response.body);
+        print("✅ FarmMarketRemoteDataSource: Farm market found");
         return Farm.fromJson(farmMarketJson);
       } else {
-        throw Exception('Failed to fetch farm market. Status: ${response.statusCode}');
+        print("❌ FarmMarketRemoteDataSource: Failed to fetch farm market. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to fetch farm market. Status: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Failed to fetch farm market: $e');
+      print("🔥 FarmMarketRemoteDataSource: Error getting farm market: $e");
+      throw ServerException(message: 'Failed to fetch farm market: $e');
     }
-  }
-  Future<Map<String, String>> _getAuthHeaders() async {
-    final token = await _secureStorageService.getAccessToken();
-    return {
-      'Authorization': 'Bearer $token',
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    };
   }
 
   Future<void> addFarmMarket(Farm farmMarket) async {
     try {
-      // Check if farmName and farmLocation are valid strings
-      if (farmMarket.farmName.isEmpty || farmMarket.farmLocation.isEmpty) {
-        throw Exception('farmName and farmLocation cannot be empty');
-      }
+      print("📡 FarmMarketRemoteDataSource: Adding new farm market");
+      final headers = await _getHeaders();
 
-      final headers = await _getAuthHeaders();
+      print("📤 Request body: ${json.encode(farmMarket.toJson())}");
       final response = await client.post(
-        Uri.parse('$baseUrl'),
+        Uri.parse(baseUrl),
         headers: headers,
         body: json.encode(farmMarket.toJson()),
       );
 
-      // Debugging the request payload and response
-      print("Request Payload: ${json.encode(farmMarket.toJson())}");
-      print("Response Status: ${response.statusCode}");
-      print("Response Body: ${response.body}");
+      print("📢 Response Status: ${response.statusCode}");
+      print("📢 Response Body: ${response.body}");
 
       if (response.statusCode != 201 && response.statusCode != 200) {
-        throw Exception(
-            'Failed to add farm market. Status: ${response.statusCode}, Response: ${response.body}');
+        print("❌ FAILED TO ADD FARM MARKET. STATUS: ${response.statusCode}");
+        throw ServerException(message: 'Failed to add farm market. Status: ${response.statusCode}, Response: ${response.body}');
       }
-    } catch (e) {
-      print("Exception in addFarmMarket: $e");
-      throw Exception('Failed to add farm market: $e');
+
+      print("✅ FARM MARKET ADDED SUCCESSFULLY");
+    } catch (e, stackTrace) {
+      print("🔥 CRITICAL ERROR ADDING FARM MARKET: ${e.toString()}");
+      print("STACK TRACE:");
+      print(stackTrace);
+      throw ServerException(message: 'Failed to add farm market: $e');
     }
   }
 
-
   Future<void> updateFarmMarket(Farm farmMarket) async {
     try {
-      final headers = await _getAuthHeaders();
+      if (farmMarket.id == null || farmMarket.id!.isEmpty) {
+        throw ServerException(message: 'Cannot update farm market: ID is missing');
+      }
+
+      final headers = await _getHeaders();
+
+      print("📡 FarmMarketRemoteDataSource: Sending PATCH request to $baseUrl/${farmMarket.id}");
+      // Use forUpdate parameter to exclude _id from the request body
+      final updateData = farmMarket.toJson(forUpdate: true);
+      print("📤 Request body: ${json.encode(updateData)}");
 
       final response = await client.patch(
         Uri.parse('$baseUrl/${farmMarket.id}'),
         headers: headers,
-        body: json.encode(farmMarket.toJson()),
+        body: json.encode(updateData),
       );
 
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
+      print("📢 FarmMarketRemoteDataSource: Response body: ${response.body}");
+
       if (response.statusCode != 200) {
-        throw Exception('Failed to update farm market. Status: ${response.statusCode}');
+        print("❌ FarmMarketRemoteDataSource: Failed to update farm market. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to update farm market. Status: ${response.statusCode}');
+      }
+
+      print("✅ FarmMarketRemoteDataSource: Farm market updated successfully");
+    } catch (e) {
+      print("🔥 FarmMarketRemoteDataSource: Error updating farm market: $e");
+      throw ServerException(message: 'Failed to update farm market: $e');
+    }
+  }
+
+  Future<List<dynamic>> getFarmProducts(String farmId) async {
+    try {
+      print("🔍 FarmMarketRemoteDataSource: Getting products for farm ID: $farmId");
+      final headers = await _getHeaders();
+
+      final response = await client.get(
+        Uri.parse('$baseUrl/$farmId/products'),
+        headers: headers,
+      );
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final List<dynamic> productsList = json.decode(response.body);
+        print("✅ FarmMarketRemoteDataSource: Retrieved ${productsList.length} products");
+        return productsList;
+      } else {
+        print("❌ FarmMarketRemoteDataSource: Failed to fetch farm products. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to fetch farm products. Status: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Failed to update farm market: $e');
+      print("🔥 FarmMarketRemoteDataSource: Error getting farm products: $e");
+      throw ServerException(message: 'Failed to fetch farm products: $e');
     }
   }
 
   Future<void> deleteFarmMarket(String id) async {
     try {
+      print("🗑️ FarmMarketRemoteDataSource: Deleting farm market ID: $id");
+      final headers = await _getHeaders();
+
+      print("📡 FarmMarketRemoteDataSource: Sending DELETE request to $baseUrl/$id");
       final response = await client.delete(
         Uri.parse('$baseUrl/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
       );
 
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
+
       if (response.statusCode != 200) {
-        throw Exception('Failed to delete farm market. Status: ${response.statusCode}');
+        print("❌ FarmMarketRemoteDataSource: Failed to delete farm market. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to delete farm market. Status: ${response.statusCode}');
       }
+
+      print("✅ FarmMarketRemoteDataSource: Farm market deleted successfully");
     } catch (e) {
-      throw Exception('Failed to delete farm market: $e');
+      print("🔥 FarmMarketRemoteDataSource: Error deleting farm market: $e");
+      throw ServerException(message: 'Failed to delete farm market: $e');
     }
   }
 
-  @override
   Future<List<Sale>> getSalesByFarmMarketId(String farmMarketId) async {
     try {
+      print("🔍 FarmMarketRemoteDataSource: Getting sales for farm market ID: $farmMarketId");
+      final headers = await _getHeaders();
+
+      print("📡 FarmMarketRemoteDataSource: Sending GET request to $baseUrl/sales/farm/$farmMarketId");
       final response = await client.get(
         Uri.parse('$baseUrl/sales/farm/$farmMarketId'),
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authentication headers if needed
-        },
+        headers: headers,
       );
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final jsonList = json.decode(response.body) as List;
+        print("✅ FarmMarketRemoteDataSource: Retrieved ${jsonList.length} sales");
         return jsonList.map((json) => Sale.fromJson(json)).toList();
       } else {
-        throw Exception(
-           'Failed to load sales: ${response.statusCode}',
-        );
+        print("❌ FarmMarketRemoteDataSource: Failed to load sales. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to load sales: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception(
-         'Error fetching sales: ${e.toString()}',
-      );
+      print("🔥 FarmMarketRemoteDataSource: Error fetching sales: $e");
+      throw ServerException(message: 'Error fetching sales: ${e.toString()}');
     }
   }
-
 
   void dispose() {
     client.close();

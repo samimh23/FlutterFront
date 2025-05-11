@@ -13,13 +13,17 @@ import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_delete.
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_getall.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_getbyid.dart';
 import 'package:hanouty/Presentation/normalmarket/Domain/usecases/market_update.dart';
+import 'package:hanouty/hedera_api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
 import '../../../../Core/Utils/secure_storage.dart';
+import '../../../../hedera_api_service.dart';
 
 class NormalMarketProvider extends ChangeNotifier {
+
+
   final GetNormalMarkets getNormalMarkets;
   final GetMyNormalMarkets getMyNormalMarkets;
   final GetNormalMarketById getNormalMarketById;
@@ -100,18 +104,23 @@ class NormalMarketProvider extends ChangeNotifier {
     }
   }
 
+
+
+
+
+
   // Method to load authenticated user's markets
   Future<void> loadMyMarkets() async {
     _isLoadingMyMarkets = true;
     _clearError();
 
     try {
-      print('📊 Provider: Loading markets owned by current user');
+      //('📊 Provider: Loading markets owned by current user');
       _myMarkets = await getMyNormalMarkets();
-      print('✅ Provider: Loaded ${_myMarkets.length} markets for current user');
+      //('✅ Provider: Loaded ${_myMarkets.length} markets for current user');
       notifyListeners();
     } catch (e) {
-      print('❌ Provider: Error loading user\'s markets: $e');
+      //('❌ Provider: Error loading user\'s markets: $e');
       _setError('Failed to load your markets: ${e.toString()}');
     } finally {
       _isLoadingMyMarkets = false;
@@ -125,7 +134,7 @@ class NormalMarketProvider extends ChangeNotifier {
       _setSubmitting(true);
       _clearError();
 
-      print('Creating market from data: $marketData');
+      //('Creating market from data: $marketData');
 
       // Create a minimal market object with only required fields
       final market = NormalMarket(
@@ -148,22 +157,22 @@ class NormalMarketProvider extends ChangeNotifier {
       try {
         if (kIsWeb && _selectedImageBytes != null) {
           imagePath = await _saveWebImage();
-          print('Using web image data URL');
+          //('Using web image data URL');
         } else if (!kIsWeb && _selectedImageFile != null) {
           imagePath = _selectedImageFile!.path;
-          print('Using file image path: $imagePath');
+          //('Using file image path: $imagePath');
         } else {
           _setError('Invalid image data');
           return false;
         }
       } catch (e) {
-        print('Error processing image: $e');
+        //('Error processing image: $e');
         _setError('Failed to process image: $e');
         return false;
       }
 
       final result = await createNormalMarket(market, imagePath);
-      print('Market created successfully with ID: ${result.id}');
+      //('Market created successfully with ID: ${result.id}');
 
       _markets.add(result);
       _myMarkets.add(result); // Add to my markets too since user created it
@@ -171,8 +180,8 @@ class NormalMarketProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e, stackTrace) {
-      print('Error creating market: $e');
-      print('Stack trace: $stackTrace');
+      //('Error creating market: $e');
+      //('Stack trace: $stackTrace');
       _setError('Failed to create market: ${e.toString()}');
       return false;
     } finally {
@@ -187,8 +196,8 @@ class NormalMarketProvider extends ChangeNotifier {
       _setSubmitting(true);
       _clearError();
 
-      print('Updating market with ID: $id');
-      print('Data: $marketData');
+      //('Updating market with ID: $id');
+      //('Data: $marketData');
 
       // Find existing market
       final existingMarket = _markets.firstWhere(
@@ -219,16 +228,16 @@ class NormalMarketProvider extends ChangeNotifier {
       if (hasSelectedImage) {
         if (kIsWeb && _selectedImageBytes != null) {
           imagePath = await _saveWebImage();
-          print('Using new web image path: $imagePath');
+          //('Using new web image path: $imagePath');
         } else if (!kIsWeb && _selectedImageFile != null) {
           imagePath = _selectedImageFile!.path;
-          print('Using new file image path: $imagePath');
+          //('Using new file image path: $imagePath');
         }
       }
 
       // Call the update usecase
       final updatedMarketFromRepo = await updateNormalMarket(id, updatedMarket, imagePath);
-      print('Market updated successfully');
+      //('Market updated successfully');
 
       // Update local state in both market lists
       _updateMarketInLists(updatedMarketFromRepo);
@@ -237,8 +246,8 @@ class NormalMarketProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e, stackTrace) {
-      print('Error updating market: $e');
-      print('Stack trace: $stackTrace');
+      //('Error updating market: $e');
+      //('Stack trace: $stackTrace');
       _setError('Failed to update market: ${e.toString()}');
       return false;
     } finally {
@@ -283,7 +292,7 @@ class NormalMarketProvider extends ChangeNotifier {
       // Create proper data URL without adding file extension
       return 'data:$mimeType;base64,$base64String';
     } catch (e) {
-      print('Error processing web image: $e');
+      //('Error processing web image: $e');
       throw Exception('Failed to process web image: $e');
     }
   }
@@ -294,7 +303,7 @@ class NormalMarketProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      print('Legacy addMarket called with model: ${market.marketName}');
+      //('Legacy addMarket called with model: ${market.marketName}');
 
       final marketEntity = NormalMarket(
         id: '',
@@ -331,8 +340,8 @@ class NormalMarketProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e, stackTrace) {
-      print('Error in legacy addMarket: $e');
-      print('Stack trace: $stackTrace');
+      //('Error in legacy addMarket: $e');
+      //('Stack trace: $stackTrace');
       _setError('Failed to create market: ${e.toString()}');
       return false;
     } finally {
@@ -346,7 +355,7 @@ class NormalMarketProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      print('Legacy updateExistingMarket called with ID: $id');
+      //('Legacy updateExistingMarket called with ID: $id');
 
       final marketEntity = NormalMarket(
         id: id,
@@ -378,8 +387,8 @@ class NormalMarketProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e, stackTrace) {
-      print('Error in legacy updateExistingMarket: $e');
-      print('Stack trace: $stackTrace');
+      //('Error in legacy updateExistingMarket: $e');
+      //('Stack trace: $stackTrace');
       _setError('Failed to update market: ${e.toString()}');
       return false;
     } finally {
@@ -462,16 +471,16 @@ class NormalMarketProvider extends ChangeNotifier {
         recipientType: recipientType,
       );
 
-      print('Sharing ${percentage}% of market ${marketId} with recipient: ${recipientAddress}');
+      //('Sharing ${percentage}% of market ${marketId} with recipient: ${recipientAddress}');
       if (recipientType != null) {
-        print('Recipient type specified as: $recipientType');
+        //('Recipient type specified as: $recipientType');
       }
 
       // Call the API
       final result = await shareFractionalNFT(marketId, request);
 
       // Log the response
-      print('Share NFT response: $result');
+      //('Share NFT response: $result');
 
       // Reload the market to get updated fractions
       if (result['success'] == true) {
@@ -480,7 +489,7 @@ class NormalMarketProvider extends ChangeNotifier {
 
       return result;
     } catch (e) {
-      print('Error sharing NFT: $e');
+      //('Error sharing NFT: $e');
       _setError('Failed to share NFT: ${e.toString()}');
       return {'success': false, 'message': e.toString()};
     } finally {
@@ -507,26 +516,37 @@ class NormalMarketProvider extends ChangeNotifier {
           return;
         }
 
-        print('Image picked: ${pickedImage.name}');
+        //('Image picked: ${pickedImage.name}');
         _selectedImageXFile = pickedImage;
 
         if (kIsWeb) {
           _selectedImageBytes = await pickedImage.readAsBytes();
           _selectedImageFile = null;
-          print('Web image loaded: ${_selectedImageBytes!.lengthInBytes} bytes');
+          //('Web image loaded: ${_selectedImageBytes!.lengthInBytes} bytes');
         } else {
           _selectedImageFile = File(pickedImage.path);
           _selectedImageBytes = null;
-          print('File image loaded: ${await _selectedImageFile!.length()} bytes');
+          //('File image loaded: ${await _selectedImageFile!.length()} bytes');
         }
 
         notifyListeners();
       } else {
-        print('No image selected by user');
+        //('No image selected by user');
       }
     } catch (e) {
-      print('Error picking image: $e');
+      //('Error picking image: $e');
       _setError('Failed to pick image: ${e.toString()}');
+    }
+  }
+  final HederaApiService hederaApi = HederaApiService();
+
+  void fetchMarketBalance( String marketId) async {
+    try {
+      // e.g., "12345"
+      final result = await hederaApi.getBalancebyMarket(marketId);
+      //('Market Balance: $result');
+    } catch (e) {
+      //('Failed to fetch market balance: $e');
     }
   }
 

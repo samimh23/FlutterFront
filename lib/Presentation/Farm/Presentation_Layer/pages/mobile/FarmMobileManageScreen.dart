@@ -30,11 +30,18 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
   late TextEditingController _farmDescriptionController;
 
   final SecureStorageService sc = SecureStorageService();
-  String? ownerId;
+  String? owner;
 
   File? _selectedImage;
   String? _existingImagePath;
   bool _isUploading = false;
+
+  Future<void> _initializeOwnerId() async {
+    final id = await sc.getUserId();
+    setState(() {
+      owner = id;
+    });
+  }
 
   @override
   void initState() {
@@ -44,15 +51,11 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
     _farmPhoneController = TextEditingController(text: widget.farm?.farmPhone ?? '');
     _farmEmailController = TextEditingController(text: widget.farm?.farmEmail ?? '');
     _farmDescriptionController = TextEditingController(text: widget.farm?.farmDescription ?? '');
-    _existingImagePath = widget.farm?.marketImage;
+    _existingImagePath = widget.farm?.farmImage;
     _initializeOwnerId();
+
   }
-  Future<void> _initializeOwnerId() async {
-    final id = await sc.getUserId();
-    setState(() {
-      ownerId = id;
-    });
-  }
+
   @override
   void dispose() {
     _farmNameController.dispose();
@@ -158,6 +161,9 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
     );
   }
 
+// Inside _AddEditFarmScreenState class in FarmMobileManageScreen.dart
+// Replace the existing _saveFarm method with this fixed version:
+
   Future<void> _saveFarm() async {
     if (_formKey.currentState!.validate()) {
       final viewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
@@ -179,20 +185,24 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
       }
 
       final farm = Farm(
-          owner: ownerId,
+        id: widget.isEditing ? widget.farm!.id : null, // Include the ID when editing
+        owner: owner,
         farmName: _farmNameController.text,
-        farmLocation: _farmLocationController.text,
+        farmLocation: _farmLocationController.text.trim(),
         farmPhone: _farmPhoneController.text.trim().isEmpty ? null : _farmPhoneController.text.trim(),
         farmEmail: _farmEmailController.text.trim().isEmpty ? null : _farmEmailController.text.trim(),
         farmDescription: _farmDescriptionController.text.trim().isEmpty ? null : _farmDescriptionController.text.trim(),
-        marketImage: imageUrl,
-        // Removed: sale and rate fields
+        farmImage: imageUrl,
+        // Preserve other fields from the original farm
+        sales: widget.isEditing ? widget.farm!.sales : null,
+        crops: widget.isEditing ? widget.farm!.crops : null,
+        rate: widget.isEditing ? widget.farm!.rate : null,
       );
 
       if (widget.isEditing) {
-        viewModel.modifyFarmMarket(farm);
+        await viewModel.modifyFarmMarket(farm);
       } else {
-        viewModel.createFarmMarket(farm);
+        await viewModel.createFarmMarket(farm);
       }
 
       setState(() {

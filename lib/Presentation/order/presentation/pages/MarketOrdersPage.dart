@@ -174,7 +174,6 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
                 _buildOrdersList(_filterOrdersByTab('all')),
                 // Pending orders
                 _buildOrdersList(_filterOrdersByTab('pending')),
-                // Completed orders
                 _buildOrdersList(_filterOrdersByTab('completed')),
               ],
             ),
@@ -222,24 +221,24 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
 
 
     if (amount != null) {
-      // Call your backend API with dio
       try {
         final dio = Dio();
-
+        final secureStorageService = SecureStorageService();
+        final token = await secureStorageService.getAccessToken();
 
         final response = await dio.post(
-          '${ApiEndpoints.baseUrl}/normalmarket/${widget.market.id}/transfer-tokens',
+          '${ApiEndpoints.baseUrl}/normal/${widget.market.id}/transfer-tokens',
           data: {'amount': amount},
           options: Options(
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer ${SecureStorageService.accessTokenKey}',
+              'Authorization': 'Bearer $token',
             },
           ),
         );
 
 
-        if (response.statusCode == 200) {
+        if (response.statusCode == 201) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Withdraw successful")),
           );

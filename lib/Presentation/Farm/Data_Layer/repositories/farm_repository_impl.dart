@@ -22,10 +22,32 @@ class FarmMarketRepositoryImpl implements FarmMarketRepository {
   }
 
   @override
+  Future<Either<Failure, List<Farm>>> getFarmsByOwner(String owner) async {
+    try {
+      final farms = await remoteDataSource.getFarmsByOwner(owner);
+      return Right(farms);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, Farm>> getFarmMarketById(String id) async {
     try {
       final farmMarket = await remoteDataSource.getFarmMarketById(id);
       return Right(farmMarket);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+
+// 3. Implement the method in the repository implementation (farm_repository_impl.dart):
+  @override
+  Future<Either<Failure, List<dynamic>>> getFarmProducts(String farmId) async {
+    try {
+      final products = await remoteDataSource.getFarmProducts(farmId);
+      return Right(products);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -44,6 +66,9 @@ class FarmMarketRepositoryImpl implements FarmMarketRepository {
 
   @override
   Future<Either<Failure, void>> updateFarmMarket(Farm farmMarket) async {
+    if (farmMarket.id == null) {
+      throw Exception('Cannot update farm market: ID is missing');
+    }
     try {
       await remoteDataSource.updateFarmMarket(farmMarket);
       return const Right(null);

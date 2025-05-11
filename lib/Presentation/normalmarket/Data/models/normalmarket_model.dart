@@ -16,7 +16,7 @@ class NormalMarketModel extends NormalMarket {
   });
 
   factory NormalMarketModel.fromJson(Map<String, dynamic> json) {
-    print('Processing JSON: ${json['marketName']} (id: ${json['_id'] ?? json['id']})');
+    //('Processing JSON: ${json['marketName']} (id: ${json['_id'] ?? json['id']})');
 
     try {
       return NormalMarketModel(
@@ -37,9 +37,9 @@ class NormalMarketModel extends NormalMarket {
         fractionalNFTAddress: json['fractionalNFTAddress']?.toString(),
       );
     } catch (e, stackTrace) {
-      print('Error creating NormalMarketModel from JSON: $e');
-      print('JSON data: $json');
-      print('Stack trace: $stackTrace');
+      //('Error creating NormalMarketModel from JSON: $e');
+      //('JSON data: $json');
+      //('Stack trace: $stackTrace');
       throw Exception('Failed to parse market: $e');
     }
   }
@@ -63,11 +63,11 @@ class NormalMarketModel extends NormalMarket {
 
   factory NormalMarketModel.fromEntity(NormalMarket entity, String? imagePath) {
     // Add debug logs
-    print("🔍 Creating model from entity:");
-    print("📦 Entity ID: ${entity.id}");
-    print("📦 Entity Name: ${entity.marketName}");
-    print("📦 Entity Location: ${entity.marketLocation}");
-    print("📦 Image Path: $imagePath");
+    //("🔍 Creating model from entity:");
+    //("📦 Entity ID: ${entity.id}");
+    //("📦 Entity Name: ${entity.marketName}");
+    //("📦 Entity Location: ${entity.marketLocation}");
+    //("📦 Image Path: $imagePath");
 
     return NormalMarketModel(
       id: entity.id,

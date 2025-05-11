@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/Setting_page.dart';
-import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/auction_market_screen.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_market_page.dart';
 import 'package:provider/provider.dart';
 
@@ -17,13 +16,12 @@ class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
   final List<Widget> _pages = [
     const NormalMarketsPage(),
-    const MarketOwnerAuctionsScreen(),
     const SettingsPage(),
     const OrdersPage(),
   ];
 
-  final List<String> _titles = ['Fresh Markets','Auctions' , 'Settings','Market Orders'];
-  final List<IconData> _pageIcons = [Icons.storefront_outlined,Icons.gavel, Icons.settings, Icons.receipt_long];
+  final List<String> _titles = ['Fresh Markets', 'Settings','Market Orders'];
+  final List<IconData> _pageIcons = [Icons.storefront_outlined, Icons.settings, Icons.receipt_long];
 
   @override
   Widget build(BuildContext context) {
@@ -89,9 +87,8 @@ class _DashboardPageState extends State<DashboardPage> {
           _buildDrawerHeader(),
           const SizedBox(height: 8),
           _buildNavItem(0, 'Markets', Icons.storefront_outlined, 'Manage your produce markets'),
-          _buildNavItem(1, 'Auctions', Icons.gavel, 'All auctions'),
-          _buildNavItem(2, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
-          _buildNavItem(3, 'Orders', Icons.receipt_long, 'View Current orders'),
+          _buildNavItem(1, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
+          _buildNavItem(2, 'Orders', Icons.receipt_long, 'View Current orders'),
           const SizedBox(height: 8),
           _buildCategorySection(),
           const SizedBox(height: 8),

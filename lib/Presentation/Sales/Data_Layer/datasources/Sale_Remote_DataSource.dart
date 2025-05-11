@@ -23,7 +23,6 @@ class SaleRemoteDataSource {
   }
 
   Exception _handleException(String message, dynamic error) {
-    print('API Error: $message - $error');
     if (error is Exception) {
       return error;
     }

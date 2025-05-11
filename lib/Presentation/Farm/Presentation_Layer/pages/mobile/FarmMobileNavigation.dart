@@ -23,8 +23,8 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
   final List<Widget> _screens = [
     const FarmMarketplaceScreen(),
     const FarmListScreen(),
-    const MobileProductDetectDisease(),
-   // const DiseaseDetectionMobileScreen(),
+   // const MobileProductDetectDisease(),
+    const DiseaseDetectionMobileScreen(),
     const FarmCropsListScreen(),
     const ProfilePage(),
   ];

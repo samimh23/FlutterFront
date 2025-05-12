@@ -2,6 +2,18 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/network/network_info.dart';
+import 'package:hanouty/Presentation/auction/data/datasource/auction_remote_datasource.dart';
+import 'package:hanouty/Presentation/auction/data/repositories/auction_repository_impl.dart';
+import 'package:hanouty/Presentation/auction/domain/repository/auction_repository.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/create_auction_usecase.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/get_active_auction_usecase.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/get_auction_by_bidder_id_usecase.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/get_auction_by_farmer_id_usecase.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/get_auction_by_id_usecase.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/get_bidders_by_auction_id_usecase.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/place_bid_usecase.dart';
+import 'package:hanouty/Presentation/auction/domain/usecases/update_auction_status_usecase.dart';
+import 'package:hanouty/Presentation/auction/presentation/provider/auction_provider.dart';
 import 'package:hanouty/Presentation/order/data/datasources/order_remote_data_source.dart';
 import 'package:hanouty/Presentation/order/data/repsitories/order_repository_impl.dart';
 import 'package:hanouty/Presentation/order/domain/repositories/order_repositories.dart';
@@ -49,6 +61,39 @@ import 'Presentation/order/domain/usecases/send_package.dart';
 
 final sl = GetIt.instance;
 Future<void> init() async {
+  //auction
+  sl.registerLazySingleton<AuctionRemoteDataSource>(
+        () => AuctionRemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerLazySingleton<AuctionRepository>(
+        () => AuctionRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+  sl.registerLazySingleton(() => CreateAuction(sl()));
+  sl.registerLazySingleton(() => GetActiveAuctions(sl()));
+  sl.registerLazySingleton(() => GetAuctionById(sl()));
+  sl.registerLazySingleton(() => PlaceBid(sl()));
+  sl.registerLazySingleton(() => UpdateAuctionStatus(sl()));
+  sl.registerLazySingleton(() => GetAuctionsByBidderId(sl()));
+  sl.registerLazySingleton(() => GetAuctionsByFarmerId(sl()));
+  sl.registerLazySingleton(() => GetBiddersByAuctionId(sl()));
+
+  sl.registerFactory<AuctionProvider>(
+        () => AuctionProvider(
+      createAuctionUseCase: sl(),
+      getActiveAuctionsUseCase: sl(),
+      getAuctionByIdUseCase: sl(),
+      placeBidUseCase: sl(),
+      updateAuctionStatusUseCase: sl(),
+      getAuctionsByBidderIdUseCase: sl(),
+      getBiddersByAuctionIdUseCase: sl(),
+      getAuctionsByFarmerIdUseCase: sl(),
+    ),
+  );
+
+
+
 //order
   // Register Order Remote Data Source
   sl.registerLazySingleton<OrderRemoteDataSource>(

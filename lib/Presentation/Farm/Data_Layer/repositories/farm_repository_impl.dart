@@ -96,4 +96,25 @@ class FarmMarketRepositoryImpl implements FarmMarketRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, String>> uploadFarmImage(String farmId, String imagePath) async {
+    try {
+      final imageUrl = await remoteDataSource.uploadFarmImage(farmId, imagePath);
+      return Right(imageUrl);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<String>>> getFarmImages(String farmId) async {
+    try {
+      final images = await remoteDataSource.getFarmImages(farmId);
+      return Right(images);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
 }

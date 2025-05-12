@@ -126,6 +126,11 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
               break;
           }
 
+          // Get full image URL using the new helper method
+          final imageUrl = crop.picture != null && crop.picture!.isNotEmpty
+              ? viewModel.getCropFullImageUrl(crop.picture)
+              : null;
+
           return CustomScrollView(
             slivers: [
               // App Bar with Crop Image
@@ -133,49 +138,13 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                 expandedHeight: 250.0,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: crop.picture != null && crop.picture!.isNotEmpty
+                  background: imageUrl != null
                       ? Image.network(
-                    crop.picture!,
+                    imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.green.shade700,
-                            primaryColor,
-                          ],
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          _getCropTypeIcon(crop.type),
-                          size: 80,
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                      ),
-                    ),
+                    errorBuilder: (context, error, stackTrace) => _buildDefaultCropImageBackground(primaryColor, crop.type),
                   )
-                      : Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.green.shade700,
-                          primaryColor,
-                        ],
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        _getCropTypeIcon(crop.type),
-                        size: 80,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                  ),
+                      : _buildDefaultCropImageBackground(primaryColor, crop.type),
                 ),
                 actions: [
                   // Add this button as the first action
@@ -211,43 +180,25 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                       if (value == 'delete') {
                         _showDeleteConfirmationDialog(context, viewModel, crop);
                       } else if (value == 'transform') {
-
-                        // Navigate to transform screen
-
                         Navigator.push(
-
                           context,
-
                           MaterialPageRoute(
-
                             builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
-
                           ),
-
                         );
                       }
                     },
                     itemBuilder: (context) => [
                       if (crop.harvestedDay != null) // Only show for harvested crops
-
                         const PopupMenuItem(
-
                           value: 'transform',
-
                           child: Row(
-
                             children: [
-
                               Icon(Icons.transform, color: Colors.blue),
-
                               SizedBox(width: 8),
-
                               Text('Transform to Product'),
-
                             ],
-
                           ),
-
                         ),
                       const PopupMenuItem(
                         value: 'delete',
@@ -496,61 +447,35 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                          Row(
-
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                          children: [
-
-                            const Text(
-
-                              'Harvest Information',
-
-                              style: TextStyle(
-
-                                fontSize: 18,
-
-                                fontWeight: FontWeight.bold,
-
-                              ),
-
-                            ),
-
-                            // Add Transform to Product button in harvest section
-
-                            ElevatedButton.icon(
-
-                              onPressed: () {
-
-                                Navigator.push(
-
-                                  context,
-
-                                  MaterialPageRoute(
-
-                                    builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
-
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Harvest Information',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
-
-                                );
-
-                              },
-
-                              icon: const Icon(Icons.transform),
-
-                              label: const Text('Transform to Product'),
-
-                              style: ElevatedButton.styleFrom(
-
-                                backgroundColor: Colors.blue,
-
-                                foregroundColor: Colors.white,
-
-                              ),
-
+                                ),
+                                // Add Transform to Product button in harvest section
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FarmCropTransformScreen(cropId: crop.id!),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.transform),
+                                  label: const Text('Transform to Product'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ],
                             ),
-
-                          ],),
                             const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.all(16),
@@ -654,6 +579,28 @@ class _FarmCropDetailScreenState extends State<FarmCropDetailScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildDefaultCropImageBackground(Color primaryColor, String cropType) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.green.shade700,
+            primaryColor,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          _getCropTypeIcon(cropType),
+          size: 80,
+          color: Colors.white.withOpacity(0.7),
+        ),
       ),
     );
   }

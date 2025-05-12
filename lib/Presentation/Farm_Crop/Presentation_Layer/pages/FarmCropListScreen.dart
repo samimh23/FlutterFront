@@ -334,7 +334,7 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
       return _buildEmptyView(context, _selectedFarmMarketId != null);
     }
 
-    return _buildCropsGrid(filteredCrops, context);
+    return _buildCropsGrid(filteredCrops, context, viewModel);
   }
 
   Widget _buildErrorView(FarmCropViewModel viewModel, BuildContext context) {
@@ -475,7 +475,7 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
     );
   }
 
-  Widget _buildCropsGrid(List<FarmCrop> crops, BuildContext context) {
+  Widget _buildCropsGrid(List<FarmCrop> crops, BuildContext context, FarmCropViewModel viewModel) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: GridView.builder(
@@ -489,13 +489,13 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
         itemCount: crops.length,
         itemBuilder: (context, index) {
           final crop = crops[index];
-          return _buildCropCard(context, crop);
+          return _buildCropCard(context, crop, viewModel);
         },
       ),
     );
   }
 
-  Widget _buildCropCard(BuildContext context, FarmCrop crop) {
+  Widget _buildCropCard(BuildContext context, FarmCrop crop, FarmCropViewModel viewModel) {
     // Calculate total expenses
     double totalExpenses = 0;
     for (var expense in crop.expenses) {
@@ -542,6 +542,11 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
       }
     }
 
+    // Get the full image URL using the viewmodel method
+    final String? imageUrl = crop.picture != null && crop.picture!.isNotEmpty
+        ? viewModel.getCropFullImageUrl(crop.picture)
+        : null;
+
     return GestureDetector(
       onTap: () {
         Provider.of<FarmCropViewModel>(context, listen: false)
@@ -578,12 +583,26 @@ class _FarmCropsListScreenState extends State<FarmCropsListScreen> {
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                   ),
-                  child: crop.picture != null && crop.picture!.isNotEmpty
+                  child: imageUrl != null
                       ? Image.network(
-                    crop.picture!,
+                    imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
+                      print("Error loading image $imageUrl: $error");
                       return _cropImagePlaceholder(crop);
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                              : null,
+                          strokeWidth: 2.0,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      );
                     },
                   )
                       : _cropImagePlaceholder(crop),

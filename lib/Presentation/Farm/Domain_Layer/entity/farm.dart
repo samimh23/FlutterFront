@@ -8,7 +8,7 @@ class Farm {
   final String? farmEmail;
   final String? farmDescription;
   final String? rate;
-  final String? farmImage;
+   String? farmImage;
   final List<String>? sales;
   final List<String>? crops;
 

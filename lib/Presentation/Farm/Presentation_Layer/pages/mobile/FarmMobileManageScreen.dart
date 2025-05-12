@@ -32,16 +32,10 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
   final SecureStorageService sc = SecureStorageService();
   String? owner;
 
-  File? _selectedImage;
-  String? _existingImagePath;
+  List<File> _selectedImages = [];
+  List<String> _existingImages = [];
   bool _isUploading = false;
-
-  Future<void> _initializeOwnerId() async {
-    final id = await sc.getUserId();
-    setState(() {
-      owner = id;
-    });
-  }
+  final ScrollController _imageScrollController = ScrollController();
 
   @override
   void initState() {
@@ -51,9 +45,25 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
     _farmPhoneController = TextEditingController(text: widget.farm?.farmPhone ?? '');
     _farmEmailController = TextEditingController(text: widget.farm?.farmEmail ?? '');
     _farmDescriptionController = TextEditingController(text: widget.farm?.farmDescription ?? '');
-    _existingImagePath = widget.farm?.farmImage;
     _initializeOwnerId();
+    _loadExistingImages();
+  }
 
+  Future<void> _initializeOwnerId() async {
+    final id = await sc.getUserId();
+    setState(() {
+      owner = id;
+    });
+  }
+
+  Future<void> _loadExistingImages() async {
+    if (widget.isEditing && widget.farm?.id != null) {
+      final viewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
+      await viewModel.fetchFarmImages(widget.farm!.id!);
+      setState(() {
+        _existingImages = List.from(viewModel.farmImages);
+      });
+    }
   }
 
   @override
@@ -63,19 +73,33 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
     _farmPhoneController.dispose();
     _farmEmailController.dispose();
     _farmDescriptionController.dispose();
+    _imageScrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImages(ImageSource source) async {
     final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: source);
+    final pickedImages = await picker.pickMultiImage();
 
-    if (pickedImage != null) {
+    if (pickedImages != null && pickedImages.isNotEmpty) {
       setState(() {
-        _selectedImage = File(pickedImage.path);
-        _isUploading = false;
+        _selectedImages.addAll(
+          pickedImages.map((image) => File(image.path)).toList(),
+        );
       });
     }
+  }
+
+  void _removeSelectedImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+  }
+
+  void _removeExistingImage(int index) {
+    setState(() {
+      _existingImages.removeAt(index);
+    });
   }
 
   void _showImageSourceDialog() {
@@ -91,7 +115,7 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Select Image Source',
+              'Select Images',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -107,7 +131,7 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                   label: 'Camera',
                   onTap: () {
                     Navigator.pop(context);
-                    _pickImage(ImageSource.camera);
+                    _pickImages(ImageSource.camera);
                   },
                 ),
                 _buildImageSourceOption(
@@ -115,7 +139,7 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                   label: 'Gallery',
                   onTap: () {
                     Navigator.pop(context);
-                    _pickImage(ImageSource.gallery);
+                    _pickImages(ImageSource.gallery);
                   },
                 ),
               ],
@@ -124,9 +148,7 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildImageSourceOption({
+  }Widget _buildImageSourceOption({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -161,59 +183,275 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
     );
   }
 
-// Inside _AddEditFarmScreenState class in FarmMobileManageScreen.dart
-// Replace the existing _saveFarm method with this fixed version:
-
   Future<void> _saveFarm() async {
     if (_formKey.currentState!.validate()) {
       final viewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
 
-      // Set uploading state
       setState(() {
         _isUploading = true;
       });
 
-      // In a real app, you would upload the image to storage and get the URL
-      // This is a placeholder for the image upload logic
-      String? imageUrl;
-      if (_selectedImage != null) {
-        // Simulate image upload delay
-        await Future.delayed(const Duration(seconds: 1));
-        imageUrl = _selectedImage!.path; // In real app, this would be the URL from storage
-      } else {
-        imageUrl = _existingImagePath;
+      try {
+        // Start with existing images (if any)
+        List<String> allImageUrls = List.from(_existingImages);
+
+        // Create the farm object (without images initially if this is a new farm)
+        final farm = Farm(
+          id: widget.isEditing ? widget.farm!.id : null,
+          owner: owner,
+          farmName: _farmNameController.text,
+          farmLocation: _farmLocationController.text.trim(),
+          farmPhone: _farmPhoneController.text.trim().isEmpty ? null : _farmPhoneController.text.trim(),
+          farmEmail: _farmEmailController.text.trim().isEmpty ? null : _farmEmailController.text.trim(),
+          farmDescription: _farmDescriptionController.text.trim().isEmpty ? null : _farmDescriptionController.text.trim(),
+          farmImage: allImageUrls.isNotEmpty ? allImageUrls.first : null,
+          sales: widget.isEditing ? widget.farm!.sales : [],
+          crops: widget.isEditing ? widget.farm!.crops : [],
+          rate: widget.isEditing ? widget.farm!.rate : null,
+        );
+
+        // For an existing farm, upload images first
+        if (widget.isEditing) {
+          // Upload images if this is an edit operation
+          if (_selectedImages.isNotEmpty && widget.farm?.id != null) {
+            for (File image in _selectedImages) {
+              try {
+                final imageUrl = await viewModel.uploadImage(widget.farm!.id!, image.path);
+                if (imageUrl != null) {
+                  allImageUrls.add(imageUrl);
+                }
+              } catch (uploadError) {
+                print('Warning: Failed to upload image: $uploadError');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Some images failed to upload but farm details will be saved'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              }
+            }
+
+            // Update the farm object with the new images
+            farm.farmImage = allImageUrls.isNotEmpty ? allImageUrls.first : farm.farmImage;
+
+            // Save the farm with updated images
+            await viewModel.modifyFarmMarket(farm);
+          } else {
+            // Just update the farm without new images
+            await viewModel.modifyFarmMarket(farm);
+          }
+        } else {
+          // For a new farm, first create the farm to get an ID
+          await viewModel.createFarmMarket(farm);
+
+          // After creation, fetch the newest farm to get its ID
+          if (owner != null) {
+            await viewModel.fetchFarmsByOwner(owner!);
+
+            // Get the most recently created farm (should be at the end of the list)
+            if (viewModel.farmerFarms.isNotEmpty) {
+              final newFarmId = viewModel.farmerFarms.last.id;
+
+              // Now upload images with the new farm ID
+              if (_selectedImages.isNotEmpty && newFarmId != null) {
+                for (File image in _selectedImages) {
+                  try {
+                    final imageUrl = await viewModel.uploadImage(newFarmId, image.path);
+                    if (imageUrl != null) {
+                      allImageUrls.add(imageUrl);
+                    }
+                  } catch (uploadError) {
+                    print('Warning: Failed to upload image: $uploadError');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Some images failed to upload but farm was created'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  }
+                }
+
+                // If we uploaded images, update the farm with the first image
+                if (allImageUrls.isNotEmpty) {
+                  final updatedFarm = Farm(
+                    id: newFarmId,
+                    owner: owner,
+                    farmName: _farmNameController.text,
+                    farmLocation: _farmLocationController.text.trim(),
+                    farmPhone: _farmPhoneController.text.trim().isEmpty ? null : _farmPhoneController.text.trim(),
+                    farmEmail: _farmEmailController.text.trim().isEmpty ? null : _farmEmailController.text.trim(),
+                    farmDescription: _farmDescriptionController.text.trim().isEmpty ? null : _farmDescriptionController.text.trim(),
+                    farmImage: allImageUrls.first,
+                    sales: [],
+                    crops: [],
+                    rate: null,
+                  );
+
+                  await viewModel.modifyFarmMarket(updatedFarm);
+                }
+              }
+            }
+          }
+        }
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.isEditing ? 'Farm updated successfully' : 'Farm created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context);
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving farm: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isUploading = false;
+          });
+        }
       }
-
-      final farm = Farm(
-        id: widget.isEditing ? widget.farm!.id : null, // Include the ID when editing
-        owner: owner,
-        farmName: _farmNameController.text,
-        farmLocation: _farmLocationController.text.trim(),
-        farmPhone: _farmPhoneController.text.trim().isEmpty ? null : _farmPhoneController.text.trim(),
-        farmEmail: _farmEmailController.text.trim().isEmpty ? null : _farmEmailController.text.trim(),
-        farmDescription: _farmDescriptionController.text.trim().isEmpty ? null : _farmDescriptionController.text.trim(),
-        farmImage: imageUrl,
-        // Preserve other fields from the original farm
-        sales: widget.isEditing ? widget.farm!.sales : null,
-        crops: widget.isEditing ? widget.farm!.crops : null,
-        rate: widget.isEditing ? widget.farm!.rate : null,
-      );
-
-      if (widget.isEditing) {
-        await viewModel.modifyFarmMarket(farm);
-      } else {
-        await viewModel.createFarmMarket(farm);
-      }
-
-      setState(() {
-        _isUploading = false;
-      });
-
-      Navigator.pop(context);
     }
   }
 
-  @override
+  Widget _buildImageGallery() {
+    return Container(
+      height: 150,
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      child: ListView(
+        controller: _imageScrollController,
+        scrollDirection: Axis.horizontal,
+        children: [
+          // Add Image Button
+          GestureDetector(
+            onTap: _showImageSourceDialog,
+            child: Container(
+              width: 150,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor.withOpacity(0.5),
+                  width: 2,
+                  style: BorderStyle.none,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate,
+                    size: 40,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Add Images',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Existing Images
+          ..._existingImages.asMap().entries.map((entry) {
+            final index = entry.key;
+            final imageUrl = entry.value;
+            return _buildImageContainer(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 40,
+                ),
+              ),
+              onDelete: () => _removeExistingImage(index),
+            );
+          }),
+
+          // Selected Images
+          ..._selectedImages.asMap().entries.map((entry) {
+            final index = entry.key;
+            final image = entry.value;
+            return _buildImageContainer(
+              child: Image.file(
+                image,
+                fit: BoxFit.cover,
+              ),
+              onDelete: () => _removeSelectedImage(index),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageContainer({
+    required Widget child,
+    required VoidCallback onDelete,
+  }) {
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: child,
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  } @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<FarmMarketViewModel>(context);
     final primaryColor = Theme.of(context).primaryColor;
@@ -278,80 +516,26 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                     ),
                   ),
 
-                // Farm Image Section
-                Center(
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: _showImageSourceDialog,
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              width: 150,
-                              height: 150,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: _selectedImage != null
-                                    ? Image.file(
-                                  _selectedImage!,
-                                  fit: BoxFit.cover,
-                                )
-                                    : _existingImagePath != null
-                                    ? Image.network(
-                                  _existingImagePath!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(
-                                    Icons.image,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                )
-                                    : const Icon(
-                                  Icons.add_a_photo,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: primaryColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.edit,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Farm Image',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                // Farm Images Gallery
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader('Farm Images'),
+                        const SizedBox(height: 16),
+                        _buildImageGallery(),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
+
+                const SizedBox(height: 16),
 
                 // Farm Information Section
                 Card(
@@ -366,7 +550,6 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                       children: [
                         _buildSectionHeader('Farm Information'),
                         const SizedBox(height: 16),
-
                         _buildFormField(
                           controller: _farmNameController,
                           labelText: 'Farm Name',
@@ -379,7 +562,6 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-
                         _buildFormField(
                           controller: _farmLocationController,
                           labelText: 'Farm Location',
@@ -392,7 +574,6 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-
                         _buildFormField(
                           controller: _farmPhoneController,
                           labelText: 'Farm Phone (Optional)',
@@ -400,7 +581,6 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 16),
-
                         _buildFormField(
                           controller: _farmEmailController,
                           labelText: 'Farm Email (Optional)',
@@ -408,7 +588,6 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                           keyboardType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 16),
-
                         _buildFormField(
                           controller: _farmDescriptionController,
                           labelText: 'Farm Description (Optional)',
@@ -449,7 +628,6 @@ class _AddEditFarmScreenState extends State<AddEditFarmScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 32),
               ],
             ),

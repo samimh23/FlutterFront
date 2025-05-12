@@ -39,10 +39,14 @@ import 'package:hanouty/Presentation/auction/presentation/provider/auction_provi
   import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
   import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
   import 'Presentation/Farm/Domain_Layer/usescases/get_farm_by_owner.dart';
-  import 'Presentation/Farm/Domain_Layer/usescases/get_farm_products.dart';
+  import 'Presentation/Farm/Domain_Layer/usescases/get_farm_images.dart';
+import 'Presentation/Farm/Domain_Layer/usescases/get_farm_products.dart';
+import 'Presentation/Farm/Domain_Layer/usescases/upload_farm_image.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/GetCropImageUrl.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConfirmAndConvertFarmCrop.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConvertFarmCropToProduct.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ProcessAllConfirmedFarmCrops.dart';
+import 'Presentation/Farm_Crop/Domain_Layer/usecases/UploadCropImage.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart';
   import 'package:hanouty/nav_bar.dart';
   import 'package:provider/provider.dart';
@@ -289,6 +293,12 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart'
           Provider<GetFarmsByOwner>(
             create: (context) => GetFarmsByOwner(context.read<FarmMarketRepositoryImpl>()),
           ),
+          Provider<GetFarmImages>(
+            create: (context) => GetFarmImages(context.read<FarmMarketRepositoryImpl>()),
+          ),
+          Provider<UploadFarmImage>(
+            create: (context) => UploadFarmImage(context.read<FarmMarketRepositoryImpl>()),
+          ),
           ChangeNotifierProvider<FarmMarketViewModel>(
             create: (context) => FarmMarketViewModel(
               getAllFarmMarkets: context.read<GetAllFarmMarkets>(),
@@ -299,6 +309,8 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart'
               getSalesByFarmMarketId: context.read<GetSalesByFarmMarketId>(),
               getFarmsByOwner: context.read<GetFarmsByOwner>(),
               getFarmProducts: context.read<GetFarmProducts>(),
+              uploadFarmImage: context.read<UploadFarmImage>(),
+              getFarmImages: context.read<GetFarmImages>(),
 
 
             ),
@@ -354,6 +366,12 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart'
           Provider<ConfirmAndConvertFarmCrop>(
             create: (context) => ConfirmAndConvertFarmCrop(context.read<FarmCropRepositoryImpl>()),
           ),
+          Provider<GetCropImageUrl>(
+            create: (context) => GetCropImageUrl(context.read<FarmCropRepositoryImpl>()),
+          ),
+          Provider<UploadCropImage>(
+            create: (context) => UploadCropImage(context.read<FarmCropRepositoryImpl>()),
+          ),
           ChangeNotifierProvider<FarmCropViewModel>(
             create: (context) => FarmCropViewModel(
               getAllFarmCrops: context.read<GetAllFarmCrops>(),
@@ -365,6 +383,8 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart'
               confirmAndConvertFarmCrop: context.read<ConfirmAndConvertFarmCrop>(),
               convertFarmCropToProduct: context.read<ConvertFarmCropToProduct>(),
               processAllConfirmedFarmCrops: context.read<ProcessAllConfirmedFarmCrops>(),
+              uploadCropImage: context.read<UploadCropImage>(),
+              getCropImageUrl: context.read<GetCropImageUrl>(),
               // calculateTotalExpenses: context.read<CalculateTotalExpenses>(),
             ),
             lazy: false,

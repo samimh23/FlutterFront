@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart';
+import 'dart:io';
 import '../../Domain_Layer/entities/farm_crop.dart';
 import '../../Domain_Layer/usecases/TransformCropProd/ConfirmAndConvertFarmCrop.dart';
 import '../../Domain_Layer/usecases/TransformCropProd/ConvertFarmCropToProduct.dart';
@@ -10,6 +11,8 @@ import '../../Domain_Layer/usecases/get_farm_crop_by_id.dart';
 import '../../Domain_Layer/usecases/add_farm_crop.dart';
 import '../../Domain_Layer/usecases/update_farm_crop.dart';
 import '../../Domain_Layer/usecases/delete_farm_crop.dart';
+import '../../Domain_Layer/usecases/UploadCropImage.dart';
+import '../../Domain_Layer/usecases/GetCropImageUrl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -23,6 +26,8 @@ class FarmCropViewModel extends ChangeNotifier {
   final ConfirmAndConvertFarmCrop confirmAndConvertFarmCrop;
   final ConvertFarmCropToProduct convertFarmCropToProduct;
   final ProcessAllConfirmedFarmCrops processAllConfirmedFarmCrops;
+  final UploadCropImage uploadCropImage;
+  final GetCropImageUrl getCropImageUrl;
 
   FarmCropViewModel({
     required this.getAllFarmCrops,
@@ -34,6 +39,8 @@ class FarmCropViewModel extends ChangeNotifier {
     required this.confirmAndConvertFarmCrop,
     required this.convertFarmCropToProduct,
     required this.processAllConfirmedFarmCrops,
+    required this.uploadCropImage,
+    required this.getCropImageUrl,
   }) {
     fetchAllCrops();
   }
@@ -54,8 +61,20 @@ class FarmCropViewModel extends ChangeNotifier {
   Map<String, dynamic>? _conversionResult;
   Map<String, dynamic>? get conversionResult => _conversionResult;
 
+  // For tracking image upload results
+  Map<String, dynamic>? _imageUploadResult;
+  Map<String, dynamic>? get imageUploadResult => _imageUploadResult;
+
+  bool _isUploadingImage = false;
+  bool get isUploadingImage => _isUploadingImage;
+
   void _setLoading(bool value) {
     _isLoading = value;
+    notifyListeners();
+  }
+
+  void _setUploadingImage(bool value) {
+    _isUploadingImage = value;
     notifyListeners();
   }
 
@@ -66,6 +85,11 @@ class FarmCropViewModel extends ChangeNotifier {
 
   void _setConversionResult(Map<String, dynamic>? result) {
     _conversionResult = result;
+    notifyListeners();
+  }
+
+  void _setImageUploadResult(Map<String, dynamic>? result) {
+    _imageUploadResult = result;
     notifyListeners();
   }
 
@@ -285,6 +309,44 @@ class FarmCropViewModel extends ChangeNotifier {
     return processData;
   }
 
+  /// Upload an image for a specific crop
+  Future<Map<String, dynamic>?> uploadCropImageFile(String cropId, File imageFile) async {
+    _setUploadingImage(true);
+    _setImageUploadResult(null);
+    _setError(null);
+
+    Map<String, dynamic>? uploadResult;
+
+    try {
+      final result = await uploadCropImage(cropId, imageFile);
+
+      result.fold(
+            (failure) {
+          _setError(failure.toString());
+          print("Error uploading crop image: ${failure.toString()}");
+        },
+            (data) {
+          _setError(null);
+          _setImageUploadResult(data);
+          uploadResult = data;
+
+          // Refresh the crop data to get updated image path
+          fetchCropById(cropId);
+        },
+      );
+    } catch (e) {
+      _setError("Failed to upload image: $e");
+      print("Exception during image upload: $e");
+    }
+
+    _setUploadingImage(false);
+    return uploadResult;
+  }
+
+  /// Get the full image URL for a crop image path
+  String getCropFullImageUrl(String? imagePath) {
+    return getCropImageUrl(imagePath);
+  }
 
   /// Main audit method (used for initial and retry audits)
   Future<List<String>> auditHarvestedTomatoes({
@@ -340,10 +402,14 @@ class FarmCropViewModel extends ChangeNotifier {
     _conversionResult = null;
     notifyListeners();
   }
+
+  void clearImageUploadResult() {
+    _imageUploadResult = null;
+    notifyListeners();
+  }
 }
 
 class CancelAuditController {
   bool isCancelled = false;
   void cancel() => isCancelled = true;
 }
-

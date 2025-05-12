@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hanouty/Core/heritables/Markets.dart';
@@ -7,7 +9,9 @@ import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_m
 import 'package:hanouty/Presentation/normalmarket/Presentation/Widgets/products_grid.dart';
 import 'package:hanouty/hedera_api_service.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../../Core/Utils/secure_storage.dart';
 import 'normal_market_form_page.dart';
 
 class NormalMarketDetailsPage extends StatefulWidget {
@@ -41,6 +45,23 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  final SecureStorageService _secureStorage = SecureStorageService();
+
+  // Helper method to get auth headers
+  Future<Map<String, String>> _getAuthHeaders() async {
+    // Get JWT token from secure storage instead of separate service
+    final token = await _secureStorage.getAccessToken();
+
+    if (token == null) {
+      throw Exception('No authentication token found. Please login again.');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
   }
 
   Future<void> _fetchOwnershipDistribution(String? tokenId) async {
@@ -1657,10 +1678,10 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
             height: buttonHeight,
             child: ElevatedButton.icon(
               onPressed: () =>
-                  _showShareNFTDialog(context, marketId, isDarkMode),
+                  _showPutOnSaleDialog(context, marketId, isDarkMode),
               icon: Icon(Icons.share, size: iconSize),
               label: Text(
-                'Share NFT Ownership',
+                'Put Some of your shares on sale',
                 style: TextStyle(
                     fontSize: fontSize, fontWeight: FontWeight.bold),
               ),
@@ -1941,544 +1962,222 @@ class _NormalMarketDetailsPageState extends State<NormalMarketDetailsPage> {
   }
 
   // Inside your _NormalMarketDetailsPageState class
-  void _showShareNFTDialog(BuildContext context, String marketId, bool isDarkMode) {
-    final recipientController = TextEditingController();
-    int percentageToShare = 10; // Default value
-    String? selectedRecipientType; // Will be null by default, 'user' or 'market'
+  void _showPutOnSaleDialog(BuildContext context, String marketId, bool isDarkMode) {
+    int sharesToSell = 100; // Default value
+    double pricePerShare = 1.0; // Default value
     bool isLoading = false;
 
-    final isSmallScreen = MediaQuery
-        .of(context)
-        .size
-        .width < 360;
-    final iconSize = isSmallScreen ? 20.0 : 24.0;
-    final titleFontSize = isSmallScreen ? 18.0 : 20.0;
-    final textFontSize = isSmallScreen ? 14.0 : 16.0;
-    final labelFontSize = isSmallScreen ? 14.0 : 16.0;
-    final buttonFontSize = isSmallScreen ? 14.0 : 16.0;
-    final dialogWidth = isSmallScreen ? 280.0 : 300.0;
-    final inputHeight = isSmallScreen ? 44.0 : 52.0;
-
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
     final backgroundColor = isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final inputBgColor = isDarkMode ? Colors.grey.shade900 : const Color(
-        0xFFEEF7ED);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(
-        0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800 : const Color(
-        0xFFD8EBD8);
-    final hintColor = isDarkMode ? Colors.grey.shade500 : Colors.black
-        .withOpacity(0.3);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(
-        0xFF555555);
-    final sliderBgColor = isDarkMode ? Colors.grey.shade800 : Colors.grey
-        .shade200;
-    final infoBgColor = isDarkMode ? Colors.blue.withOpacity(0.2) : Colors.blue
-        .withOpacity(0.1);
-    final infoBorderColor = isDarkMode ? Colors.blue.withOpacity(0.4) : Colors
-        .blue.withOpacity(0.3);
 
     showDialog(
       context: context,
-      builder: (dialogContext) =>
-          StatefulBuilder(
-            builder: (context, setState) =>
-                AlertDialog(
-                  backgroundColor: backgroundColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: backgroundColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          title: Row(
+            children: [
+              Icon(Icons.sell, color: accentColor, size: isSmallScreen ? 22 : 26),
+              SizedBox(width: isSmallScreen ? 10 : 14),
+              Expanded(
+                child: Text(
+                  'Put Shares On Sale',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 18 : 20,
                   ),
-                  contentPadding: EdgeInsets.all(isSmallScreen ? 16 : 24),
-                  titlePadding: EdgeInsets.only(
-                      left: isSmallScreen ? 16 : 24,
-                      right: isSmallScreen ? 16 : 24,
-                      top: isSmallScreen ? 16 : 24,
-                      bottom: isSmallScreen ? 8 : 16
+                ),
+              ),
+            ],
+          ),
+          content: isLoading
+              ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: accentColor),
+              SizedBox(height: isSmallScreen ? 16 : 24),
+              Text(
+                'Listing shares for sale...',
+                style: TextStyle(color: textColor, fontSize: isSmallScreen ? 14 : 16),
+              ),
+            ],
+          )
+              : SizedBox(
+            width: isSmallScreen ? 260 : 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Amount of shares
+                Text(
+                  'Number of Shares to Sell',
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                    fontSize: isSmallScreen ? 14 : 16,
                   ),
-                  title: Row(
-                    children: [
-                      Icon(Icons.share, color: accentColor, size: iconSize),
-                      SizedBox(width: isSmallScreen ? 10 : 14),
-                      Expanded(
-                        child: Text(
-                          'Share NFT Ownership',
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: titleFontSize,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  content: isLoading
-                      ? Container(
-                    constraints: BoxConstraints(maxWidth: dialogWidth),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(color: accentColor),
-                        SizedBox(height: isSmallScreen ? 16 : 24),
-                        Text(
-                          'Processing share request...',
-                          style: TextStyle(
-                              color: textColor, fontSize: textFontSize),
-                        ),
-                      ],
-                    ),
-                  )
-                      : SingleChildScrollView(
-                    child: Container(
-                      width: dialogWidth,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Recipient Type Selection
-                          Text(
-                            'Recipient Type',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: labelFontSize,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 8 : 10),
-                          Container(
-                            height: inputHeight,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: inputBgColor,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: borderColor,
-                                width: 1,
-                              ),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                isExpanded: true,
-                                value: selectedRecipientType,
-                                hint: Text(
-                                  'Select recipient type',
-                                  style: TextStyle(
-                                    color: hintColor,
-                                  ),
-                                ),
-                                items: [
-                                  DropdownMenuItem<String>(
-                                    value: null,
-                                    child: Text('Auto-detect',
-                                      style: TextStyle(color: textColor),
-                                    ),
-                                  ),
-                                  DropdownMenuItem<String>(
-                                    value: 'user',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.person,
-                                          color: accentColor,
-                                          size: isSmallScreen ? 16 : 18,
-                                        ),
-                                        SizedBox(width: isSmallScreen ? 6 : 8),
-                                        Text('User',
-                                          style: TextStyle(color: textColor),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  DropdownMenuItem<String>(
-                                    value: 'market',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.store,
-                                          color: accentColor,
-                                          size: isSmallScreen ? 16 : 18,
-                                        ),
-                                        SizedBox(width: isSmallScreen ? 6 : 8),
-                                        Text('Market',
-                                          style: TextStyle(color: textColor),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedRecipientType = value;
-                                  });
-                                },
-                                underline: Container(),
-                                dropdownColor: backgroundColor,
-                                icon: Icon(
-                                    Icons.arrow_drop_down, color: accentColor),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: isSmallScreen ? 16 : 20),
-
-                          // Recipient Address
-                          Text(
-                            'Recipient Address',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: labelFontSize,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 8 : 10),
-                          SizedBox(
-                            height: inputHeight,
-                            child: TextFormField(
-                              controller: recipientController,
-                              style: TextStyle(color: textColor,
-                                  fontSize: textFontSize),
-                              decoration: InputDecoration(
-                                hintText: 'Enter wallet address or ID',
-                                hintStyle: TextStyle(
-                                  color: hintColor,
-                                  fontSize: textFontSize,
-                                ),
-                                filled: true,
-                                fillColor: inputBgColor,
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: borderColor, width: 1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: borderColor, width: 1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: accentColor, width: 1.5),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: isSmallScreen ? 16 : 18,
-                                    vertical: isSmallScreen ? 12 : 16
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.account_balance_wallet_outlined,
-                                  color: accentColor,
-                                  size: isSmallScreen ? 18 : 22,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: isSmallScreen ? 20 : 24),
-
-                          // Percentage to Share
-                          Text(
-                            'Percentage to Share',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: labelFontSize,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 12 : 16),
-                          Container(
-                            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                            decoration: BoxDecoration(
-                              color: inputBgColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: borderColor,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment
-                                      .spaceBetween,
-                                  children: [
-                                    Text(
-                                      '$percentageToShare%',
-                                      style: TextStyle(
-                                        color: textColor,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: isSmallScreen ? 16 : 18,
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: isSmallScreen ? 10 : 12,
-                                          vertical: isSmallScreen ? 4 : 6
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: accentColor,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        'You keep ${100 - percentageToShare}%',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: isSmallScreen ? 12 : 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: isSmallScreen ? 12 : 16),
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                    activeTrackColor: accentColor,
-                                    inactiveTrackColor: sliderBgColor,
-                                    thumbColor: Colors.white,
-                                    overlayColor: accentColor.withOpacity(0.2),
-                                    thumbShape: RoundSliderThumbShape(
-                                        enabledThumbRadius: isSmallScreen
-                                            ? 12
-                                            : 14),
-                                    overlayShape: RoundSliderOverlayShape(
-                                        overlayRadius: isSmallScreen ? 20 : 24),
-                                    trackHeight: isSmallScreen ? 4 : 6,
-                                  ),
-                                  child: Slider(
-                                    value: percentageToShare.toDouble(),
-                                    min: 1,
-                                    max: 100,
-                                    divisions: 99,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        percentageToShare = value.round();
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Information about recipient type
-                          if (selectedRecipientType != null)
-                            Container(
-                              margin: EdgeInsets.only(top: isSmallScreen
-                                  ? 12
-                                  : 16),
-                              padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
-                              decoration: BoxDecoration(
-                                color: infoBgColor,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: infoBorderColor,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: Colors.blue[700],
-                                    size: isSmallScreen ? 18 : 20,
-                                  ),
-                                  SizedBox(width: isSmallScreen ? 6 : 8),
-                                  Expanded(
-                                    child: Text(
-                                      selectedRecipientType == 'user'
-                                          ? 'You selected "User". Enter a user ID or Hedera account.'
-                                          : 'You selected "Market". Enter a market ID or Hedera account.',
-                                      style: TextStyle(
-                                        color: isDarkMode
-                                            ? Colors.blue[200]
-                                            : Colors.blue[700],
-                                        fontSize: isSmallScreen ? 11 : 13,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
+                ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Slider(
+                        value: sharesToSell.toDouble(),
+                        min: 1,
+                        max: 10000, // Adjust as per your max
+                        divisions: 100,
+                        label: sharesToSell.toString(),
+                        onChanged: (value) {
+                          setState(() {
+                            sharesToSell = value.round();
+                          });
+                        },
                       ),
                     ),
-                  ),
-                  actions: isLoading
-                      ? []
-                      : [
-                    TextButton(
-                      onPressed: () => Navigator.pop(dialogContext),
-                      style: TextButton.styleFrom(
-                        foregroundColor: isDarkMode
-                            ? Colors.grey[300]
-                            : const Color(0xFF666666),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: isSmallScreen ? 12 : 16,
-                            vertical: isSmallScreen ? 8 : 10
-                        ),
-                      ),
-                      child: Text('Cancel',
-                          style: TextStyle(fontSize: buttonFontSize)
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (recipientController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.redAccent,
-                              content: Text(
-                                'Please enter recipient address',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isSmallScreen ? 14 : 16
-                                ),
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                          return;
-                        }
-
-                        // Set loading state
-                        setState(() {
-                          isLoading = true;
-                        });
-
-                        // Get provider and call shareNFT
-                        final provider = context.read<NormalMarketProvider>();
-
-                        // Store important data in local variables
-                        final String recipient = recipientController.text;
-                        final int percentage = percentageToShare;
-                        final String? recipientType = selectedRecipientType;
-
-                        try {
-                          Map<String, dynamic> result = await provider.shareNFT(
-                            marketId,
-                            recipient,
-                            percentage,
-                            recipientType: recipientType,
-                          );
-
-                          if (context.mounted) {
-                            Navigator.pop(dialogContext);
-                          }
-
-                          if (!context.mounted) return;
-
-                          // Reload market data
-                          provider.loadMarketById(marketId);
-
-                          // Show success or error message
-                          if (result['success'] == true) {
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: accentColor,
-                                content: Row(
-                                  children: [
-                                    Icon(
-                                        Icons.check_circle,
-                                        color: Colors.white,
-                                        size: isSmallScreen ? 16 : 18
-                                    ),
-                                    SizedBox(width: isSmallScreen ? 8 : 10),
-                                    Text(
-                                      'NFT shared successfully',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: isSmallScreen ? 14 : 16
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          } else {
-                            // Show error message from the response
-                            String errorMessage = result['message'] ??
-                                'Failed to share NFT';
-
-                            // Check if it's a token association error
-                            if (errorMessage.contains(
-                                'TOKEN_NOT_ASSOCIATED_TO_ACCOUNT') ||
-                                errorMessage.contains(
-                                    'token association required')) {
-                              errorMessage =
-                              'Token association required. The recipient must associate with the token first.';
-                            }
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: Colors.redAccent,
-                                content: Text(
-                                  errorMessage,
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isSmallScreen ? 14 : 16
-                                  ),
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            Navigator.pop(dialogContext);
-                          }
-
-                          if (!context.mounted) return;
-
-                          // Show error message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.redAccent,
-                              content: Text(
-                                'Error sharing NFT: ${e.toString()}',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isSmallScreen ? 14 : 16
-                                ),
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: accentColor,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                            horizontal: isSmallScreen ? 16 : 20,
-                            vertical: isSmallScreen ? 10 : 12
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              isSmallScreen ? 8 : 10),
-                        ),
-                      ),
-                      child: Text(
-                        'Share NFT',
-                        style: TextStyle(
-                            fontSize: buttonFontSize,
-                            fontWeight: FontWeight.bold
+                    SizedBox(width: 10),
+                    SizedBox(
+                      width: 60,
+                      child: TextFormField(
+                        initialValue: sharesToSell.toString(),
+                        keyboardType: TextInputType.number,
+                        onChanged: (val) {
+                          int? v = int.tryParse(val);
+                          if (v != null) setState(() => sharesToSell = v);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Shares',
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         ),
                       ),
                     ),
                   ],
                 ),
-          ),
-    ).then((_) {
-      // Dispose of controller when dialog is closed
-      recipientController.dispose();
-      // Refresh market data when dialog is closed
-      context.read<NormalMarketProvider>().loadMarketById(marketId);
-    });
-  }
+                SizedBox(height: 16),
 
+                // Price per share
+                Text(
+                  'Price Per Share',
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                    fontSize: isSmallScreen ? 14 : 16,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(Icons.attach_money, color: accentColor, size: 22),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        initialValue: pricePerShare.toStringAsFixed(2),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (val) {
+                          double? v = double.tryParse(val);
+                          if (v != null) setState(() => pricePerShare = v);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Price per share',
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: isLoading
+              ? []
+              : [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Validate
+                if (sharesToSell < 1 || pricePerShare <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.redAccent,
+                      content: Text(
+                        'Enter valid share amount and price.',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() => isLoading = true);
+                try {
+                  final headers = await _getAuthHeaders();
+                  final response = await http.post(
+                    Uri.parse('http://192.168.128.4:3000/normal/$marketId/list-shares-for-sale'),
+                    headers: headers,
+                    body: jsonEncode({
+                      "shares": sharesToSell,
+                      "pricePerShare": pricePerShare,
+                    }),
+                  );
+
+                  if (context.mounted) Navigator.pop(dialogContext);
+
+                  final Map<String, dynamic> result = jsonDecode(response.body);
+
+                  if (response.statusCode == 200 || response.statusCode == 201) {
+                    // Success
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: accentColor,
+                        content: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Shares listed for sale!',
+                                style: TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.redAccent,
+                        content: Text(
+                          result['message'] ?? 'Failed to list shares.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.redAccent,
+                      content: Text(
+                        'Error: ${e.toString()}',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: accentColor),
+              child: Text('Put On Sale'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   void _deleteMarket(BuildContext context, String marketId, bool isDarkMode) {
     final isSmallScreen = MediaQuery
         .of(context)

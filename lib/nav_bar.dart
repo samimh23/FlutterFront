@@ -12,6 +12,7 @@ import 'package:hanouty/responsive/responsive_layout.dart';
 import 'package:hanouty/wallet_screen.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui';
+import 'Buyshares.dart';
 import 'injection_container.dart' as di;
 
 class MainScreen extends StatefulWidget {
@@ -51,10 +52,16 @@ class _MainScreenState extends State<MainScreen>
       selectedColor: const Color.fromARGB(255, 8, 227, 234),
     ),
     NavigationItem(
+      title: 'Invest',
+      icon: Icons.sell_outlined,
+      selectedColor: const Color(0xFF8B5CF6),
+    ),
+    NavigationItem(
       title: 'Profile',
       icon: Icons.person_rounded,
       selectedColor: const Color(0xFF8B5CF6),
     ),
+
   ];
 
   @override
@@ -65,7 +72,9 @@ class _MainScreenState extends State<MainScreen>
       const CartScreen(),
       WalletScreen(),
       const OrdersScreen(),
+      CustomerMarketListingsPage(),
       const ProfilePage(),
+
       
     ];
 

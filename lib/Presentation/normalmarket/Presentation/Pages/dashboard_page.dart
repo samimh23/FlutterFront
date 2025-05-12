@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../Auth/presentation/controller/profilep^rovider.dart';
 import '../../../Auth/presentation/pages/login_page.dart';
 import '../../../order/presentation/pages/orderpage.dart';
+import 'Marketlisting.dart';
 import 'auction_market_screen.dart' show MarketOwnerAuctionsScreen;
 
 // RouteObserver to be provided to MaterialApp if needed
@@ -32,6 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final GlobalKey<_OrdersPageWrapperState> _ordersKey = GlobalKey();
   final GlobalKey<_FarmPageWrapperState> _farmKey = GlobalKey();
 
+
   late final List<Widget> _pages = [
     NormalMarketsPageWrapper(key: _marketsKey),
     MarketOwnerAuctionsScreen(),
@@ -39,6 +41,7 @@ class _DashboardPageState extends State<DashboardPage> {
     OrdersPageWrapper(key: _ordersKey),
     FarmMarketplaceScreen(key: _farmKey),
     WalletScreen(),
+    MarketListingsPage(),
   ];
 
   final List<String> _titles = [
@@ -47,7 +50,8 @@ class _DashboardPageState extends State<DashboardPage> {
     'Settings',
     'Market Orders',
     'Farms',
-    'My Wallet'
+    'My Wallet',
+    'Market Listings',
   ];
   final List<IconData> _pageIcons = [
     Icons.storefront_outlined,
@@ -55,7 +59,8 @@ class _DashboardPageState extends State<DashboardPage> {
     Icons.settings,
     Icons.receipt_long,
     Icons.storefront,
-    Icons.wallet
+    Icons.wallet,
+    Icons.sell_outlined
   ];
 
   void _reloadCurrentPage() {

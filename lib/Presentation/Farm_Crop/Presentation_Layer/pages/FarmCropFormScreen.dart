@@ -41,6 +41,7 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
   bool _isSubmitting = false;
   File? _imageFile;
   String? _existingImageUrl;
+  bool _isUploadingImage = false;
 
   final List<String> _tomatoTypes = [
     'Beefsteak tomatoes',
@@ -54,15 +55,10 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
     'Other'
   ];
 
-
-
   @override
   void initState() {
     super.initState();
     _initializeOwnerId();
-
-
-
 
     // Initialize controllers with existing data or empty strings
     _nameController = TextEditingController(
@@ -74,19 +70,23 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
 
     // Initialize other fields if editing
     if (widget.isEditing && widget.cropToEdit != null) {
-      _selectedFarmMarketId = widget.cropToEdit!.farmMarketId; // Initialize selected farm market
+      _selectedFarmMarketId = widget.cropToEdit!.farmMarketId;
       _selectedType = widget.cropToEdit!.type;
       _implantDate = widget.cropToEdit!.implantDate;
       _harvestedDate = widget.cropToEdit!.harvestedDay;
       _auditStatus = FarmCrop.stringToAuditStatus(widget.cropToEdit!.auditStatus) ?? AuditStatus.pending;
-      _existingImageUrl = widget.cropToEdit!.picture;
+
+      // Initialize image URL if available
+      if (widget.cropToEdit!.picture != null && widget.cropToEdit!.picture!.isNotEmpty) {
+        final cropViewModel = Provider.of<FarmCropViewModel>(context, listen: false);
+        _existingImageUrl = cropViewModel.getCropFullImageUrl(widget.cropToEdit!.picture);
+      }
     }
 
     if (!widget.isEditing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final farmMarketViewModel = Provider.of<FarmMarketViewModel>(context, listen: false);
-
-        farmMarketViewModel.fetchFarmsByOwner(owner!); // Replace with actual user ID
+        farmMarketViewModel.fetchFarmsByOwner(owner!);
       });
     }
   }
@@ -162,6 +162,11 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
         _imageFile = File(pickedFile.path);
         _existingImageUrl = null; // Clear existing URL if a new image is selected
       });
+
+      // If we're editing an existing crop, upload the image immediately
+      if (widget.isEditing && widget.cropToEdit?.id != null) {
+        _uploadImage(widget.cropToEdit!.id!);
+      }
     }
   }
 
@@ -173,6 +178,43 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
       setState(() {
         _imageFile = File(pickedFile.path);
         _existingImageUrl = null; // Clear existing URL if a new image is selected
+      });
+
+      // If we're editing an existing crop, upload the image immediately
+      if (widget.isEditing && widget.cropToEdit?.id != null) {
+        _uploadImage(widget.cropToEdit!.id!);
+      }
+    }
+  }
+
+  Future<void> _uploadImage(String cropId) async {
+    if (_imageFile == null) return;
+
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    final viewModel = Provider.of<FarmCropViewModel>(context, listen: false);
+    try {
+      final result = await viewModel.uploadCropImageFile(cropId, _imageFile!);
+
+      if (result != null && result.containsKey('imageUrl')) {
+        setState(() {
+          _existingImageUrl = result['imageUrl'] as String?;
+          _imageFile = null; // Clear the file reference as it's now uploaded
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image uploaded successfully')),
+        );
+      } else {
+        _showErrorSnackBar('Failed to upload image: ${viewModel.errorMessage}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error uploading image: $e');
+    } finally {
+      setState(() {
+        _isUploadingImage = false;
       });
     }
   }
@@ -219,19 +261,24 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
         _isSubmitting = true;
       });
 
-      // TODO: In a real app, you would upload the image to storage and get a URL
-      // For now, we'll just use the path or existing URL
-      final imageUrl = _imageFile?.path ?? _existingImageUrl;
+      // Handle the crop creation/update
+      _handleCropSubmission();
+    }
+  }
 
-      // Create a new crop object with farmMarketId
-      final crop = FarmCrop(
+  Future<void> _handleCropSubmission() async {
+    final viewModel = Provider.of<FarmCropViewModel>(context, listen: false);
+
+    try {
+      // First, create or update the crop
+      FarmCrop crop = FarmCrop(
         id: widget.isEditing ? widget.cropToEdit!.id : null,
-        farmMarketId: _selectedFarmMarketId!, // Include the selected farm market ID
+        farmMarketId: _selectedFarmMarketId!,
         productName: _nameController.text,
         type: _selectedType,
         implantDate: _implantDate,
         harvestedDay: _harvestedDate,
-        picture: imageUrl,
+        picture: widget.isEditing && _imageFile == null ? widget.cropToEdit!.picture : null,
         quantity: _quantityController.text.isNotEmpty
             ? int.tryParse(_quantityController.text)
             : null,
@@ -241,34 +288,35 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
             : [],
       );
 
-      // Save the crop
-      final viewModel = Provider.of<FarmCropViewModel>(context, listen: false);
-
       if (widget.isEditing) {
-        viewModel.modifyFarmCrop(crop).then((_) {
-          setState(() {
-            _isSubmitting = false;
-          });
-          Navigator.pop(context);
-        }).catchError((error) {
-          setState(() {
-            _isSubmitting = false;
-          });
-          _showErrorSnackBar('Failed to update crop: $error');
-        });
+        await viewModel.modifyFarmCrop(crop);
       } else {
-        viewModel.createFarmCrop(crop).then((_) {
-          setState(() {
-            _isSubmitting = false;
-          });
-          Navigator.pop(context);
-        }).catchError((error) {
-          setState(() {
-            _isSubmitting = false;
-          });
-          _showErrorSnackBar('Failed to add crop: $error');
-        });
+        await viewModel.createFarmCrop(crop);
+
+        // For new crops, we need to get the ID after creation to upload the image
+        if (_imageFile != null) {
+          // Get the latest crops to find the new one
+          await viewModel.fetchAllCrops();
+          final newCrop = viewModel.crops.firstWhere(
+                (c) => c.productName == crop.productName && c.farmMarketId == crop.farmMarketId,
+            orElse: () => crop,
+          );
+
+          if (newCrop.id != null) {
+            await _uploadImage(newCrop.id!);
+          }
+        }
       }
+
+      // Return to previous screen
+      Navigator.pop(context);
+
+    } catch (error) {
+      _showErrorSnackBar('Failed to save crop: $error');
+    } finally {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 
@@ -332,6 +380,7 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
     final theme = Theme.of(context);
     final primaryColor = Colors.green.shade700;
     final farmMarketViewModel = Provider.of<FarmMarketViewModel>(context);
+    final cropViewModel = Provider.of<FarmCropViewModel>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -405,7 +454,7 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                           });
                         }
                       },
-                      items: farmMarketViewModel.farmerFarms // Use farmerFarms instead of farmMarkets
+                      items: farmMarketViewModel.farmerFarms
                           .map<DropdownMenuItem<String>>((Farm farm) {
                         return DropdownMenuItem<String>(
                           value: farm.id,
@@ -527,7 +576,7 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                         const SizedBox(height: 12),
                         Center(
                           child: GestureDetector(
-                            onTap: _showImageSourceDialog,
+                            onTap: _isUploadingImage ? null : _showImageSourceDialog,
                             child: Container(
                               width: 200,
                               height: 200,
@@ -536,7 +585,24 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey.shade400),
                               ),
-                              child: _imageFile != null
+                              child: _isUploadingImage
+                                  ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Uploading image...',
+                                      style: TextStyle(
+                                        color: primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                                  : _imageFile != null
                                   ? ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Image.file(
@@ -550,6 +616,16 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                                 child: Image.network(
                                   _existingImageUrl!,
                                   fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
                                   errorBuilder: (ctx, error, _) => const Icon(
                                     Icons.image_not_supported,
                                     size: 50,
@@ -583,8 +659,8 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.add_photo_alternate),
-                            label: const Text('Select Image'),
-                            onPressed: _showImageSourceDialog,
+                            label: Text(_isUploadingImage ? 'Uploading...' : 'Select Image'),
+                            onPressed: _isUploadingImage ? null : _showImageSourceDialog,
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: primaryColor),
                               foregroundColor: primaryColor,
@@ -692,7 +768,7 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submitForm,
+                    onPressed: (_isSubmitting || _isUploadingImage) ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -713,6 +789,22 @@ class _FarmCropFormScreenState extends State<FarmCropFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // Show errors if any
+                if (cropViewModel.errorMessage != null)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[300]!),
+                    ),
+                    child: Text(
+                      cropViewModel.errorMessage!,
+                      style: TextStyle(color: Colors.red[800]),
+                    ),
+                  ),
               ],
             ),
           ),

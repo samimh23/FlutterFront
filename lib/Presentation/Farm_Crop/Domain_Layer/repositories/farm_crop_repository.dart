@@ -2,6 +2,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
 import '../entities/farm_crop.dart';
+import 'dart:io';
 
 abstract class FarmCropRepository {
   Future<Either<Failure, List<FarmCrop>>> getAllFarmCrops();
@@ -14,4 +15,7 @@ abstract class FarmCropRepository {
   Future<Either<Failure, Map<String, dynamic>>> convertFarmCropToProduct(String cropId);
   Future<Either<Failure, Map<String, dynamic>>> confirmAndConvertFarmCrop(String cropId, String auditReport);
   Future<Either<Failure, Map<String, dynamic>>> processAllConfirmedFarmCrops();
+
+  Future<Either<Failure, Map<String, dynamic>>> uploadCropImage(String cropId, File imageFile);
+  String getCropImageUrl(String? imagePath);
 }

@@ -27,7 +27,7 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
     //const MobileProductDetectDisease(),
     const DiseaseDetectionMobileScreen(),
     const FarmCropsListScreen(),
-    const ProfilePage(),
+    const FarmMarketplaceScreen(),
   ];
 
   @override
@@ -55,15 +55,16 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
-            label: 'Manage Farms',
+            label: 'Farms',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
             label: 'Product IA',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.nature),
-            label: 'Crop',
+            label: 'Crops',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

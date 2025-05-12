@@ -3,6 +3,7 @@ import 'package:hanouty/Core/Utils/Api_EndPoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
+import 'package:http_parser/http_parser.dart';
 import 'dart:math' as Math;
 
 import '../../../Sales/Domain_Layer/entities/sale.dart';
@@ -219,44 +220,162 @@ class FarmMarketRemoteDataSource {
         headers: headers,
       );
 
-      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
 
       if (response.statusCode != 200) {
-        print("❌ FarmMarketRemoteDataSource: Failed to delete farm market. Status: ${response.statusCode}");
         throw ServerException(message: 'Failed to delete farm market. Status: ${response.statusCode}');
       }
 
-      print("✅ FarmMarketRemoteDataSource: Farm market deleted successfully");
     } catch (e) {
-      print("🔥 FarmMarketRemoteDataSource: Error deleting farm market: $e");
       throw ServerException(message: 'Failed to delete farm market: $e');
     }
   }
 
   Future<List<Sale>> getSalesByFarmMarketId(String farmMarketId) async {
     try {
-      print("🔍 FarmMarketRemoteDataSource: Getting sales for farm market ID: $farmMarketId");
       final headers = await _getHeaders();
 
-      print("📡 FarmMarketRemoteDataSource: Sending GET request to $baseUrl/sales/farm/$farmMarketId");
       final response = await client.get(
         Uri.parse('$baseUrl/sales/farm/$farmMarketId'),
+        headers: headers,
+      );
+
+
+      if (response.statusCode == 200) {
+        final jsonList = json.decode(response.body) as List;
+        return jsonList.map((json) => Sale.fromJson(json)).toList();
+      } else {
+        throw ServerException(message: 'Failed to load sales: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw ServerException(message: 'Error fetching sales: ${e.toString()}');
+    }
+  }
+
+  Future<String> uploadFarmImage(String farmId, String imagePath) async {
+    try {
+      print("📸 FarmMarketRemoteDataSource: Uploading image for farm ID: $farmId");
+      final headers = await _getHeaders();
+
+      // Create multipart request
+      final uri = Uri.parse('$baseUrl/$farmId/upload-image');
+      final request = http.MultipartRequest('POST', uri);
+
+      // Add headers (excluding Content-Type for multipart)
+      headers.remove('Content-Type');
+      request.headers.addAll(headers);
+
+      // Add file with the correct field name 'farmImage'
+      final file = await http.MultipartFile.fromPath(
+        'farmImage',  // This must match the backend's expected field name
+        imagePath,
+        // Add content type detection
+        contentType: MediaType(
+          'image',
+          imagePath.split('.').last.toLowerCase(),
+        ),
+      );
+      request.files.add(file);
+
+      print("📤 FarmMarketRemoteDataSource: Sending request to ${request.url}");
+      print("📤 FarmMarketRemoteDataSource: Headers: ${request.headers}");
+      print("📤 FarmMarketRemoteDataSource: File name: ${file.filename}");
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
+      print("📢 FarmMarketRemoteDataSource: Response body: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+
+        if (responseData['farm'] != null && responseData['farm']['farmImage'] != null) {
+          final imagePath = responseData['farm']['farmImage'];
+          // Use the API_BASE_URL from your environment if available
+          final baseApiUrl = ApiEndpoints.baseUrl;
+          final imageUrl = '$baseApiUrl/farm/image/$imagePath';
+          print("✅ FarmMarketRemoteDataSource: Image uploaded successfully: $imageUrl");
+          return imageUrl;
+        } else {
+          print("❌ FarmMarketRemoteDataSource: Invalid response format");
+          throw ServerException(
+              message: 'Invalid response format from server',
+              statusCode: response.statusCode
+          );
+        }
+      } else {
+        print("❌ FarmMarketRemoteDataSource: Upload failed with status ${response.statusCode}");
+        final errorMessage = _parseErrorMessage(response);
+        throw ServerException(
+            message: 'Failed to upload image: $errorMessage',
+            statusCode: response.statusCode
+        );
+      }
+    } catch (e) {
+      print("🔥 FarmMarketRemoteDataSource: Error uploading image: $e");
+      if (e is ServerException) {
+        rethrow;
+      }
+      throw ServerException(
+          message: 'Failed to upload image: ${e.toString()}',
+          statusCode: 500
+      );
+    }
+  }
+
+  Future<List<String>> getFarmImages(String farmId) async {
+    try {
+      print("🖼️ FarmMarketRemoteDataSource: Getting images for farm ID: $farmId");
+      final headers = await _getHeaders();
+
+      final response = await client.get(
+        Uri.parse('$baseUrl/$farmId'),
         headers: headers,
       );
 
       print("📢 FarmMarketRemoteDataSource: Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        final jsonList = json.decode(response.body) as List;
-        print("✅ FarmMarketRemoteDataSource: Retrieved ${jsonList.length} sales");
-        return jsonList.map((json) => Sale.fromJson(json)).toList();
+        final farmData = json.decode(response.body);
+        final farmImage = farmData['farmImage'];
+
+        if (farmImage != null && farmImage.isNotEmpty) {
+          // Use the API_BASE_URL from your environment
+          final baseApiUrl = ApiEndpoints.baseUrl;
+          final imageUrl = '$baseApiUrl/farm/image/$farmImage';
+          print("✅ FarmMarketRemoteDataSource: Retrieved farm image: $imageUrl");
+          return [imageUrl];
+        }
+
+        print("ℹ️ FarmMarketRemoteDataSource: No images found for farm");
+        return [];
       } else {
-        print("❌ FarmMarketRemoteDataSource: Failed to load sales. Status: ${response.statusCode}");
-        throw ServerException(message: 'Failed to load sales: ${response.statusCode}');
+        print("❌ FarmMarketRemoteDataSource: Failed to fetch farm images. Status: ${response.statusCode}");
+        final errorMessage = _parseErrorMessage(response);
+        throw ServerException(
+            message: 'Failed to fetch farm images: $errorMessage',
+            statusCode: response.statusCode
+        );
       }
     } catch (e) {
-      print("🔥 FarmMarketRemoteDataSource: Error fetching sales: $e");
-      throw ServerException(message: 'Error fetching sales: ${e.toString()}');
+      print("🔥 FarmMarketRemoteDataSource: Error getting farm images: $e");
+      if (e is ServerException) {
+        rethrow;
+      }
+      throw ServerException(
+          message: 'Failed to fetch farm images: ${e.toString()}',
+          statusCode: 500
+      );
+    }
+  }
+
+// Add this helper method to parse error messages
+  String _parseErrorMessage(http.Response response) {
+    try {
+      final errorData = json.decode(response.body);
+      return errorData['message'] ?? response.body;
+    } catch (e) {
+      return response.body;
     }
   }
 

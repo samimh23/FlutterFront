@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:hanouty/Core/theme/AppColors.dart'; // Import for MarketOwnerColors
 
 import '../../../../Sales/Presentation_Layer/viewmodels/sale_viewmodel.dart';
 import '../../../Domain_Layer/entity/farm.dart';
@@ -19,6 +18,11 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+
+  // Theme colors as in DashboardPage
+  static const Color _backgroundColor = Color(0xFFF9F5EC);
+  static const Color _accentGreen = Color(0xFFA8CF6A);
+  static const Color _deepBrown = Color(0xFF6A4D24);
 
   @override
   void initState() {
@@ -47,8 +51,9 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Use the custom theme colors
     return Scaffold(
-      backgroundColor: MarketOwnerColors.background,
+      backgroundColor: _backgroundColor,
       body: Consumer<FarmMarketViewModel>(
         builder: (context, viewModel, child) {
           return NestedScrollView(
@@ -58,7 +63,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                 SliverAppBar(
                   expandedHeight: 170.0,
                   pinned: true,
-                  backgroundColor: MarketOwnerColors.primary,
+                  backgroundColor: _accentGreen,
                   elevation: _isScrolled ? 2 : 0,
                   flexibleSpace: FlexibleSpaceBar(
                     titlePadding: const EdgeInsets.only(left: 16, bottom: 16, right: 16),
@@ -68,7 +73,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
-                        color: Colors.white,
+                        color: _deepBrown,
                         letterSpacing: 0.2,
                       ),
                     )
@@ -76,16 +81,16 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Gradient background using MarketOwnerColors
+                        // Gradient background to match DashboardPage
                         Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                MarketOwnerColors.primary,
-                                MarketOwnerColors.primary.withOpacity(0.8),
-                                MarketOwnerColors.secondary,
+                                Color(0xFFFDF6ED),
+                                Color(0xFFE2C79E),
+                                Color(0xFFA8CF6A),
                               ],
                             ),
                           ),
@@ -95,11 +100,11 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                           right: -30,
                           top: -10,
                           child: Opacity(
-                            opacity: 0.15,
+                            opacity: 0.13,
                             child: Icon(
                               Icons.eco,
                               size: 150,
-                              color: Colors.white,
+                              color: _accentGreen,
                             ),
                           ),
                         ),
@@ -115,17 +120,17 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                               const Text(
                                 'Farm Marketplace',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: _deepBrown,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 26,
                                   letterSpacing: 0.2,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              const Text(
+                              Text(
                                 'Discover local farms and fresh produce',
                                 style: TextStyle(
-                                  color: Colors.white70,
+                                  color: Colors.brown[300],
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -154,15 +159,12 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                             borderRadius: BorderRadius.circular(30),
                             borderSide: BorderSide.none,
                           ),
-                          prefixIcon: Icon(Icons.search, color: MarketOwnerColors.primary),
+                          prefixIcon: Icon(Icons.search, color: _accentGreen),
                           suffixIcon: IconButton(
-                            icon: Icon(Icons.filter_list, color: MarketOwnerColors.primary),
+                            icon: Icon(Icons.filter_list, color: _accentGreen),
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Filters coming soon!"),
-                                  backgroundColor: MarketOwnerColors.primary,
-                                ),
+                                const SnackBar(content: Text("Filters coming soon!")),
                               );
                             },
                           ),
@@ -183,26 +185,13 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: MarketOwnerColors.primary,
-        foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddEditFarmScreen(isEditing: false),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
   Widget _buildContent(FarmMarketViewModel viewModel, BuildContext context) {
     if (viewModel.isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: MarketOwnerColors.primary),
+      return const Center(
+        child: CircularProgressIndicator(color: _accentGreen),
       );
     }
 
@@ -250,7 +239,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
             Icon(
               Icons.error_outline,
               size: 60,
-              color: Colors.red,
+              color: _accentGreen,
             ),
             const SizedBox(height: 16),
             Text(
@@ -258,7 +247,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: MarketOwnerColors.text,
+                color: _deepBrown,
               ),
               textAlign: TextAlign.center,
             ),
@@ -277,7 +266,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: MarketOwnerColors.primary,
+                backgroundColor: _accentGreen,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -301,17 +290,17 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
             Icon(
               _searchQuery.isEmpty ? Icons.eco_outlined : Icons.search_off,
               size: 80,
-              color: MarketOwnerColors.primary.withOpacity(0.3),
+              color: _accentGreen.withOpacity(0.3),
             ),
             const SizedBox(height: 24),
             Text(
               _searchQuery.isEmpty
                   ? 'No farms available yet'
                   : 'No farms match your search',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: MarketOwnerColors.text,
+                color: _deepBrown,
               ),
               textAlign: TextAlign.center,
             ),
@@ -340,7 +329,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                 icon: const Icon(Icons.add),
                 label: const Text('Add Your Farm'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: MarketOwnerColors.primary,
+                  backgroundColor: _accentGreen,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -355,16 +344,13 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
   }
 
   Widget _buildFarmGrid(List<Farm> farms, BuildContext context) {
-    // Check if we're on a very small device
-    final isSmallScreen = MediaQuery.of(context).size.width < 360;
-
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: GridView.builder(
-        padding: EdgeInsets.fromLTRB(16, 4, 16, 80),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: isSmallScreen ? 1 : 2, // Switch to single column on small screens
-          childAspectRatio: isSmallScreen ? 1.2 : 0.78,
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -399,9 +385,9 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -415,7 +401,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                   height: 140,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: MarketOwnerColors.primary.withOpacity(0.05),
+                    color: _accentGreen.withOpacity(0.12),
                   ),
                   child: farm.farmImage != null && farm.farmImage!.isNotEmpty
                       ? Image.network(
@@ -423,11 +409,11 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: MarketOwnerColors.background,
+                        color: _accentGreen.withOpacity(0.08),
                         child: Center(
                           child: Icon(
                             Icons.image_not_supported,
-                            color: MarketOwnerColors.primary.withOpacity(0.3),
+                            color: _accentGreen,
                             size: 40,
                           ),
                         ),
@@ -437,7 +423,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                       : Center(
                     child: Icon(
                       Icons.landscape,
-                      color: MarketOwnerColors.primary.withOpacity(0.3),
+                      color: _accentGreen.withOpacity(0.6),
                       size: 40,
                     ),
                   ),
@@ -451,13 +437,13 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: MarketOwnerColors.primary,
+                        color: _accentGreen,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.star, color: Colors.white, size: 16),
+                          const Icon(Icons.star, color: Colors.white, size: 16),
                           const SizedBox(width: 4),
                           Text(
                             farm.rate!,
@@ -480,7 +466,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: MarketOwnerColors.secondary.withOpacity(0.85),
+                        color: _deepBrown.withOpacity(0.82),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -511,10 +497,10 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                   children: [
                     Text(
                       farm.farmName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: MarketOwnerColors.text,
+                        color: _deepBrown,
                         letterSpacing: 0.1,
                       ),
                       maxLines: 1,
@@ -525,10 +511,10 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                     // Location
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.location_on,
                           size: 14,
-                          color: MarketOwnerColors.primary,
+                          color: _accentGreen,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -536,7 +522,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                             farm.farmLocation,
                             style: TextStyle(
                               fontSize: 12,
-                              color: MarketOwnerColors.textLight,
+                              color: Colors.brown[400],
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -553,50 +539,13 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
                         farm.farmDescription ?? 'No description available',
                         style: TextStyle(
                           fontSize: 12,
-                          color: MarketOwnerColors.text.withOpacity(0.7),
+                          color: Colors.grey[800],
                           height: 1.3,
                         ),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-
-                    // View Products Button for larger cards
-                    if (MediaQuery.of(context).size.width >= 360 && farm.sales != null && farm.sales!.isNotEmpty)
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: TextButton(
-                            onPressed: () {
-                              Provider.of<FarmMarketViewModel>(context, listen: false)
-                                  .selectFarmMarket(farm.id!);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChangeNotifierProvider.value(
-                                    value: context.read<SaleViewModel>(),
-                                    child: FarmMobileDetailScreen(farm: farm),
-                                  ),
-                                ),
-                              );
-                            },
-                            style: TextButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              foregroundColor: MarketOwnerColors.primary,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Text('View Products', style: TextStyle(fontSize: 12)),
-                                SizedBox(width: 4),
-                                Icon(Icons.arrow_forward, size: 12),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),

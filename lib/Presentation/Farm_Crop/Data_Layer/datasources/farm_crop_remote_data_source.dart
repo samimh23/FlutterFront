@@ -1,11 +1,12 @@
-//Data_Layer/datasources/farm_crop_remote_data_source.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 import 'package:hanouty/Core/errors/exceptions.dart';
 import 'dart:math' as Math;
 import '../../../../Core/Utils/Api_EndPoints.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
+import 'package:http_parser/http_parser.dart';
 
 class FarmCropRemoteDataSource {
   final String baseUrl = '${ApiEndpoints.baseUrl}/farm-crops';
@@ -18,7 +19,7 @@ class FarmCropRemoteDataSource {
   }) : client = client ?? http.Client();
 
   // Helper method to get authentication headers
-  Future<Map<String, String>> _getHeaders() async {
+  Future<Map<String, String>> _getHeaders({bool isMultipart = false}) async {
     try {
       final token = await authService.getAccessToken();
       print("🔑 FarmCropRemoteDataSource: Access token retrieved");
@@ -29,7 +30,7 @@ class FarmCropRemoteDataSource {
       }
 
       final headers = {
-        "Content-Type": "application/json",
+        if (!isMultipart) "Content-Type": "application/json",
         if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
       };
 
@@ -38,7 +39,7 @@ class FarmCropRemoteDataSource {
     } catch (e, stackTrace) {
       print("⚠️ ERROR in _getHeaders: ${e.toString()}");
       print(stackTrace);
-      return {"Content-Type": "application/json"};
+      return isMultipart ? {} : {"Content-Type": "application/json"};
     }
   }
 
@@ -220,8 +221,6 @@ class FarmCropRemoteDataSource {
         headers: headers,
       );
 
-
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final resultJson = json.decode(response.body);
         return resultJson;
@@ -245,7 +244,6 @@ class FarmCropRemoteDataSource {
         body: requestBody,
       );
 
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final resultJson = json.decode(response.body);
         return resultJson;
@@ -266,8 +264,6 @@ class FarmCropRemoteDataSource {
         headers: headers,
       );
 
-
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final resultJson = json.decode(response.body);
         return resultJson;
@@ -277,6 +273,88 @@ class FarmCropRemoteDataSource {
     } catch (e) {
       throw ServerException(message: 'Failed to process confirmed crops: $e');
     }
+  }
+
+  // New method for uploading crop images
+  Future<Map<String, dynamic>> uploadCropImage(String cropId, File imageFile) async {
+    try {
+      print("📸 FarmCropRemoteDataSource: Uploading image for crop ID: $cropId");
+
+      final headers = await _getHeaders(isMultipart: true);
+
+      // Create multipart request
+      final uri = Uri.parse('$baseUrl/$cropId/upload-picture');
+      var request = http.MultipartRequest('POST', uri);
+
+      // Add headers
+      headers.forEach((key, value) {
+        request.headers[key] = value;
+      });
+
+      // Add the file
+      final fileName = imageFile.path.split('/').last;
+      final fileExtension = fileName.split('.').last.toLowerCase();
+      final mimeType = _getMimeType(fileExtension);
+
+      print("📤 FarmCropRemoteDataSource: Adding file $fileName with mime type $mimeType");
+
+      final fileStream = http.ByteStream(imageFile.openRead());
+      final fileLength = await imageFile.length();
+
+      final multipartFile = http.MultipartFile(
+        'image',
+        fileStream,
+        fileLength,
+        filename: fileName,
+        contentType: MediaType(mimeType.split('/')[0], mimeType.split('/')[1]),
+      );
+
+      request.files.add(multipartFile);
+
+      print("📡 FarmCropRemoteDataSource: Sending multipart request to $uri");
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print("📢 FarmCropRemoteDataSource: Response status: ${response.statusCode}");
+      print("📢 FarmCropRemoteDataSource: Response body: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resultJson = json.decode(response.body);
+        print("✅ FarmCropRemoteDataSource: Image uploaded successfully");
+        return resultJson;
+      } else {
+        print("❌ FarmCropRemoteDataSource: Failed to upload image. Status: ${response.statusCode}");
+        throw ServerException(message: 'Failed to upload image. Status: ${response.statusCode}, Response: ${response.body}');
+      }
+    } catch (e) {
+      print("🔥 FarmCropRemoteDataSource: Error uploading image: $e");
+      throw ServerException(message: 'Failed to upload image: $e');
+    }
+  }
+
+  // Helper method to determine MIME type based on file extension
+  String _getMimeType(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'heic':
+        return 'image/heic';
+      default:
+        return 'image/jpeg'; // Default to JPEG if unknown
+    }
+  }
+
+  // Get the full image URL for a crop
+  String getCropImageUrl(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) return '';
+    return '${ApiEndpoints.baseUrl}/farm-crops/image/$imagePath';
   }
 
   void dispose() {

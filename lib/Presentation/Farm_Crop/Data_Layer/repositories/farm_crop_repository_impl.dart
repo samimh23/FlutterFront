@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
 import '../../Domain_Layer/entities/farm_crop.dart';
@@ -102,4 +103,20 @@ class FarmCropRepositoryImpl implements FarmCropRepository {
     }
   }
 
+  // New method implementation for uploading crop images
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> uploadCropImage(String cropId, File imageFile) async {
+    try {
+      final result = await remoteDataSource.uploadCropImage(cropId, imageFile);
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  // Helper to get full image URL
+  @override
+  String getCropImageUrl(String? imagePath) {
+    return remoteDataSource.getCropImageUrl(imagePath);
+  }
 }

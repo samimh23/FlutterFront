@@ -12,4 +12,6 @@ abstract class FarmMarketRepository {
   Future<Either<Failure, List<Sale>>> getSalesByFarmMarketId(String farmMarketId);
   Future<Either<Failure, List<Farm>>> getFarmsByOwner(String owner);
   Future<Either<Failure, List<dynamic>>> getFarmProducts(String farmId);
+  Future<Either<Failure, String>> uploadFarmImage(String farmId, String imagePath);
+  Future<Either<Failure, List<String>>> getFarmImages(String farmId);
 }

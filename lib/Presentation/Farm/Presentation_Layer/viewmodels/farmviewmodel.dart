@@ -8,9 +8,11 @@ import '../../Domain_Layer/usescases/addfarm.dart';
 import '../../Domain_Layer/usescases/delete_farm_market.dart';
 import '../../Domain_Layer/usescases/get_all_farm_markets.dart';
 import '../../Domain_Layer/usescases/get_farm_by_owner.dart';
+import '../../Domain_Layer/usescases/get_farm_images.dart';
 import '../../Domain_Layer/usescases/get_farm_market_by_id.dart';
 import '../../Domain_Layer/usescases/get_farm_products.dart';
 import '../../Domain_Layer/usescases/update_farm_market.dart';
+import '../../Domain_Layer/usescases/upload_farm_image.dart';
 
 class FarmMarketViewModel extends ChangeNotifier {
   final GetAllFarmMarkets getAllFarmMarkets;
@@ -21,6 +23,8 @@ class FarmMarketViewModel extends ChangeNotifier {
   final GetSalesByFarmMarketId getSalesByFarmMarketId;
   final GetFarmsByOwner getFarmsByOwner;
   final GetFarmProducts getFarmProducts;
+  final UploadFarmImage uploadFarmImage;
+  final GetFarmImages getFarmImages;
 
   FarmMarketViewModel({
     required this.getAllFarmMarkets,
@@ -31,6 +35,8 @@ class FarmMarketViewModel extends ChangeNotifier {
     required this.getSalesByFarmMarketId,
     required this.getFarmsByOwner,
     required this.getFarmProducts,
+    required this.uploadFarmImage,
+    required this.getFarmImages,
 
 
   }) {
@@ -53,6 +59,9 @@ class FarmMarketViewModel extends ChangeNotifier {
   // Sales related to the selected farm market
   List<Sale> _farmSales = [];
   List<Sale> get farmSales => _farmSales;
+
+  List<String> _farmImages = [];
+  List<String> get farmImages => _farmImages;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -205,15 +214,51 @@ class FarmMarketViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
+  Future<void> fetchFarmImages(String farmId) async {
+    _setLoading(true);
+    final result = await getFarmImages(farmId);
+    result.fold(
+          (failure) => _setError(failure.toString()),
+          (images) {
+        _farmImages = images;
+        notifyListeners();
+      },
+    );
+    _setLoading(false);
+  }
+
+  Future<String?> uploadImage(String farmId, String imagePath) async {
+    _setLoading(true);
+    String? imageUrl;
+
+    final result = await uploadFarmImage(farmId, imagePath);
+    result.fold(
+          (failure) => _setError(failure.toString()),
+          (url) {
+        imageUrl = url;
+        // Add the new image to the list if it's not already there
+        if (!_farmImages.contains(url) && url.isNotEmpty) {
+          _farmImages.add(url);
+          notifyListeners();
+        }
+      },
+    );
+
+    _setLoading(false);
+    return imageUrl;
+  }
+
   void selectFarmMarket(String id) {
     fetchFarmMarketById(id);
     fetchFarmProducts(id);
+    fetchFarmImages(id);
   }
 
   void clearSelectedFarmMarket() {
     _selectedFarmMarket = null;
     _farmSales = [];
     _farmProducts = [];
+    _farmImages = [];
     notifyListeners();
   }
 }

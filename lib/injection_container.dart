@@ -62,36 +62,6 @@ import 'Presentation/order/domain/usecases/send_package.dart';
 final sl = GetIt.instance;
 Future<void> init() async {
   //auction
-  sl.registerLazySingleton<AuctionRemoteDataSource>(
-        () => AuctionRemoteDataSourceImpl(client: sl()),
-  );
-  sl.registerLazySingleton<AuctionRepository>(
-        () => AuctionRepositoryImpl(
-      remoteDataSource: sl(),
-    ),
-  );
-  sl.registerLazySingleton(() => CreateAuction(sl()));
-  sl.registerLazySingleton(() => GetActiveAuctions(sl()));
-  sl.registerLazySingleton(() => GetAuctionById(sl()));
-  sl.registerLazySingleton(() => PlaceBid(sl()));
-  sl.registerLazySingleton(() => UpdateAuctionStatus(sl()));
-  sl.registerLazySingleton(() => GetAuctionsByBidderId(sl()));
-  sl.registerLazySingleton(() => GetAuctionsByFarmerId(sl()));
-  sl.registerLazySingleton(() => GetBiddersByAuctionId(sl()));
-
-  sl.registerFactory<AuctionProvider>(
-        () => AuctionProvider(
-      createAuctionUseCase: sl(),
-      getActiveAuctionsUseCase: sl(),
-      getAuctionByIdUseCase: sl(),
-      placeBidUseCase: sl(),
-      updateAuctionStatusUseCase: sl(),
-      getAuctionsByBidderIdUseCase: sl(),
-      getBiddersByAuctionIdUseCase: sl(),
-      getAuctionsByFarmerIdUseCase: sl(),
-    ),
-  );
-
 
 
 //order

@@ -5,6 +5,8 @@ import 'package:hanouty/Presentation/product/presentation/widgets/market_details
 import 'package:hanouty/app_colors.dart';
 import 'package:hanouty/responsive/responsive_layout.dart';
 
+import '../../../../Core/theme/AppColors.dart';
+
 class MarketDetailsScreen extends StatelessWidget {
   final String heroTag;
   final String marketName;
@@ -29,48 +31,51 @@ class MarketDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final isTablet = ResponsiveLayout.isTablet(context);
-    
+
     return Scaffold(
+      backgroundColor: ClientColors.background, // Updated background color
       appBar: AppBar(
         title: Text(
           marketName,
           style: TextStyle(
-            color: AppColors.black,
+            color: ClientColors.text, // Updated text color
             fontWeight: FontWeight.bold,
             fontSize: isDesktop ? 22 : (isTablet ? 20 : 18),
           ),
         ),
+        backgroundColor: Colors.white, // Clean white app bar
+        elevation: 0.5, // Subtle elevation
+        shadowColor: ClientColors.primary.withOpacity(0.1), // Subtle shadow with primary color
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.black),
+          icon: Icon(Icons.arrow_back, color: ClientColors.primary), // Updated icon color
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          
           IconButton(
-            icon: const Icon(Icons.favorite_border, color: AppColors.black),
+            icon: Icon(Icons.favorite_border, color: ClientColors.primary), // Updated icon color
             onPressed: () {},
           ),
         ],
       ),
-      body: isDesktop 
+      body: isDesktop
           ? MarketDetailsDesktopLayout(
-              marketEmail: marketEmail,
-              marketPhone: marketPhone, // Add appropriate phone
-              marketLocation: marketLocation, // Add appropriate location
-              heroTag: heroTag,
-              marketName: marketName,
-              imageUrl: imageUrl,
-              products: products,
-            )
+        marketEmail: marketEmail,
+        marketPhone: marketPhone,
+        marketLocation: marketLocation,
+        heroTag: heroTag,
+        marketName: marketName,
+        imageUrl: imageUrl,
+        products: products,
+      )
           : MarketDetailsMobileTabletLayout(
-              marketEmail: marketEmail, // Add appropriate email
-              marketPhone: marketPhone, // Add appropriate phone
-              marketLocation: marketLocation, // Add appropriate location
-              heroTag: heroTag,
-              marketName: marketName,
-              imageUrl: imageUrl,
-              products: products,
-            ),
+        marketEmail: marketEmail,
+        marketPhone: marketPhone,
+        marketLocation: marketLocation,
+        heroTag: heroTag,
+        marketName: marketName,
+        imageUrl: imageUrl,
+        products: products,
+      ),
     );
   }
 }

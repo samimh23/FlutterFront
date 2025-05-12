@@ -26,6 +26,13 @@ class SecureStorageService {
     await _storage.write(key: accessTokenKey, value: token);
   }
 
+  Future<void> saveUserRole(String role) async {
+    await _storage.write(key: 'user_role', value: role);
+  }
+
+  Future<String?> getUserRole() async {
+    return await _storage.read(key: 'user_role');
+  }
   Future<void> saveRefreshToken(String token) async {
     await _storage.write(key: refreshTokenKey, value: token);
   }

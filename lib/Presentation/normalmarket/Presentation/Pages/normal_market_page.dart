@@ -5,12 +5,14 @@ import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_mark
 import 'package:hanouty/Presentation/normalmarket/Presentation/Pages/normal_market_form_page.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import '../../../../Core/theme/AppColors.dart';
+// Import our market owner colors
+
 
 class NormalMarketsPage extends StatefulWidget {
-
   const NormalMarketsPage({Key? key}) : super(key: key);
 
   @override
@@ -25,11 +27,11 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
-  bool _isFiltering = false;
   String? _filterCategory;
 
-  // Animation for screen transitions
   final Tween<double> _fadeInTween = Tween<double>(begin: 0.0, end: 1.0);
+
+  // Rest of your variables and methods remain the same...
 
   static void reloadMarkets(BuildContext context) {
     final state = context.findAncestorStateOfType<_NormalMarketsPageState>();
@@ -65,7 +67,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
   void didChangeDependencies() {
     super.didChangeDependencies();
     _provider = Provider.of<NormalMarketProvider>(context, listen: false);
-    // don't double reload every dependency change, just rely on initState for initial load
   }
 
   @override
@@ -75,6 +76,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     _searchController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -82,15 +84,24 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     final isMediumScreen = screenSize.width >= 360 && screenSize.width < 600;
     final isLargeScreen = screenSize.width >= 900;
     final isWebPlatform = kIsWeb;
+    final theme = Theme.of(context);
 
-    final brightness = Theme.of(context).brightness;
-    final isDarkMode = brightness == Brightness.dark;
+    // Use Market Owner Colors
+    final primaryColor = MarketOwnerColors.primary;
+    final secondaryColor = MarketOwnerColors.secondary;
+    final accentColor = MarketOwnerColors.accent;
+    final backgroundColor = MarketOwnerColors.background;
+    final surfaceColor = MarketOwnerColors.surface;
+    final textColor = MarketOwnerColors.text;
+    final textLightColor = MarketOwnerColors.textLight;
+    final iconColor = MarketOwnerColors.icon;
 
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3);
+    // For backwards compatibility
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = colorScheme.brightness == Brightness.dark;
+    final merchantAccent = secondaryColor; // Use our secondary color
 
-    if (isSmallScreen && _isGridView) {
-      _isGridView = false;
-    }
+    if (isSmallScreen && _isGridView) _isGridView = false;
 
     final crossAxisCount = screenSize.width > 1200
         ? 4
@@ -101,107 +112,117 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
         : 1;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: backgroundColor, // Use market owner background
       body: FadeTransition(
         opacity: _fadeInTween.animate(_animationController),
         child: Consumer<NormalMarketProvider>(
           builder: (context, provider, child) {
             if (provider.isLoadingMyMarkets) {
-              return _buildLoadingView(isSmallScreen, isDarkMode);
+              return _buildLoadingView(
+                  isSmallScreen, primaryColor, colorScheme, theme);
             } else if (provider.errorMessage.isNotEmpty) {
-              return _buildErrorView(provider, isSmallScreen, isMediumScreen, isDarkMode);
+              return _buildErrorView(
+                  provider, isSmallScreen, isMediumScreen, isDarkMode);
             } else if (provider.markets.isEmpty) {
               return _buildEmptyView(isSmallScreen, isMediumScreen, isDarkMode);
             }
             final markets = _filterMarkets(provider.myMarkets);
             return _buildMarketplaceView(
-                provider,
-                markets,
-                screenSize,
-                crossAxisCount,
-                isSmallScreen,
-                isMediumScreen,
-                isLargeScreen,
-                isWebPlatform,
-                isDarkMode
+              provider,
+              markets,
+              screenSize,
+              crossAxisCount,
+              isSmallScreen,
+              isMediumScreen,
+              isLargeScreen,
+              isWebPlatform,
+              isDarkMode,
             );
           },
         ),
       ),
-      floatingActionButton: Builder(
-          builder: (context) {
-            return FloatingActionButton.extended(
-              onPressed: () async {
-                HapticFeedback.mediumImpact();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Creating new market...'),
-                    backgroundColor: const Color(0xFF4CAF50),
-                    duration: const Duration(milliseconds: 600),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-                await Future.delayed(const Duration(milliseconds: 300));
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const NormalMarketFormPage()),
-                );
-                // After returning from form, force reload
-                _reloadMarkets();
-              },
-              backgroundColor: const Color(0xFF4CAF50),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text('New Market'),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          HapticFeedback.mediumImpact();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Creating new market...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: MarketOwnerColors.onPrimary, // Update text color
+                ),
               ),
-            );
-          }
+              backgroundColor: primaryColor, // Use primary color for snackbar
+              duration: const Duration(milliseconds: 600),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+          await Future.delayed(const Duration(milliseconds: 300));
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (context) => const NormalMarketFormPage()),
+          );
+          _reloadMarkets();
+        },
+        backgroundColor: primaryColor, // Use market owner primary
+        foregroundColor: MarketOwnerColors.onPrimary, // Use on primary for text
+        icon: const Icon(Icons.add),
+        label: Text(
+          'New Market',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: MarketOwnerColors.onPrimary, // Update text color
+          ),
+        ),
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
     );
   }
 
+  // --- PART 2: Market Filtering Logic ---
   List<Markets> _filterMarkets(List<Markets> markets) {
     if (_searchQuery.isEmpty && _filterCategory == null) {
       return markets;
     }
-
     return markets.where((market) {
       bool matchesSearch = true;
       bool matchesFilter = true;
-
       if (_searchQuery.isNotEmpty) {
         final name = (market as dynamic).marketName.toString().toLowerCase();
-        final location = (market as dynamic).marketLocation.toString().toLowerCase();
+        final location = (market as dynamic).marketLocation.toString()
+            .toLowerCase();
         matchesSearch = name.contains(_searchQuery.toLowerCase()) ||
             location.contains(_searchQuery.toLowerCase());
       }
-
       if (_filterCategory != null) {
         if (_filterCategory == 'tokenized') {
           matchesFilter = (market as dynamic).fractionalNFTAddress != null &&
-              (market as dynamic).fractionalNFTAddress != "PENDING_FUNDING_NEEDED";
+              (market as dynamic).fractionalNFTAddress !=
+                  "PENDING_FUNDING_NEEDED";
         } else if (_filterCategory == 'non-tokenized') {
           matchesFilter = (market as dynamic).fractionalNFTAddress == null ||
-              (market as dynamic).fractionalNFTAddress == "PENDING_FUNDING_NEEDED";
+              (market as dynamic).fractionalNFTAddress ==
+                  "PENDING_FUNDING_NEEDED";
         }
       }
-
       return matchesSearch && matchesFilter;
     }).toList();
   }
 
-  Widget _buildLoadingView(bool isSmallScreen, bool isDarkMode) {
+  // --- PART 3: Loading, Error, and Empty States using Theme Colors ---
+  Widget _buildLoadingView(bool isSmallScreen, Color primaryColor,
+      ColorScheme colorScheme, ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFFAFAFA),
+        color: MarketOwnerColors.background, // Use market owner background
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
-          opacity: isDarkMode ? 0.03 : 0.05,
+          opacity: colorScheme.brightness == Brightness.dark ? 0.03 : 0.05,
           repeat: ImageRepeat.repeat,
         ),
       ),
@@ -209,7 +230,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Animated loading indicator
             TweenAnimationBuilder(
               tween: Tween<double>(begin: 0.0, end: 1.0),
               duration: const Duration(milliseconds: 1000),
@@ -228,7 +248,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
               },
             ),
             SizedBox(height: isSmallScreen ? 16 : 24),
-            // Loading text with shimmer effect
             TweenAnimationBuilder(
               tween: Tween<double>(begin: 0.6, end: 1.0),
               duration: const Duration(milliseconds: 800),
@@ -237,25 +256,23 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                   opacity: value as double,
                   child: Text(
                     'Loading markets...',
-                    style: TextStyle(
-                      fontSize: isSmallScreen ? 16 : 20,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: MarketOwnerColors.primary, // Use primary color for text
                       fontWeight: FontWeight.w500,
-                      color: isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
                     ),
                   ),
                 );
               },
             ),
             const SizedBox(height: 16),
-            // Progress indicator
             SizedBox(
               width: isSmallScreen ? 100 : 140,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: const LinearProgressIndicator(
+                child: LinearProgressIndicator(
                   minHeight: 6,
-                  backgroundColor: Color(0xFFE0E0E0),
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                  backgroundColor: MarketOwnerColors.background.withOpacity(0.5), // Lighter background
+                  valueColor: AlwaysStoppedAnimation<Color>(MarketOwnerColors.primary), // Primary color for progress
                 ),
               ),
             ),
@@ -265,24 +282,22 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     );
   }
 
-  Widget _buildErrorView(NormalMarketProvider provider, bool isSmallScreen, bool isMediumScreen, bool isDarkMode) {
+  Widget _buildErrorView(NormalMarketProvider provider, bool isSmallScreen,
+      bool isMediumScreen, bool isDarkMode) {
+    final theme = Theme.of(context);
     final contentWidth = isSmallScreen
         ? double.infinity
         : isMediumScreen
         ? 400.0
         : 500.0;
-
     final padding = isSmallScreen ? 16.0 : 30.0;
-
-    // Color theme adjustments based on dark mode
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final errorColor = isDarkMode ? Colors.redAccent.shade200 : Colors.red[700];
-    final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[700];
+    final cardColor = MarketOwnerColors.surface; // Use surface color
+    final errorColor = Color(0xFFD32F2F); // Keep error red for clarity
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+        color: MarketOwnerColors.background, // Use market owner background
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
           opacity: isDarkMode ? 0.03 : 0.05,
@@ -294,8 +309,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
           padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
           child: Container(
             width: contentWidth,
-            margin: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 8 : 20),
+            margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 20),
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
               color: cardColor,
@@ -311,7 +325,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Error icon with animation
                 TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 800),
                   tween: Tween<double>(begin: 0.7, end: 1.0),
@@ -321,7 +334,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: errorColor?.withOpacity(0.1),
+                          color: errorColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -336,44 +349,45 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                 SizedBox(height: isSmallScreen ? 16 : 24),
                 Text(
                   'Oops! Could not load markets',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 18 : 22,
-                    fontWeight: FontWeight.bold,
+                  style: theme.textTheme.titleLarge?.copyWith(
                     color: errorColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 18 : 22,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: isSmallScreen ? 12 : 16),
                 Text(
                   provider.errorMessage,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 14 : 16,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: subtitleColor,
-                    height: 1.5,
+                    fontSize: isSmallScreen ? 14 : 16,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: isSmallScreen ? 20 : 30),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    provider.loadMyMarkets();
-                  },
+                  onPressed: () => provider.loadMyMarkets(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: MarketOwnerColors.primary, // Use primary color
+                    foregroundColor: MarketOwnerColors.onPrimary, // Use on primary for text
                     padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 16 : 20,
                       vertical: isSmallScreen ? 10 : 12,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
+                      borderRadius: BorderRadius.circular(
+                          isSmallScreen ? 10 : 12),
                     ),
                     elevation: 0,
                   ),
                   icon: Icon(Icons.refresh, size: isSmallScreen ? 18 : 24),
                   label: Text(
                     'Try Again',
-                    style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: MarketOwnerColors.onPrimary, // Use on primary for text
+                      fontSize: isSmallScreen ? 14 : 16,
+                    ),
                   ),
                 ),
               ],
@@ -385,23 +399,20 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
   }
 
   Widget _buildEmptyView(bool isSmallScreen, bool isMediumScreen, bool isDarkMode) {
+    final theme = Theme.of(context);
     final contentWidth = isSmallScreen
         ? double.infinity
         : isMediumScreen
         ? 450.0
         : 550.0;
-
     final padding = isSmallScreen ? 20.0 : 30.0;
-
-    // Color theme adjustments based on dark mode
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF555555);
+    final cardColor = MarketOwnerColors.surface; // Use surface color
+    final accentColor = MarketOwnerColors.primary; // Use primary color
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+        color: MarketOwnerColors.background, // Use market owner background
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
           opacity: isDarkMode ? 0.03 : 0.05,
@@ -430,7 +441,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Plant growth image with bounce animation
                 TweenAnimationBuilder(
                   duration: const Duration(seconds: 1),
                   tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -451,31 +461,27 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                 SizedBox(height: isSmallScreen ? 20 : 30),
                 Text(
                   'Start Your Market',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 22 : 28,
-                    fontWeight: FontWeight.bold,
+                  style: theme.textTheme.titleLarge?.copyWith(
                     color: accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 22 : 28,
                   ),
                 ),
                 SizedBox(height: isSmallScreen ? 12 : 16),
                 Text(
                   'Create your first market to start selling tokenized fresh produce',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 15 : 18,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: subtitleColor,
-                    height: 1.5,
+                    fontSize: isSmallScreen ? 15 : 18,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: isSmallScreen ? 30 : 40),
                 ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    _navigateToAddMarket();
-                  },
+                  onPressed: () => _navigateToAddMarket(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
+                    backgroundColor: MarketOwnerColors.primary, // Use primary color
+                    foregroundColor: MarketOwnerColors.onPrimary, // Use on primary for text
                     padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 20 : 30,
                       vertical: isSmallScreen ? 12 : 16,
@@ -490,7 +496,10 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                       SizedBox(width: isSmallScreen ? 8 : 10),
                       Text(
                         'Create Market',
-                        style: TextStyle(fontSize: isSmallScreen ? 15 : 18),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: MarketOwnerColors.onPrimary, // Use on primary for text
+                          fontSize: isSmallScreen ? 15 : 18,
+                        ),
                       ),
                     ],
                   ),
@@ -498,23 +507,35 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                 const SizedBox(height: 10),
                 TextButton(
                   onPressed: () {
-                    HapticFeedback.lightImpact();
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Need Help?'),
-                        content: const Text('Learn how to create and manage markets with our tutorial guide.'),
+                        backgroundColor: MarketOwnerColors.surface, // Use surface color
+                        title: Text('Need Help?',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: MarketOwnerColors.text, // Use text color
+                            )),
+                        content: Text(
+                            'Learn how to create and manage markets with our tutorial guide.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: MarketOwnerColors.textLight, // Use lighter text color
+                            )),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
+                            child: Text(
+                                'Close',
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: MarketOwnerColors.textLight, // Use lighter text color
+                                )),
                           ),
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context);
-                              // Navigate to help page or show tutorial
                             },
-                            child: const Text('View Tutorial'),
+                            child: Text('View Tutorial',
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                    color: MarketOwnerColors.primary)), // Use primary color
                           ),
                         ],
                       ),
@@ -522,8 +543,8 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                   },
                   child: Text(
                     'Learn More',
-                    style: TextStyle(
-                      color: accentColor,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: MarketOwnerColors.primary, // Use primary color
                       decoration: TextDecoration.underline,
                     ),
                   ),
@@ -536,6 +557,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     );
   }
 
+  // --- PART 4: Marketplace Main View (search, filter, stats, toggle) ---
   Widget _buildMarketplaceView(
       NormalMarketProvider provider,
       List<Markets> filteredMarkets,
@@ -547,6 +569,10 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
       bool isWebPlatform,
       bool isDarkMode,
       ) {
+    final theme = Theme.of(context);
+    final accentColor = MarketOwnerColors.primary; // Use primary color
+    final cardColor = MarketOwnerColors.surface; // Use surface color
+
     final marketsCount = provider.myMarkets.length;
     final filteredCount = filteredMarkets.length;
     final hasNftCount = provider.myMarkets
@@ -554,8 +580,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     (m as dynamic).fractionalNFTAddress != null &&
         (m as dynamic).fractionalNFTAddress != "PENDING_FUNDING_NEEDED")
         .length;
-
-    // Calculate average ownership
     double averageOwnership = 0;
     if (marketsCount > 0) {
       averageOwnership = provider.myMarkets.fold(
@@ -563,27 +587,17 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
           marketsCount;
     }
 
-    // Determine horizontal padding based on screen size
-    final horizontalPadding = isSmallScreen
-        ? 12.0
-        : isMediumScreen
-        ? 16.0
-        : 24.0;
+    final horizontalPadding = isSmallScreen ? 12.0 : isMediumScreen ? 16.0 : 24.0;
 
-    // Color theme adjustments based on dark mode
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF666666);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final dividerColor = isDarkMode ? Colors.grey.withOpacity(0.3) : Colors.grey.withOpacity(0.2);
+    final dividerColor = MarketOwnerColors.secondary.withOpacity(0.3); // Use secondary with opacity
     final backgroundOverlayOpacity = isDarkMode ? 0.03 : 0.05;
-    final searchBgColor = isDarkMode ? const Color(0xFF252525) : Colors.white;
-    final searchBorderColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300;
-    final hintTextColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFFAAAAAA);
+    final searchBgColor = MarketOwnerColors.surface; // Use surface color
+    final searchBorderColor = MarketOwnerColors.secondary.withOpacity(0.3); // Use secondary with opacity
+    final hintTextColor = MarketOwnerColors.textLight; // Use lighter text color
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+        color: MarketOwnerColors.background, // Use background color
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
           opacity: backgroundOverlayOpacity,
@@ -591,13 +605,14 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
         ),
       ),
       child: RefreshIndicator(
-        color: accentColor,
+        color: MarketOwnerColors.primary, // Use primary color
         backgroundColor: cardColor,
         strokeWidth: 3,
         onRefresh: () async {
           HapticFeedback.lightImpact();
           await provider.loadMyMarkets();
         },
+        // Rest of code remains unchanged...
         child: Scrollbar(
           controller: _scrollController,
           thickness: isWebPlatform ? 10.0 : 6.0,
@@ -606,14 +621,14 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // Marketplace Header
+              // Header
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _SliverAppBarDelegate(
                   minHeight: isSmallScreen ? 60 : 70,
                   maxHeight: isSmallScreen ? 60 : 70,
                   child: Container(
-                    color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+                    color: MarketOwnerColors.background, // Fixe
                     padding: EdgeInsets.symmetric(
                       horizontal: horizontalPadding,
                       vertical: isSmallScreen ? 8 : 12,
@@ -621,32 +636,27 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                     child: Row(
                       children: [
                         Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Fresh Market',
-                                style: TextStyle(
-                                  fontSize: isSmallScreen ? 20 : 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.white : const Color(0xFF2E7D32),
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            'Fresh Market',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 20 : 24,
+                              fontWeight: FontWeight.bold,
+                              color: MarketOwnerColors.primary,
+                            ),
                           ),
                         ),
                         if (filteredCount != marketsCount)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.15),
+                              color: MarketOwnerColors.primary.withOpacity(0.15), // Fixed
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               'Filtered: $filteredCount',
                               style: TextStyle(
-                                color: accentColor,
+                                color: MarketOwnerColors.primary, // Fixed
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -660,23 +670,38 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
               // Search Bar
               SliverToBoxAdapter(
                 child: Container(
-                  margin: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 16),
-                  child: _buildSearchBar(isSmallScreen, isDarkMode, searchBgColor, searchBorderColor, hintTextColor, accentColor),
+                  margin: EdgeInsets.fromLTRB(
+                      horizontalPadding, 0, horizontalPadding, 16),
+                  child: _buildSearchBar(
+                      isSmallScreen, isDarkMode, searchBgColor,
+                      searchBorderColor, hintTextColor, accentColor),
                 ),
               ),
 
               // Stats Row
               SliverToBoxAdapter(
                 child: Container(
-                  margin: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, isSmallScreen ? 16 : 24),
-                  child: _buildStatsRow(marketsCount, hasNftCount, averageOwnership, isSmallScreen, isDarkMode, cardColor, accentColor, dividerColor),
+                  margin: EdgeInsets.fromLTRB(
+                      horizontalPadding, 0, horizontalPadding,
+                      isSmallScreen ? 16 : 24),
+                  child: _buildStatsRow(
+                      marketsCount,
+                      hasNftCount,
+                      averageOwnership,
+                      isSmallScreen,
+                      isDarkMode,
+                      cardColor,
+                      accentColor,
+                      dividerColor),
                 ),
               ),
 
               // Filter Chips
               SliverToBoxAdapter(
                 child: Container(
-                  margin: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, isSmallScreen ? 12 : 16),
+                  margin: EdgeInsets.fromLTRB(
+                      horizontalPadding, 0, horizontalPadding,
+                      isSmallScreen ? 12 : 16),
                   height: 40,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
@@ -684,33 +709,23 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                       _buildFilterChip(
                         label: 'All Markets',
                         isSelected: _filterCategory == null,
-                        onTap: () {
-                          setState(() {
-                            _filterCategory = null;
-                          });
-                        },
+                        onTap: () => setState(() => _filterCategory = null),
                         isDarkMode: isDarkMode,
                       ),
                       const SizedBox(width: 8),
                       _buildFilterChip(
                         label: 'Tokenized',
                         isSelected: _filterCategory == 'tokenized',
-                        onTap: () {
-                          setState(() {
-                            _filterCategory = 'tokenized';
-                          });
-                        },
+                        onTap: () =>
+                            setState(() => _filterCategory = 'tokenized'),
                         isDarkMode: isDarkMode,
                       ),
                       const SizedBox(width: 8),
                       _buildFilterChip(
                         label: 'Non-Tokenized',
                         isSelected: _filterCategory == 'non-tokenized',
-                        onTap: () {
-                          setState(() {
-                            _filterCategory = 'non-tokenized';
-                          });
-                        },
+                        onTap: () =>
+                            setState(() => _filterCategory = 'non-tokenized'),
                         isDarkMode: isDarkMode,
                       ),
                     ],
@@ -721,7 +736,9 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
               // View Toggle and Count
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, isSmallScreen ? 12 : 16),
+                  padding: EdgeInsets.fromLTRB(
+                      horizontalPadding, 0, horizontalPadding,
+                      isSmallScreen ? 12 : 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -734,18 +751,18 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                         style: TextStyle(
                           fontSize: isSmallScreen ? 16 : 18,
                           fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : const Color(0xFF2E7D32),
+                          color: accentColor,
                         ),
                       ),
                       Row(
                         children: [
-                          // View Toggle - hide on very small screens
+// Inside _buildMarketplaceView method, for the view toggle container:
                           if (!isSmallScreen)
                             Container(
                               decoration: BoxDecoration(
                                 color: cardColor,
                                 borderRadius: BorderRadius.circular(isMediumScreen ? 10 : 12),
-                                border: Border.all(color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
+                                border: Border.all(color: MarketOwnerColors.secondary.withOpacity(0.3)), // Fix: Use MarketOwnerColors
                               ),
                               child: Row(
                                 children: [
@@ -769,19 +786,17 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                               ),
                             ),
                           SizedBox(width: isSmallScreen ? 8 : 12),
-                          // Sort Button
                           Container(
                             decoration: BoxDecoration(
                               color: cardColor,
                               borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
-                              border: Border.all(color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
+                              border: Border.all(color: MarketOwnerColors.secondary.withOpacity(0.3)), // Fix: Use MarketOwnerColors
                             ),
                             child: IconButton(
                               icon: const Icon(Icons.sort),
                               color: accentColor,
                               iconSize: isSmallScreen ? 18 : 24,
                               onPressed: () {
-                                // Sort functionality
                                 HapticFeedback.selectionClick();
                                 _showSortOptions(context, isDarkMode);
                               },
@@ -801,16 +816,25 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
               // Market Items or Empty State
               filteredMarkets.isEmpty
                   ? SliverToBoxAdapter(
-                child: _buildNoResultsView(isSmallScreen, isDarkMode, cardColor),
+                child: _buildNoResultsView(
+                    isSmallScreen, isDarkMode, cardColor),
               )
                   : _isGridView && !isSmallScreen
-                  ? _buildMarketsGrid(filteredMarkets, crossAxisCount, isSmallScreen, isMediumScreen, isLargeScreen, horizontalPadding, isDarkMode, cardColor)
-                  : _buildMarketsList(filteredMarkets, isSmallScreen, isMediumScreen, horizontalPadding, isDarkMode, cardColor),
+                  ? _buildMarketsGrid(
+                  filteredMarkets,
+                  crossAxisCount,
+                  isSmallScreen,
+                  isMediumScreen,
+                  isLargeScreen,
+                  horizontalPadding,
+                  isDarkMode,
+                  cardColor)
+                  : _buildMarketsList(
+                  filteredMarkets, isSmallScreen, isMediumScreen,
+                  horizontalPadding, isDarkMode, cardColor),
 
-              // Bottom Padding
               SliverToBoxAdapter(
-                child: SizedBox(height: isSmallScreen ? 80 : 100),
-              ),
+                  child: SizedBox(height: isSmallScreen ? 80 : 100)),
             ],
           ),
         ),
@@ -818,14 +842,23 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     );
   }
 
-  Widget _buildSearchBar(bool isSmallScreen, bool isDarkMode, Color bgColor, Color borderColor, Color hintColor, Color accentColor) {
+  // --- PART 5: Search Bar, Stats Row, Filter Chip, View Toggle, No Results ---
+
+  Widget _buildSearchBar(
+      bool isSmallScreen,
+      bool isDarkMode,
+      Color bgColor,
+      Color borderColor,
+      Color hintColor,
+      Color accentColor,
+      ) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isSmallScreen ? 12 : 16,
         vertical: isSmallScreen ? 8 : 10,
       ),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: MarketOwnerColors.surface, // Use surface color
         borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
         boxShadow: [
           BoxShadow(
@@ -834,13 +867,13 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: borderColor, width: 1),
+        border: Border.all(color: MarketOwnerColors.secondary.withOpacity(0.3), width: 1), // Use secondary with opacity
       ),
       child: Row(
         children: [
           Icon(
             _isSearching ? Icons.search : Icons.search_outlined,
-            color: _isSearching ? accentColor : (isDarkMode ? Colors.grey.shade500 : const Color(0xFF888888)),
+            color: _isSearching ? MarketOwnerColors.primary : MarketOwnerColors.textLight, // Use primary if searching, light text otherwise
             size: isSmallScreen ? 18 : 24,
           ),
           SizedBox(width: isSmallScreen ? 8 : 12),
@@ -851,7 +884,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                 hintText: 'Search markets...',
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: hintColor,
+                  color: MarketOwnerColors.textLight, // Use lighter text color
                   fontSize: isSmallScreen ? 14 : 16,
                 ),
                 isDense: true,
@@ -859,7 +892,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
               ),
               style: TextStyle(
                 fontSize: isSmallScreen ? 14 : 16,
-                color: isDarkMode ? Colors.white : Colors.black87,
+                color: MarketOwnerColors.text, // Use text color
               ),
               onChanged: (value) {
                 setState(() {
@@ -882,7 +915,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
           if (_isSearching)
             IconButton(
               icon: Icon(Icons.close, size: isSmallScreen ? 18 : 20),
-              color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+              color: MarketOwnerColors.textLight, // Use lighter text color
               padding: EdgeInsets.zero,
               constraints: BoxConstraints(
                 minWidth: isSmallScreen ? 32 : 40,
@@ -900,7 +933,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
             Container(
               height: isSmallScreen ? 24 : 30,
               width: 1,
-              color: borderColor,
+              color: MarketOwnerColors.secondary.withOpacity(0.3), // Use secondary with opacity
               margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 12),
             ),
           if (!_isSearching)
@@ -910,7 +943,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                 vertical: isSmallScreen ? 4 : 6,
               ),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.1),
+                color: MarketOwnerColors.primary.withOpacity(0.1), // Use primary with opacity
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Row(
@@ -918,13 +951,13 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                   Icon(
                     Icons.filter_alt_outlined,
                     size: isSmallScreen ? 14 : 16,
-                    color: accentColor,
+                    color: MarketOwnerColors.primary, // Use primary color
                   ),
                   SizedBox(width: isSmallScreen ? 4 : 6),
                   Text(
                     'Filters',
                     style: TextStyle(
-                      color: accentColor,
+                      color: MarketOwnerColors.primary, // Use primary color
                       fontSize: isSmallScreen ? 12 : 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -951,20 +984,17 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     final valueFontSize = isSmallScreen ? 18.0 : 20.0;
     final iconSize = isSmallScreen ? 20.0 : 24.0;
     final padding = isSmallScreen ? 16.0 : 20.0;
+    final textColor = MarketOwnerColors.text; // Use text color
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
 
-    // Use colors based on dark mode
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
-
-    // Define color schemes for each stat
-    final marketsColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final tokenColor = isDarkMode ? const Color(0xFFFFB74D) : const Color(0xFFFF9800);
-    final ownershipColor = isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3);
+    final marketsColor = MarketOwnerColors.primary; // Use primary color
+    final tokenColor = MarketOwnerColors.secondary; // Use secondary color
+    final ownershipColor = MarketOwnerColors.accent; // Use accent color
 
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: MarketOwnerColors.surface, // Use surface color
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -973,8 +1003,11 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
             offset: const Offset(0, 2),
           ),
         ],
-        border: isDarkMode ? Border.all(color: Colors.grey.shade800, width: 1) : null,
+        border: isDarkMode
+            ? Border.all(color: MarketOwnerColors.secondary.withOpacity(0.3), width: 1) // Use secondary with opacity
+            : null,
       ),
+      // Rest of stats row implementation remains the same...
       child: Row(
         children: [
           Expanded(
@@ -1092,14 +1125,14 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     required VoidCallback onTap,
     required bool isDarkMode,
   }) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final accentColor = MarketOwnerColors.primary; // Use primary color
     final backgroundColor = isSelected
         ? accentColor
-        : (isDarkMode ? const Color(0xFF252525) : Colors.white);
+        : (MarketOwnerColors.surface); // Use surface color
     final textColor = isSelected
-        ? Colors.white
-        : (isDarkMode ? Colors.white : Colors.black87);
-    final borderColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300;
+        ? MarketOwnerColors.onPrimary // Use on primary for text
+        : (MarketOwnerColors.text); // Use text color
+    final borderColor = MarketOwnerColors.secondary.withOpacity(0.3); // Use secondary with opacity
 
     return GestureDetector(
       onTap: () {
@@ -1145,10 +1178,10 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     required bool isMediumScreen,
     required bool isDarkMode,
   }) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final selectedColor = isSelected ? accentColor : (isDarkMode ? Colors.grey.shade600 : Colors.grey);
+    final primaryColor = MarketOwnerColors.primary;
+    final selectedColor = isSelected ? primaryColor : MarketOwnerColors.textLight;
     final selectedBgColor = isSelected
-        ? accentColor.withOpacity(0.1)
+        ? primaryColor.withOpacity(0.1)
         : Colors.transparent;
 
     return Material(
@@ -1172,19 +1205,20 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     );
   }
 
-  Widget _buildNoResultsView(bool isSmallScreen, bool isDarkMode, Color cardColor) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600;
+  Widget _buildNoResultsView(bool isSmallScreen, bool isDarkMode,
+      Color cardColor) {
+    final primaryColor = MarketOwnerColors.primary;
+    final textColor = MarketOwnerColors.text;
+    final subtitleColor = MarketOwnerColors.textLight;
 
     return Container(
       margin: EdgeInsets.all(isSmallScreen ? 16 : 24),
       padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: MarketOwnerColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+          color: MarketOwnerColors.secondary.withOpacity(0.3), // Fixed
         ),
       ),
       child: Column(
@@ -1193,7 +1227,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
           Icon(
             Icons.search_off,
             size: isSmallScreen ? 48 : 64,
-            color: accentColor.withOpacity(0.7),
+            color: primaryColor.withOpacity(0.7),
           ),
           SizedBox(height: isSmallScreen ? 16 : 24),
           Text(
@@ -1225,10 +1259,15 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
               });
             },
             icon: Icon(Icons.refresh_outlined, size: isSmallScreen ? 16 : 20),
-            label: Text('Clear filters'),
+            label: Text(
+              'Clear filters',
+              style: TextStyle(
+                color: primaryColor, // Fix: Use primaryColor
+              ),
+            ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: accentColor,
-              side: BorderSide(color: accentColor),
+              foregroundColor: primaryColor,
+              side: BorderSide(color: primaryColor),
               padding: EdgeInsets.symmetric(
                 horizontal: isSmallScreen ? 16 : 20,
                 vertical: isSmallScreen ? 10 : 12,
@@ -1240,16 +1279,16 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     );
   }
 
-  Widget _buildMarketsGrid(
-      List<Markets> markets,
+  // --- PART 6: Market Grid, List, Cards, List Items, Market Image, Navigation, Sort Options ---
+
+  Widget _buildMarketsGrid(List<Markets> markets,
       int crossAxisCount,
       bool isSmallScreen,
       bool isMediumScreen,
       bool isLargeScreen,
       double horizontalPadding,
       bool isDarkMode,
-      Color cardColor,
-      ) {
+      Color cardColor,) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       sliver: SliverGrid(
@@ -1260,70 +1299,70 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
           childAspectRatio: isMediumScreen ? 0.7 : (isLargeScreen ? 0.85 : 0.8),
         ),
         delegate: SliverChildBuilderDelegate(
-              (context, index) => _buildMarketCard(
-            markets[index],
-            isSmallScreen,
-            isMediumScreen,
-            isDarkMode,
-            cardColor,
-          ),
+              (context, index) =>
+              _buildMarketCard(
+                markets[index],
+                isSmallScreen,
+                isMediumScreen,
+                isDarkMode,
+                cardColor,
+              ),
           childCount: markets.length,
         ),
       ),
     );
   }
 
-  Widget _buildMarketsList(
-      List<Markets> markets,
+  Widget _buildMarketsList(List<Markets> markets,
       bool isSmallScreen,
       bool isMediumScreen,
       double horizontalPadding,
       bool isDarkMode,
-      Color cardColor,
-      ) {
+      Color cardColor,) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
-              (context, index) => Padding(
-            padding: EdgeInsets.only(bottom: isSmallScreen ? 10 : 16),
-            child: _buildMarketListItem(
-              markets[index],
-              isSmallScreen,
-              isMediumScreen,
-              isDarkMode,
-              cardColor,
-            ),
-          ),
+              (context, index) =>
+              Padding(
+                padding: EdgeInsets.only(bottom: isSmallScreen ? 10 : 16),
+                child: _buildMarketListItem(
+                  markets[index],
+                  isSmallScreen,
+                  isMediumScreen,
+                  isDarkMode,
+                  cardColor,
+                ),
+              ),
           childCount: markets.length,
         ),
       ),
     );
   }
 
-  Widget _buildMarketCard(Markets market, bool isSmallScreen, bool isMediumScreen, bool isDarkMode, Color cardColor) {
+  Widget _buildMarketCard(
+      Markets market,
+      bool isSmallScreen,
+      bool isMediumScreen,
+      bool isDarkMode,
+      Color cardColor,
+      ) {
     final String? imagePath = (market as dynamic).marketImage;
     final bool hasNft = (market as dynamic).fractionalNFTAddress != null &&
         (market as dynamic).fractionalNFTAddress != "PENDING_FUNDING_NEEDED";
-    final double ownership = (market as dynamic).fractions.toDouble() / 100;
+    final double ownership = ((market as dynamic).fractions.toDouble() / 100);
 
-    final fontSize = isSmallScreen ? 16.0 : 18.0;
-    final smallFontSize = isSmallScreen ? 12.0 : 14.0;
-    final iconSize = isSmallScreen ? 12.0 : 14.0;
-    final padding = isSmallScreen ? 12.0 : 16.0;
-
-    // Colors based on theme
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.transparent;
+    // Use Market Owner color palette consistently
+    final primaryColor = MarketOwnerColors.primary;
+    final onPrimaryColor = MarketOwnerColors.onPrimary;
+    final secondaryColor = MarketOwnerColors.secondary;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: MarketOwnerColors.surface, // Use surface color instead of passed cardColor
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: Colors.transparent),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
@@ -1337,168 +1376,96 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            _navigateToMarketDetails(market.id);
-          },
-          splashColor: accentColor.withOpacity(0.1),
-          highlightColor: accentColor.withOpacity(0.05),
+          onTap: () => _navigateToMarketDetails(market.id),
+          splashColor: primaryColor.withOpacity(0.07), // Use primaryColor instead of accentColor
+          highlightColor: primaryColor.withOpacity(0.04), // Use primaryColor instead of accentColor
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Container with hero animation for smooth transitions
-              Hero(
-                tag: 'market_image_${market.id}',
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: SizedBox(
-                    height: isMediumScreen ? 120 : 140,
-                    width: double.infinity,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // Market Image
-                        _buildMarketImage(imagePath, isSmallScreen, isDarkMode),
-
-                        // Gradient Overlay
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.6),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Token Badge with animation
-                        if (hasNft)
-                          Positioned(
-                            top: isSmallScreen ? 8 : 12,
-                            right: isSmallScreen ? 8 : 12,
-                            child: TweenAnimationBuilder(
-                                tween: Tween<double>(begin: 0.8, end: 1.0),
-                                duration: const Duration(milliseconds: 300),
-                                builder: (context, value, child) {
-                                  return Transform.scale(
-                                    scale: value as double,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: isSmallScreen ? 8 : 10,
-                                        vertical: isSmallScreen ? 4 : 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF4CAF50),
-                                        borderRadius: BorderRadius.circular(30),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.3),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.token,
-                                            size: iconSize,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(width: isSmallScreen ? 2 : 4),
-                                          Text(
-                                            'Tokenized',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: isSmallScreen ? 10 : 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }
-                            ),
-                          ),
-
-                        // Location Badge
-                        Positioned(
-                          bottom: isSmallScreen ? 8 : 12,
-                          left: isSmallScreen ? 8 : 12,
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: iconSize,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                (market as dynamic).marketLocation,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 10 : 12,
-                                  fontWeight: FontWeight.w500,
-                                  shadows: [
-                                    const Shadow(
-                                      color: Colors.black54,
-                                      offset: Offset(0, 1),
-                                      blurRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+              Stack(
+                children: [
+                  Hero(
+                    tag: 'market_image_${market.id}',
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16)),
+                      child: SizedBox(
+                        height: isMediumScreen ? 120 : 140,
+                        width: double.infinity,
+                        child: _buildMarketImage(
+                            imagePath, isSmallScreen, isDarkMode),
+                      ),
                     ),
                   ),
-                ),
+                  if (hasNft)
+                    Positioned(
+                      top: isSmallScreen ? 8 : 12,
+                      right: isSmallScreen ? 8 : 12,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 8 : 10,
+                          vertical: isSmallScreen ? 4 : 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.token, size: isSmallScreen ? 12 : 14,
+                                color: onPrimaryColor),
+                            SizedBox(width: isSmallScreen ? 2 : 4),
+                            Text(
+                              'Tokenized',
+                              style: TextStyle(
+                                color: onPrimaryColor,
+                                fontSize: isSmallScreen ? 10 : 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
-
-              // Market Info
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.all(padding),
+                  padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Market Name
                       Text(
                         (market as dynamic).marketName,
                         style: TextStyle(
-                          fontSize: fontSize,
+                          fontSize: isSmallScreen ? 16 : 18,
                           fontWeight: FontWeight.bold,
-                          color: textColor,
+                          color: MarketOwnerColors.text, // Use text color from MarketOwnerColors
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: isSmallScreen ? 6 : 8),
-
-                      // Ownership Info with animated progress bar
                       Row(
                         children: [
                           Container(
                             padding: EdgeInsets.all(isSmallScreen ? 4 : 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2196F3).withOpacity(isDarkMode ? 0.2 : 0.1),
+                              color: primaryColor.withOpacity(0.14), // Use primaryColor instead of accentColor
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.pie_chart,
-                              size: iconSize,
-                              color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                              size: isSmallScreen ? 12 : 14,
+                              color: primaryColor, // Use primaryColor instead of accentColor
                             ),
                           ),
                           SizedBox(width: isSmallScreen ? 6 : 8),
@@ -1507,53 +1474,49 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$ownership% Ownership',
+                                  '${ownership.toStringAsFixed(1)}% Ownership',
                                   style: TextStyle(
-                                    fontSize: smallFontSize,
-                                    color: subtitleColor,
-                                    fontWeight: FontWeight.w500,
+                                    color: MarketOwnerColors.textLight, // Use textLight color
+                                    fontSize: 12,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                // Progress bar for ownership visualization
                                 TweenAnimationBuilder<double>(
                                   duration: const Duration(milliseconds: 800),
                                   curve: Curves.easeOutCubic,
-                                  tween: Tween<double>(begin: 0.0, end: ownership / 100),
-                                  builder: (context, value, _) => ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: LinearProgressIndicator(
-                                      value: value,
-                                      backgroundColor: Colors.grey.withOpacity(isDarkMode ? 0.3 : 0.2),
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                                  tween: Tween<double>(
+                                      begin: 0.0, end: ownership / 100),
+                                  builder: (context, value, _) =>
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: LinearProgressIndicator(
+                                          value: value,
+                                          backgroundColor: primaryColor
+                                              .withOpacity(0.15), // Use primaryColor instead of accentColor
+                                          valueColor: AlwaysStoppedAnimation<
+                                              Color>(primaryColor), // Use primaryColor
+                                          minHeight: 5,
+                                        ),
                                       ),
-                                      minHeight: 5,
-                                    ),
-                                  ),
                                 ),
                               ],
                             ),
                           ),
                         ],
                       ),
-
                       const Spacer(),
-
-                      // Action Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            HapticFeedback.mediumImpact();
-                            _navigateToMarketDetails(market.id);
-                          },
+                          onPressed: () => _navigateToMarketDetails(market.id),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 10),
+                            backgroundColor: primaryColor, // Use primaryColor instead of accentColor
+                            foregroundColor: onPrimaryColor, // Use onPrimaryColor instead of onAccent
+                            padding: EdgeInsets.symmetric(
+                                vertical: isSmallScreen ? 8 : 10),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                              borderRadius: BorderRadius.circular(
+                                  isSmallScreen ? 8 : 10),
                             ),
                             elevation: 0,
                           ),
@@ -1571,30 +1534,28 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     );
   }
 
-  Widget _buildMarketListItem(Markets market, bool isSmallScreen, bool isMediumScreen, bool isDarkMode, Color cardColor) {
+  Widget _buildMarketListItem(Markets market,
+      bool isSmallScreen,
+      bool isMediumScreen,
+      bool isDarkMode,
+      Color cardColor,) {
     final String? imagePath = (market as dynamic).marketImage;
     final bool hasNft = (market as dynamic).fractionalNFTAddress != null &&
         (market as dynamic).fractionalNFTAddress != "PENDING_FUNDING_NEEDED";
-    final double ownership = (market as dynamic).fractions.toDouble() / 100;
+    final double ownership = ((market as dynamic).fractions.toDouble() / 100);
 
-    final padding = isSmallScreen ? 12.0 : 16.0;
-    final imageSize = isSmallScreen ? 60.0 : 80.0;
-    final fontSize = isSmallScreen ? 16.0 : 18.0;
-    final smallFontSize = isSmallScreen ? 12.0 : 14.0;
-    final iconSize = isSmallScreen ? 14.0 : 16.0;
-
-    // Colors based on theme
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.transparent;
+    final primaryColor = MarketOwnerColors.primary;
+    final onPrimaryColor = MarketOwnerColors.onPrimary;
+    final secondaryColor = MarketOwnerColors.secondary;
+    final textColor = MarketOwnerColors.text;
+    final textLightColor = MarketOwnerColors.textLight;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: MarketOwnerColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: Colors.transparent),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
@@ -1608,77 +1569,67 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            _navigateToMarketDetails(market.id);
-          },
-          splashColor: accentColor.withOpacity(0.1),
-          highlightColor: accentColor.withOpacity(0.05),
+          onTap: () => _navigateToMarketDetails(market.id),
+          splashColor: primaryColor.withOpacity(0.1),
+          highlightColor: primaryColor.withOpacity(0.05),
           child: Padding(
-            padding: EdgeInsets.all(padding),
+            padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Market Image with hero animation
                 Hero(
                   tag: 'market_image_${market.id}',
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: SizedBox(
-                      width: imageSize,
-                      height: imageSize,
-                      child: _buildMarketImage(imagePath, isSmallScreen, isDarkMode),
+                      width: isSmallScreen ? 60.0 : 80.0,
+                      height: isSmallScreen ? 60.0 : 80.0,
+                      child: _buildMarketImage(
+                          imagePath, isSmallScreen, isDarkMode),
                     ),
                   ),
                 ),
                 SizedBox(width: isSmallScreen ? 12 : 16),
-
-                // Market Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          // Market Name
                           Expanded(
-                            child: Text(
+                            child:Text(
                               (market as dynamic).marketName,
                               style: TextStyle(
-                                fontSize: fontSize,
+                                fontSize: isSmallScreen ? 16 : 18,
                                 fontWeight: FontWeight.bold,
-                                color: textColor,
+                                color: textColor, // Fix: Use text color
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-
-                          // NFT Badge
                           if (hasNft)
                             Container(
                               padding: EdgeInsets.symmetric(
-                                horizontal: isSmallScreen ? 6 : 8,
-                                vertical: isSmallScreen ? 3 : 4,
-                              ),
-                              margin: EdgeInsets.only(left: isSmallScreen ? 6 : 8),
+                                  horizontal: isSmallScreen ? 6 : 8,
+                                  vertical: isSmallScreen ? 3 : 4),
+                              margin: EdgeInsets.only(
+                                  left: isSmallScreen ? 6 : 8),
                               decoration: BoxDecoration(
-                                color: accentColor.withOpacity(0.1),
+                                color: primaryColor.withOpacity(0.13),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.token,
-                                    size: isSmallScreen ? 12 : 14,
-                                    color: accentColor,
-                                  ),
+                                  Icon(Icons.token,
+                                      size: isSmallScreen ? 12 : 14,
+                                      color: primaryColor),
                                   SizedBox(width: isSmallScreen ? 2 : 4),
                                   Text(
                                     'Tokenized',
                                     style: TextStyle(
-                                      color: accentColor,
+                                      color: primaryColor,
                                       fontSize: isSmallScreen ? 10 : 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1689,22 +1640,18 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                         ],
                       ),
                       SizedBox(height: isSmallScreen ? 6 : 8),
-
-                      // Location
                       Row(
                         children: [
-                          Icon(
-                            Icons.location_on,
-                            size: iconSize,
-                            color: isDarkMode ? Colors.grey.shade400 : const Color(0xFF757575),
-                          ),
+                          Icon(Icons.location_on, size: isSmallScreen
+                              ? 14.0
+                              : 16.0, color: primaryColor),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               (market as dynamic).marketLocation,
                               style: TextStyle(
-                                color: isDarkMode ? Colors.grey.shade400 : const Color(0xFF757575),
-                                fontSize: smallFontSize,
+                                color: textLightColor, // Fix: Use textLightColor
+                                fontSize: 12,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1713,20 +1660,18 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                         ],
                       ),
                       SizedBox(height: isSmallScreen ? 6 : 8),
-
-                      // Ownership info with animated progress bar
                       Row(
                         children: [
                           Container(
                             padding: EdgeInsets.all(isSmallScreen ? 4 : 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2196F3).withOpacity(isDarkMode ? 0.2 : 0.1),
+                              color: primaryColor.withOpacity(0.14),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.pie_chart,
                               size: isSmallScreen ? 12 : 14,
-                              color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                              color: primaryColor,
                             ),
                           ),
                           SizedBox(width: isSmallScreen ? 6 : 8),
@@ -1735,30 +1680,29 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$ownership% Ownership',
-                                  style: TextStyle(
-                                    fontSize: smallFontSize,
-                                    color: subtitleColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                                  '${ownership.toStringAsFixed(1)}% Ownership',
+                                    style: TextStyle(
+                                      color: textLightColor, // Fix: Use textLightColor
+                                      fontSize: 12,
+                                    ),),
                                 const SizedBox(height: 4),
-                                // Progress bar for ownership visualization
                                 TweenAnimationBuilder<double>(
                                   duration: const Duration(milliseconds: 800),
                                   curve: Curves.easeOutCubic,
-                                  tween: Tween<double>(begin: 0.0, end: ownership / 100),
-                                  builder: (context, value, _) => ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: LinearProgressIndicator(
-                                      value: value,
-                                      backgroundColor: Colors.grey.withOpacity(isDarkMode ? 0.3 : 0.2),
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                                  tween: Tween<double>(
+                                      begin: 0.0, end: ownership / 100),
+                                  builder: (context, value, _) =>
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: LinearProgressIndicator(
+                                          value: value,
+                                          backgroundColor: primaryColor
+                                              .withOpacity(0.15),
+                                          valueColor: AlwaysStoppedAnimation<
+                                              Color>(primaryColor),
+                                          minHeight: 4,
+                                        ),
                                       ),
-                                      minHeight: 4,
-                                    ),
-                                  ),
                                 ),
                               ],
                             ),
@@ -1768,30 +1712,23 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
                     ],
                   ),
                 ),
-
-                // Action Button - using an animated container for feedback
                 Container(
                   margin: EdgeInsets.only(left: isSmallScreen ? 8 : 16),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        _navigateToMarketDetails(market.id);
-                      },
+                      onTap: () => _navigateToMarketDetails(market.id),
                       borderRadius: BorderRadius.circular(30),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: accentColor.withOpacity(0.1),
+                          color: primaryColor.withOpacity(0.13),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
                           onPressed: () => _navigateToMarketDetails(market.id),
-                          icon: Icon(
-                              Icons.arrow_forward_ios,
-                              size: isSmallScreen ? 16 : 20
-                          ),
-                          color: accentColor,
+                          icon: Icon(Icons.arrow_forward_ios,
+                              size: isSmallScreen ? 16 : 20),
+                          color: primaryColor,
                           tooltip: 'Manage Market',
                           constraints: BoxConstraints(
                             minWidth: isSmallScreen ? 36 : 40,
@@ -1813,8 +1750,11 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
   }
 
   Widget _buildMarketImage(String? imagePath, bool isSmallScreen, bool isDarkMode) {
-    final placeholderColor = isDarkMode ? const Color(0xFF1A2E1A) : const Color(0xFFEEF7ED);
-    final errorIconColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    // Fix: Use blue colors that match MarketOwnerColors
+    final placeholderColor = isDarkMode
+        ? const Color(0xFF0D2D4A)  // Dark blue for dark mode
+        : const Color(0xFFE3F2FD); // Light blue for light mode
+    final errorIconColor = MarketOwnerColors.secondary; // Use secondary color
 
     if (imagePath == null || imagePath.isEmpty || imagePath == 'image_url_here') {
       return Container(
@@ -1830,19 +1770,13 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
       );
     }
 
-    // Fix backslashes in paths coming from server
     final String normalizedPath = imagePath.replaceAll('\\', '/');
-
-    // Process the image URL using ApiConstants
     final String imageUrl = ApiConstants.getFullImageUrl(normalizedPath);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Base placeholder
         Container(color: placeholderColor),
-
-        // Actual image with shimmer loading effect
         ShimmerLoadingImage(
           imageUrl: imageUrl,
           isSmallScreen: isSmallScreen,
@@ -1854,8 +1788,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
 
   void _navigateToMarketDetails(String marketId) {
     final provider = _provider;
-
-    // Add page transition animation for better UX
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -1864,10 +1796,9 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOutCubic;
-
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(begin: begin, end: end).chain(
+              CurveTween(curve: curve));
           var offsetAnimation = animation.drive(tween);
-
           return SlideTransition(position: offsetAnimation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 300),
@@ -1881,7 +1812,6 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
 
   void _navigateToAddMarket() {
     final provider = _provider;
-
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -1902,110 +1832,102 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
   }
 
   void _showSortOptions(BuildContext context, bool isDarkMode) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final backgroundColor = isDarkMode ? const Color(0xFF202020) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final primaryColor = MarketOwnerColors.primary;
+    final surfaceColor = MarketOwnerColors.surface;
+    final textColor = MarketOwnerColors.text;
+
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+      builder: (context) =>
+          Container(
+            decoration: BoxDecoration(
+              color: surfaceColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Bottom sheet handle
-              Container(
-                margin: const EdgeInsets.only(top: 10),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Title
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Icon(Icons.sort, color: accentColor),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Sort Markets',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: MarketOwnerColors.secondary.withOpacity(0.3), // Fixed
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Icon(Icons.sort, color: primaryColor),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Sort Markets',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSortOption(
+                    icon: Icons.sort_by_alpha,
+                    title: 'Market Name (A-Z)',
+                    isDarkMode: isDarkMode,
+                    onTap: () {
+                      // Implement sorting if needed
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildSortOption(
+                    icon: Icons.calendar_today,
+                    title: 'Date Added (Newest)',
+                    isDarkMode: isDarkMode,
+                    onTap: () {
+                      // Implement sorting if needed
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildSortOption(
+                    icon: Icons.pie_chart,
+                    title: 'Ownership (Highest)',
+                    isDarkMode: isDarkMode,
+                    onTap: () {
+                      // Implement sorting if needed
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildSortOption(
+                    icon: Icons.shopping_basket,
+                    title: 'Products Count',
+                    isDarkMode: isDarkMode,
+                    onTap: () {
+                      // Implement sorting if needed
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-
-              const SizedBox(height: 20),
-
-              // Sort options
-              _buildSortOption(
-                icon: Icons.sort_by_alpha,
-                title: 'Market Name (A-Z)',
-                isDarkMode: isDarkMode,
-                onTap: () {
-                  // Implement sorting
-                  Navigator.pop(context);
-                },
-              ),
-
-              _buildSortOption(
-                icon: Icons.calendar_today,
-                title: 'Date Added (Newest)',
-                isDarkMode: isDarkMode,
-                onTap: () {
-                  // Implement sorting
-                  Navigator.pop(context);
-                },
-              ),
-
-              _buildSortOption(
-                icon: Icons.pie_chart,
-                title: 'Ownership (Highest)',
-                isDarkMode: isDarkMode,
-                onTap: () {
-                  // Implement sorting
-                  Navigator.pop(context);
-                },
-              ),
-
-              _buildSortOption(
-                icon: Icons.shopping_basket,
-                title: 'Products Count',
-                isDarkMode: isDarkMode,
-                onTap: () {
-                  // Implement sorting
-                  Navigator.pop(context);
-                },
-              ),
-
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -2015,8 +1937,8 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
     required bool isDarkMode,
     required VoidCallback onTap,
   }) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final primaryColor = MarketOwnerColors.primary;
+    final textColor = MarketOwnerColors.text;
 
     return InkWell(
       onTap: () {
@@ -2027,7 +1949,7 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
           children: [
-            Icon(icon, color: accentColor, size: 22),
+            Icon(icon, color: primaryColor, size: 22),
             const SizedBox(width: 16),
             Text(
               title,
@@ -2041,9 +1963,11 @@ class _NormalMarketsPageState extends State<NormalMarketsPage> with SingleTicker
       ),
     );
   }
-}
 
-// Helper class for the sliver app bar
+}
+// --- PART 7: SliverAppBarDelegate, ShimmerLoadingImage, Gradient Helper ---
+
+// SliverPersistentHeaderDelegate for main page header
 class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double minHeight;
@@ -2078,7 +2002,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-// Shimmer loading effect for images
+// Shimmer loading effect for images (uses theme colors)
 class ShimmerLoadingImage extends StatefulWidget {
   final String imageUrl;
   final bool isSmallScreen;
@@ -2099,7 +2023,6 @@ class _ShimmerLoadingImageState extends State<ShimmerLoadingImage>
     with SingleTickerProviderStateMixin {
   late AnimationController _shimmerController;
   bool _isLoading = true;
-  bool _hasError = false;
 
   @override
   void initState() {
@@ -2131,21 +2054,20 @@ class _ShimmerLoadingImageState extends State<ShimmerLoadingImage>
                   gradient: LinearGradient(
                     colors: widget.isDarkMode
                         ? [
-                      const Color(0xFF1A2E1A),
-                      const Color(0xFF253D25),
-                      const Color(0xFF1A2E1A),
+                      const Color(0xFF0D2D4A),  // Dark blue
+                      const Color(0xFF164677),  // Medium blue
+                      const Color(0xFF0D2D4A),
                     ]
                         : [
-                      const Color(0xFFEEF7ED),
-                      const Color(0xFFF5FAF5),
-                      const Color(0xFFEEF7ED),
+                      const Color(0xFFE3F2FD),  // Very light blue
+                      const Color(0xFFBBDEFB),  // Light blue
+                      const Color(0xFFE3F2FD),
                     ],
                     stops: const [0.0, 0.5, 1.0],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     transform: SlidingGradientTransform(
-                        _shimmerController.value * 2 - 1
-                    ),
+                        _shimmerController.value * 2 - 1),
                   ),
                 ),
               );
@@ -2157,22 +2079,24 @@ class _ShimmerLoadingImageState extends State<ShimmerLoadingImage>
           widget.imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stack) {
-            _hasError = true;
-            _isLoading = false;
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.image_not_supported,
-                    color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                    color: widget.isDarkMode
+                        ? Colors.grey.shade600
+                        : Colors.grey.shade400,
                     size: widget.isSmallScreen ? 24 : 32,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Image not available',
                     style: TextStyle(
-                      color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+                      color: widget.isDarkMode
+                          ? Colors.grey.shade500
+                          : Colors.grey.shade600,
                       fontSize: widget.isSmallScreen ? 10 : 12,
                     ),
                     textAlign: TextAlign.center,
@@ -2183,7 +2107,9 @@ class _ShimmerLoadingImageState extends State<ShimmerLoadingImage>
           },
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) {
-              _isLoading = false;
+              if (_isLoading) {
+                setState(() => _isLoading = false);
+              }
               return child;
             }
             return child;
@@ -2194,7 +2120,7 @@ class _ShimmerLoadingImageState extends State<ShimmerLoadingImage>
   }
 }
 
-// Helper class for sliding gradient
+// Helper for shimmer gradient sliding
 class SlidingGradientTransform extends GradientTransform {
   final double slidePercentage;
 

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
+import '../../../../Core/theme/AppColors.dart';
 import 'MarketOrdersPage.dart';
 
 class OrdersPage extends StatefulWidget {
@@ -185,15 +186,14 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     final isMediumScreen = screenSize.width >= 360 && screenSize.width < 600;
     final isLargeScreen = screenSize.width >= 900;
     final isWebPlatform = kIsWeb;
-
     // Use appropriate theme data based on platform
     final brightness = Theme.of(context).brightness;
     final isDarkMode = brightness == Brightness.dark;
 
-    // Background color based on theme mode
+    // Background color based on theme mode - use MarketOwnerColors
     final backgroundColor = isDarkMode
-        ? const Color(0xFF121212)
-        : const Color(0xFFF9F7F3);
+        ? Color(0xFF0D2D4A) // Dark blue for dark mode
+        : MarketOwnerColors.background;
 
     // Automatically switch to list view on very small screens
     if (isSmallScreen && _isGridView) {
@@ -271,10 +271,11 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     }).toList();
   }
 
+
   Widget _buildLoadingView(bool isSmallScreen, bool isDarkMode) {
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFFAFAFA),
+        color: isDarkMode ? Color(0xFF0D2D4A) : MarketOwnerColors.background, // Use MarketOwnerColors
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
           opacity: isDarkMode ? 0.03 : 0.05,
@@ -316,7 +317,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                     style: TextStyle(
                       fontSize: isSmallScreen ? 16 : 20,
                       fontWeight: FontWeight.w500,
-                      color: isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
+                      color: MarketOwnerColors.primary, // Use MarketOwnerColors primary
                     ),
                   ),
                 );
@@ -328,10 +329,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               width: isSmallScreen ? 100 : 140,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: const LinearProgressIndicator(
+                child: LinearProgressIndicator(
                   minHeight: 6,
-                  backgroundColor: Color(0xFFE0E0E0),
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                  backgroundColor: MarketOwnerColors.background.withOpacity(0.5), // Use lighter background
+                  valueColor: AlwaysStoppedAnimation<Color>(MarketOwnerColors.primary), // Use primary color
                 ),
               ),
             ),
@@ -340,7 +341,6 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
       ),
     );
   }
-
   Widget _buildErrorView(NormalMarketProvider provider, bool isSmallScreen, bool isMediumScreen, bool isDarkMode) {
     final contentWidth = isSmallScreen
         ? double.infinity
@@ -350,15 +350,15 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
 
     final padding = isSmallScreen ? 16.0 : 30.0;
 
-    // Color theme adjustments based on dark mode
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final errorColor = isDarkMode ? Colors.redAccent.shade200 : Colors.red[700];
-    final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[700];
+    // Color theme adjustments using MarketOwnerColors
+    final cardColor = MarketOwnerColors.surface; // Use surface color
+    final textColor = MarketOwnerColors.text; // Use text color
+    final errorColor = Color(0xFFD32F2F); // Keep error red for clarity
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+        color: isDarkMode ? Color(0xFF0D2D4A) : MarketOwnerColors.background, // Use background color
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
           opacity: isDarkMode ? 0.03 : 0.05,
@@ -370,8 +370,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
           child: Container(
             width: contentWidth,
-            margin: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 8 : 20),
+            margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 20),
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
               color: cardColor,
@@ -397,7 +396,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: errorColor?.withOpacity(0.1),
+                          color: errorColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -435,10 +434,11 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                     HapticFeedback.lightImpact();
                     provider.loadMyMarkets();
                     _loadMarketOrderCounts();
-                    _loadMarketBalances(); // Add reload of market balances
+                    _loadMarketBalances();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: MarketOwnerColors.primary, // Use primary color
+                    foregroundColor: MarketOwnerColors.onPrimary, // Use on primary color
                     padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 16 : 20,
                       vertical: isSmallScreen ? 10 : 12,
@@ -461,7 +461,6 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
       ),
     );
   }
-
   Widget _buildEmptyView(bool isSmallScreen, bool isMediumScreen, bool isDarkMode) {
     final contentWidth = isSmallScreen
         ? double.infinity
@@ -471,15 +470,15 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
 
     final padding = isSmallScreen ? 20.0 : 30.0;
 
-    // Color theme adjustments based on dark mode
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF555555);
+    // Color theme adjustments using MarketOwnerColors
+    final cardColor = MarketOwnerColors.surface; // Use surface color
+    final textColor = MarketOwnerColors.text; // Use text color
+    final primaryColor = MarketOwnerColors.primary; // Use primary color
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+        color: isDarkMode ? Color(0xFF0D2D4A) : MarketOwnerColors.background, // Use background color
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
           opacity: isDarkMode ? 0.03 : 0.05,
@@ -520,7 +519,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                         child: Icon(
                           Icons.receipt_long,
                           size: isSmallScreen ? 100 : 140,
-                          color: accentColor.withOpacity(0.7),
+                          color: primaryColor.withOpacity(0.7),
                         ),
                       ),
                     );
@@ -532,7 +531,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                   style: TextStyle(
                     fontSize: isSmallScreen ? 22 : 28,
                     fontWeight: FontWeight.bold,
-                    color: accentColor,
+                    color: primaryColor,
                   ),
                 ),
                 SizedBox(height: isSmallScreen ? 12 : 16),
@@ -552,8 +551,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                     Navigator.of(context).pushReplacementNamed('/dashboard');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
+                    backgroundColor: MarketOwnerColors.primary, // Use primary color
+                    foregroundColor: MarketOwnerColors.onPrimary, // Use on primary for text
                     padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 20 : 30,
                       vertical: isSmallScreen ? 12 : 16,
@@ -614,20 +613,21 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         ? 16.0
         : 24.0;
 
-    // Color theme adjustments based on dark mode
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : const Color(0xFF666666);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final dividerColor = isDarkMode ? Colors.grey.withOpacity(0.3) : Colors.grey.withOpacity(0.2);
+    // Color theme adjustments using MarketOwnerColors
+    final cardColor = MarketOwnerColors.surface; // Use surface color
+    final textColor = MarketOwnerColors.text; // Use text color
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
+    final primaryColor = MarketOwnerColors.primary; // Use primary color
+    final secondaryColor = MarketOwnerColors.secondary; // Use secondary color
+    final dividerColor = secondaryColor.withOpacity(0.3); // Use secondary with opacity
     final backgroundOverlayOpacity = isDarkMode ? 0.03 : 0.05;
-    final searchBgColor = isDarkMode ? const Color(0xFF252525) : Colors.white;
-    final searchBorderColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300;
-    final hintTextColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFFAAAAAA);
+    final searchBgColor = MarketOwnerColors.surface; // Use surface color
+    final searchBorderColor = secondaryColor.withOpacity(0.3); // Use secondary with opacity
+    final hintTextColor = MarketOwnerColors.textLight; // Use lighter text color
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+        color: isDarkMode ? Color(0xFF0D2D4A) : MarketOwnerColors.background, // Use background color
         image: DecorationImage(
           image: AssetImage('icons/fruits_pattern_light.gif'),
           opacity: backgroundOverlayOpacity,
@@ -635,14 +635,14 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         ),
       ),
       child: RefreshIndicator(
-        color: accentColor,
+        color: primaryColor, // Use primary color
         backgroundColor: cardColor,
         strokeWidth: 3,
         onRefresh: () async {
           HapticFeedback.lightImpact();
           await provider.loadMyMarkets();
           await _loadMarketOrderCounts();
-          await _loadMarketBalances(); // Load market balances on refresh
+          await _loadMarketBalances();
         },
         child: Scrollbar(
           controller: _scrollController,
@@ -659,7 +659,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                   minHeight: isSmallScreen ? 60 : 70,
                   maxHeight: isSmallScreen ? 60 : 70,
                   child: Container(
-                    color: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F7F3),
+                    color: MarketOwnerColors.background, // Use background color
                     padding: EdgeInsets.symmetric(
                       horizontal: horizontalPadding,
                       vertical: isSmallScreen ? 8 : 12,
@@ -676,7 +676,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                                 style: TextStyle(
                                   fontSize: isSmallScreen ? 20 : 24,
                                   fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.white : const Color(0xFF2E7D32),
+                                  color: primaryColor, // Use primary color
                                 ),
                               ),
                             ],
@@ -686,13 +686,13 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.15),
+                              color: primaryColor.withOpacity(0.15), // Use primary color with opacity
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               'Filtered: $filteredCount',
                               style: TextStyle(
-                                color: accentColor,
+                                color: primaryColor, // Use primary color
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -707,7 +707,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               SliverToBoxAdapter(
                 child: Container(
                   margin: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 16),
-                  child: _buildSearchBar(isSmallScreen, isDarkMode, searchBgColor, searchBorderColor, hintTextColor, accentColor),
+                  child: _buildSearchBar(isSmallScreen, isDarkMode, searchBgColor, searchBorderColor, hintTextColor, primaryColor),
                 ),
               ),
 
@@ -715,7 +715,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               SliverToBoxAdapter(
                 child: Container(
                   margin: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, isSmallScreen ? 16 : 24),
-                  child: _buildStatsRow(totalOrders, filteredMarkets.length, totalRevenue, isSmallScreen, isDarkMode, cardColor, accentColor, dividerColor),
+                  child: _buildStatsRow(totalOrders, filteredMarkets.length, totalRevenue, isSmallScreen, isDarkMode, cardColor, primaryColor, dividerColor),
                 ),
               ),
 
@@ -780,7 +780,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                         style: TextStyle(
                           fontSize: isSmallScreen ? 16 : 18,
                           fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : const Color(0xFF2E7D32),
+                          color: MarketOwnerColors.primary, // Use primary color instead of green
                         ),
                       ),
                       Row(
@@ -791,7 +791,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                               decoration: BoxDecoration(
                                 color: cardColor,
                                 borderRadius: BorderRadius.circular(isMediumScreen ? 10 : 12),
-                                border: Border.all(color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
+                                border: Border.all(color: MarketOwnerColors.secondary.withOpacity(0.3)), // Use secondary with opacity
                               ),
                               child: Row(
                                 children: [
@@ -820,11 +820,11 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                             decoration: BoxDecoration(
                               color: cardColor,
                               borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
-                              border: Border.all(color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
+                              border: Border.all(color: MarketOwnerColors.secondary.withOpacity(0.3)), // Use secondary with opacity
                             ),
                             child: IconButton(
                               icon: const Icon(Icons.sort),
-                              color: accentColor,
+                              color: primaryColor,
                               iconSize: isSmallScreen ? 18 : 24,
                               onPressed: () {
                                 // Sort functionality
@@ -865,13 +865,17 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   }
 
   Widget _buildSearchBar(bool isSmallScreen, bool isDarkMode, Color bgColor, Color borderColor, Color hintColor, Color accentColor) {
+    final primaryColor = MarketOwnerColors.primary;
+    final textColor = MarketOwnerColors.text;
+    final textLightColor = MarketOwnerColors.textLight;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isSmallScreen ? 12 : 16,
         vertical: isSmallScreen ? 8 : 10,
       ),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: MarketOwnerColors.surface, // Use surface color
         borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
         boxShadow: [
           BoxShadow(
@@ -880,13 +884,13 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: borderColor, width: 1),
+        border: Border.all(color: MarketOwnerColors.secondary.withOpacity(0.3), width: 1), // Use secondary with opacity
       ),
       child: Row(
         children: [
           Icon(
             _isSearching ? Icons.search : Icons.search_outlined,
-            color: _isSearching ? accentColor : (isDarkMode ? Colors.grey.shade500 : const Color(0xFF888888)),
+            color: _isSearching ? primaryColor : textLightColor, // Use primary if searching, textLight otherwise
             size: isSmallScreen ? 18 : 24,
           ),
           SizedBox(width: isSmallScreen ? 8 : 12),
@@ -897,7 +901,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                 hintText: 'Search markets...',
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: hintColor,
+                  color: textLightColor, // Use textLight color
                   fontSize: isSmallScreen ? 14 : 16,
                 ),
                 isDense: true,
@@ -905,7 +909,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
               ),
               style: TextStyle(
                 fontSize: isSmallScreen ? 14 : 16,
-                color: isDarkMode ? Colors.white : Colors.black87,
+                color: textColor, // Use text color
               ),
               onChanged: (value) {
                 setState(() {
@@ -956,7 +960,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                 vertical: isSmallScreen ? 4 : 6,
               ),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Row(
@@ -964,13 +968,13 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                   Icon(
                     Icons.filter_alt_outlined,
                     size: isSmallScreen ? 14 : 16,
-                    color: accentColor,
+                    color: primaryColor,
                   ),
                   SizedBox(width: isSmallScreen ? 4 : 6),
                   Text(
                     'Filters',
                     style: TextStyle(
-                      color: accentColor,
+                      color: primaryColor,
                       fontSize: isSmallScreen ? 12 : 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -999,18 +1003,18 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     final padding = isSmallScreen ? 16.0 : 20.0;
 
     // Use colors based on dark mode
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
+    final textColor = MarketOwnerColors.text;
+    final subtitleColor = MarketOwnerColors.textLight;
 
     // Define color schemes for each stat
-    final ordersColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final marketsColor = isDarkMode ? const Color(0xFFFFB74D) : const Color(0xFFFF9800);
-    final revenueColor = isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3);
+    final ordersColor = MarketOwnerColors.primary; // Primary blue
+    final marketsColor = MarketOwnerColors.secondary; // Secondary blue
+    final revenueColor = MarketOwnerColors.accent; // Accent color
 
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: cardColor,
+        color:MarketOwnerColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1140,14 +1144,14 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     required VoidCallback onTap,
     required bool isDarkMode,
   }) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final primaryColor = MarketOwnerColors.primary; // Use primary color
     final backgroundColor = isSelected
-        ? accentColor
-        : (isDarkMode ? const Color(0xFF252525) : Colors.white);
+        ? primaryColor
+        : MarketOwnerColors.surface; // Use surface color
     final textColor = isSelected
-        ? Colors.white
-        : (isDarkMode ? Colors.white : Colors.black87);
-    final borderColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300;
+        ? MarketOwnerColors.onPrimary // Use on primary color
+        : MarketOwnerColors.text; // Use text color
+    final borderColor = MarketOwnerColors.secondary.withOpacity(0.3); // Use secondary with opacity
 
     return GestureDetector(
       onTap: () {
@@ -1161,13 +1165,13 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           color: backgroundColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? accentColor : borderColor,
+            color: isSelected ? primaryColor  : borderColor,
             width: 1,
           ),
           boxShadow: isSelected
               ? [
             BoxShadow(
-              color: accentColor.withOpacity(0.3),
+              color: primaryColor.withOpacity(0.3),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -1193,10 +1197,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     required bool isMediumScreen,
     required bool isDarkMode,
   }) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final selectedColor = isSelected ? accentColor : (isDarkMode ? Colors.grey.shade600 : Colors.grey);
+    final primaryColor = MarketOwnerColors.primary; // Use primary color
+    final selectedColor = isSelected ? primaryColor : MarketOwnerColors.textLight; // Use textLight color
     final selectedBgColor = isSelected
-        ? accentColor.withOpacity(0.1)
+        ? primaryColor.withOpacity(0.1)
         : Colors.transparent;
 
     return Material(
@@ -1221,18 +1225,18 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   }
 
   Widget _buildNoResultsView(bool isSmallScreen, bool isDarkMode, Color cardColor) {
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600;
+    final primaryColor = MarketOwnerColors.primary;
+    final textColor = MarketOwnerColors.text;
+    final textLightColor = MarketOwnerColors.textLight;
 
     return Container(
       margin: EdgeInsets.all(isSmallScreen ? 16 : 24),
       padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: MarketOwnerColors.surface, // Use surface color
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+          color: MarketOwnerColors.secondary.withOpacity(0.3), // Use secondary with opacity
         ),
       ),
       child: Column(
@@ -1241,7 +1245,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           Icon(
             Icons.search_off,
             size: isSmallScreen ? 48 : 64,
-            color: accentColor.withOpacity(0.7),
+            color: primaryColor.withOpacity(0.7), // Use primary color
           ),
           SizedBox(height: isSmallScreen ? 16 : 24),
           Text(
@@ -1249,7 +1253,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             style: TextStyle(
               fontSize: isSmallScreen ? 18 : 22,
               fontWeight: FontWeight.bold,
-              color: textColor,
+              color: textColor, // Use text color
             ),
           ),
           SizedBox(height: isSmallScreen ? 8 : 12),
@@ -1257,7 +1261,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             'Try adjusting your search or filters',
             style: TextStyle(
               fontSize: isSmallScreen ? 14 : 16,
-              color: subtitleColor,
+              color: textLightColor, // Use textLight color
             ),
             textAlign: TextAlign.center,
           ),
@@ -1275,8 +1279,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             icon: Icon(Icons.refresh_outlined, size: isSmallScreen ? 16 : 20),
             label: Text('Clear filters'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: accentColor,
-              side: BorderSide(color: accentColor),
+              foregroundColor: primaryColor, // Use primary color
+              side: BorderSide(color: primaryColor), // Use primary color
               padding: EdgeInsets.symmetric(
                 horizontal: isSmallScreen ? 16 : 20,
                 vertical: isSmallScreen ? 10 : 12,
@@ -1360,17 +1364,19 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     final padding = isSmallScreen ? 12.0 : 16.0;
 
     // Colors based on theme
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.transparent;
+    // Use MarketOwnerColors
+    final textColor = MarketOwnerColors.text; // Use text color
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
+    final primaryColor = MarketOwnerColors.primary; // Use primary color
+    final secondaryColor = MarketOwnerColors.secondary; // Use secondary color
+
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: secondaryColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
@@ -1388,8 +1394,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             HapticFeedback.mediumImpact();
             _navigateToMarketOrders(market);
           },
-          splashColor: accentColor.withOpacity(0.1),
-          highlightColor: accentColor.withOpacity(0.05),
+          splashColor: primaryColor.withOpacity(0.1),
+          highlightColor: primaryColor.withOpacity(0.05),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1597,7 +1603,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                             _navigateToMarketOrders(market);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
+                            backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 10),
                             shape: RoundedRectangleBorder(
@@ -1631,10 +1637,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     final iconSize = isSmallScreen ? 14.0 : 16.0;
 
     // Colors based on theme
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.transparent;
+    final textColor = MarketOwnerColors.text; // Use text color
+    final subtitleColor = MarketOwnerColors.textLight; // Use lighter text color
+    final primaryColor = MarketOwnerColors.primary; // Use primary color
+    final borderColor = isDarkMode ? MarketOwnerColors.secondary.withOpacity(0.3) : Colors.transparent;
 
     return AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -1659,8 +1665,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     HapticFeedback.mediumImpact();
     _navigateToMarketOrders(market);
     },
-    splashColor: accentColor.withOpacity(0.1),
-    highlightColor: accentColor.withOpacity(0.05),
+    splashColor: primaryColor.withOpacity(0.1),
+    highlightColor: primaryColor.withOpacity(0.05),
     child: Padding(
     padding: EdgeInsets.all(padding),
     child: Row(
@@ -1711,8 +1717,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                   margin: EdgeInsets.only(left: isSmallScreen ? 6 : 8),
                   decoration: BoxDecoration(
                     color: orderCount > 0
-                        ? const Color(0xFF4CAF50)
-                        : Colors.orange,
+                        ? MarketOwnerColors.primary
+                        : MarketOwnerColors.secondary,
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Row(
@@ -1721,7 +1727,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                       Icon(
                         orderCount > 0 ? Icons.receipt : Icons.hourglass_empty,
                         size: iconSize - 2,
-                        color: Colors.white,
+                        color: subtitleColor,
                       ),
                       SizedBox(width: isSmallScreen ? 2 : 3),
                       Text(
@@ -1771,7 +1777,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                 Icon(
                   Icons.attach_money,
                   size: iconSize,
-                  color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                  color:  MarketOwnerColors.accent,
                 ),
                 SizedBox(width: isSmallScreen ? 2 : 4),
                 Text(
@@ -1779,7 +1785,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                   style: TextStyle(
                     fontSize: smallFontSize,
                     fontWeight: FontWeight.w500,
-                    color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF2196F3),
+                    color: MarketOwnerColors.accent,
                   ),
                 ),
               ],
@@ -1803,8 +1809,11 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   }
 
   Widget _buildMarketImage(String? imagePath, bool isSmallScreen, bool isDarkMode) {
-    final placeholderColor = isDarkMode ? const Color(0xFF1A2E1A) : const Color(0xFFEEF7ED);
-    final errorIconColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    // Fix blue placeholder colors for Market Owner
+    final placeholderColor = isDarkMode
+        ? const Color(0xFF0D2D4A)  // Dark blue for dark mode
+        : const Color(0xFFE3F2FD); // Light blue for light mode
+    final errorIconColor = MarketOwnerColors.secondary; // Use secondary color
 
     if (imagePath == null || imagePath.isEmpty || imagePath == 'image_url_here') {
       return Container(
@@ -1905,9 +1914,10 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   }
 
   void _showSortOptions(BuildContext context, bool isDarkMode) {
-    final cardColor = isDarkMode ? const Color(0xFF252525) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final dividerColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300;
+    // Use MarketOwnerColors
+    final cardColor = MarketOwnerColors.surface; // Use surface color
+    final textColor = MarketOwnerColors.text; // Use text color
+    final dividerColor = MarketOwnerColors.secondary.withOpacity(0.3); // Use secondary
 
     showDialog(
       context: context,
@@ -1976,8 +1986,8 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
     required bool isDarkMode,
     required VoidCallback onTap,
   }) {
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
+    final textColor = MarketOwnerColors.text;
+    final accentColor = MarketOwnerColors.primary;
 
     return InkWell(
       onTap: onTap,
@@ -2119,7 +2129,7 @@ class _ShimmerLoadingImageState extends State<ShimmerLoadingImage> with SingleTi
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Shimmer effect for loading
+        // Shimmer effect for loading - using blue colors
         if (!_isLoaded)
           AnimatedBuilder(
             animation: _animation,
@@ -2130,9 +2140,15 @@ class _ShimmerLoadingImageState extends State<ShimmerLoadingImage> with SingleTi
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
-                      widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
-                      widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                      widget.isDarkMode
+                          ? const Color(0xFF0D2D4A)  // Dark blue
+                          : const Color(0xFFE3F2FD),  // Light blue
+                      widget.isDarkMode
+                          ? const Color(0xFF164677)  // Medium blue
+                          : const Color(0xFFBBDEFB),  // Medium light blue
+                      widget.isDarkMode
+                          ? const Color(0xFF0D2D4A)  // Dark blue
+                          : const Color(0xFFE3F2FD),  // Light blue
                     ],
                     stops: [
                       0.0,

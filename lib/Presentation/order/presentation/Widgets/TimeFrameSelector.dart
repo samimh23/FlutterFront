@@ -1,6 +1,5 @@
-// lib/Presentation/order/presentation/Page/widgets/time_frame_selector.dart
-
 import 'package:flutter/material.dart';
+import 'package:hanouty/Core/theme/AppColors.dart'; // Add this import
 
 class TimeFrameSelector extends StatelessWidget {
   final List<String> timeFrames;
@@ -34,13 +33,13 @@ class TimeFrameSelector extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF43A047).withOpacity(0.1)
+                    ? MarketOwnerColors.primary.withOpacity(0.1) // Use primary blue with opacity
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF43A047)
-                      : Colors.grey.withOpacity(0.3),
+                      ? MarketOwnerColors.primary // Use primary blue for selected item
+                      : MarketOwnerColors.secondary.withOpacity(0.3), // Use secondary blue with opacity
                   width: 1,
                 ),
               ),
@@ -49,8 +48,8 @@ class TimeFrameSelector extends StatelessWidget {
                 timeFrame,
                 style: TextStyle(
                   color: isSelected
-                      ? const Color(0xFF43A047)
-                      : Colors.grey[600],
+                      ? MarketOwnerColors.primary // Use primary blue for selected text
+                      : MarketOwnerColors.textLight, // Use lighter text color for unselected
                   fontWeight: isSelected
                       ? FontWeight.bold
                       : FontWeight.normal,

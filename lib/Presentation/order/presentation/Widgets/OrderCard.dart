@@ -1,6 +1,5 @@
-// lib/Presentation/order/presentation/Widgets/OrderCard.dart
-
 import 'package:flutter/material.dart';
+import 'package:hanouty/Core/theme/AppColors.dart';
 import 'package:hanouty/Presentation/order/domain/entities/order.dart';
 import 'package:hanouty/Presentation/order/presentation/provider/order_provider.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +19,7 @@ class OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('MMM dd, yyyy - HH:mm');
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     // Handle dateOrder which could be DateTime or String
     late DateTime orderDate;
@@ -51,7 +51,7 @@ class OrderCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: MarketOwnerColors.surface, // Use surface color
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -69,8 +69,8 @@ class OrderCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: isConfirmed
-                  ? const Color(0xFF4CAF50).withOpacity(0.1)  // Green for confirmed
-                  : const Color(0xFFFFA000).withOpacity(0.1), // Orange for pending
+                  ? MarketOwnerColors.primary.withOpacity(0.1)  // Primary blue for confirmed
+                  : MarketOwnerColors.secondary.withOpacity(0.1), // Secondary for pending
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(12),
               ),
@@ -81,24 +81,28 @@ class OrderCard extends StatelessWidget {
                   isConfirmed ? Icons.check_circle : Icons.pending,
                   size: 20,
                   color: isConfirmed
-                      ? const Color(0xFF4CAF50)  // Green for confirmed
-                      : const Color(0xFFFFA000), // Orange for pending
+                      ? MarketOwnerColors.primary  // Primary blue for confirmed
+                      : MarketOwnerColors.secondary, // Secondary for pending
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Order #${order.id.substring(0, min(8, order.id.length)).toUpperCase()}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                Expanded(  // Added Expanded to prevent overflow
+                  child: Text(
+                    'Order #${order.id.substring(0, min(8, order.id.length)).toUpperCase()}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: MarketOwnerColors.text, // Use text color
+                    ),
+                    overflow: TextOverflow.ellipsis,  // Add ellipsis for overflow
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8), // Add space between title and status
                 Text(
                   isConfirmed ? 'Completed' : 'Pending',
                   style: TextStyle(
                     color: isConfirmed
-                        ? const Color(0xFF4CAF50)  // Green for confirmed
-                        : const Color(0xFFFFA000), // Orange for pending
+                        ? MarketOwnerColors.primary  // Primary blue for confirmed
+                        : MarketOwnerColors.secondary, // Secondary for pending
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                   ),
@@ -113,35 +117,45 @@ class OrderCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Date and items count
-                Row(
+                // Date and items count - Fix overflow with Flexible widgets
+                Wrap(  // Replace Row with Wrap to prevent overflow
+                  spacing: 16,
                   children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: Colors.grey[600],
+                    Row(
+                      mainAxisSize: MainAxisSize.min,  // Don't take more space than needed
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 16,
+                          color: MarketOwnerColors.textLight,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          formattedDate,
+                          style: TextStyle(
+                            color: MarketOwnerColors.textLight,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      formattedDate,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$totalItems items',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,  // Don't take more space than needed
+                      children: [
+                        Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 16,
+                          color: MarketOwnerColors.textLight,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$totalItems items',
+                          style: TextStyle(
+                            color: MarketOwnerColors.textLight,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -151,20 +165,21 @@ class OrderCard extends StatelessWidget {
                 // Price
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Total:',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
+                        color: MarketOwnerColors.text, // Use text color
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'TD ${order.totalPrice.toStringAsFixed(2)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E7D32),
+                        color: MarketOwnerColors.primary, // Use primary color
                       ),
                     ),
                   ],
@@ -172,40 +187,79 @@ class OrderCard extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Action buttons
-                Row(
-                  mainAxisAlignment: !isConfirmed
-                      ? MainAxisAlignment.spaceBetween
-                      : MainAxisAlignment.center,
-                  children: [
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.visibility),
-                      label: const Text('View Details'),
-                      onPressed: onViewDetails,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF2E7D32),
-                        side: const BorderSide(color: Color(0xFF2E7D32)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-
-                    // Show Send Package button only for pending orders
-                    if (!isConfirmed)
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.local_shipping),
-                        label: const Text('Send Package'),
-                        onPressed: () => _sendPackage(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                // Action buttons - Fix overflow with proper layout
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // If in large screen or confirmed order (one button)
+                    if (constraints.maxWidth > 320 || isConfirmed) {
+                      return Row(
+                        mainAxisAlignment: !isConfirmed
+                            ? MainAxisAlignment.spaceBetween
+                            : MainAxisAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.visibility),
+                            label: const Text('View Details'),
+                            onPressed: onViewDetails,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: MarketOwnerColors.primary,
+                              side: BorderSide(color: MarketOwnerColors.primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                  ],
+
+                          // Show Send Package button only for pending orders
+                          if (!isConfirmed)
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.local_shipping),
+                              label: const Text('Send Package'),
+                              onPressed: () => _sendPackage(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: MarketOwnerColors.primary,
+                                foregroundColor: MarketOwnerColors.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    } else {
+                      // In small screen with two buttons, stack them vertically
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.visibility),
+                            label: const Text('View Details'),
+                            onPressed: onViewDetails,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: MarketOwnerColors.primary,
+                              side: BorderSide(color: MarketOwnerColors.primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.local_shipping),
+                            label: const Text('Send Package'),
+                            onPressed: () => _sendPackage(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: MarketOwnerColors.primary,
+                              foregroundColor: MarketOwnerColors.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                  },
                 ),
               ],
             ),
@@ -221,16 +275,28 @@ class OrderCard extends StatelessWidget {
     final shouldSend = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Send Package'),
-        content: const Text('Are you sure you want to mark this order as sent? The client will be notified to confirm receipt.'),
+        backgroundColor: MarketOwnerColors.surface, // Use surface color
+        title: Text('Send Package',
+          style: TextStyle(color: MarketOwnerColors.text), // Use text color
+        ),
+        content: Text(
+          'Are you sure you want to mark this order as sent? The client will be notified to confirm receipt.',
+          style: TextStyle(color: MarketOwnerColors.textLight), // Use lighter text color
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: MarketOwnerColors.textLight, // Use lighter text color
+            ),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MarketOwnerColors.primary, // Use primary color
+              foregroundColor: MarketOwnerColors.onPrimary, // Use on primary color
+            ),
             child: const Text('Send'),
           ),
         ],
@@ -245,9 +311,9 @@ class OrderCard extends StatelessWidget {
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Package marked as sent. Awaiting client confirmation.'),
-            backgroundColor: Color(0xFF2196F3),
+          SnackBar(
+            content: const Text('Package marked as sent. Awaiting client confirmation.'),
+            backgroundColor: MarketOwnerColors.primary, // Use primary color
           ),
         );
       } catch (e) {
@@ -255,7 +321,7 @@ class OrderCard extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update order: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.red, // Keep red for errors
           ),
         );
       }

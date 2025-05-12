@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/app_colors.dart';
 
+import '../../../../Core/theme/AppColors.dart';
+
 class SimplifiedContactInfo extends StatelessWidget {
   final String marketName;
   final String marketLocation;
@@ -18,64 +20,119 @@ class SimplifiedContactInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      elevation: 1, // Reduced elevation for subtlety
+      shadowColor: ClientColors.primary.withOpacity(0.1), // Updated shadow color
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: ClientColors.primary.withOpacity(0.05), // Subtle border
+          width: 1,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Contact Information",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.black,
-              ),
+            Row(
+              children: [
+                Icon(
+                  Icons.contact_page_outlined,
+                  size: 20,
+                  color: ClientColors.primary, // Updated icon color
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "Contact Information",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: ClientColors.text, // Updated text color
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            _buildContactRow(
+              icon: Icons.phone_outlined,
+              label: "Phone",
+              value: marketPhone,
+              onTap: () {
+                // Handle phone tap - could launch phone dialer
+              },
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(Icons.phone, size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  marketPhone,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
+            _buildContactRow(
+              icon: Icons.email_outlined,
+              label: "Email",
+              value: marketEmail,
+              onTap: () {
+                // Handle email tap - could launch email app
+              },
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.email, size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  marketEmail,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
+            const SizedBox(height: 12),
+            _buildContactRow(
+              icon: Icons.location_on_outlined,
+              label: "Address",
+              value: marketLocation,
+              onTap: () {
+                // Handle location tap - could open maps
+              },
             ),
-            const SizedBox(height: 8),
-             Row(
-              children: [
-                const Icon(Icons.location_city, size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  marketLocation,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: ClientColors.primary, // Updated icon color
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: ClientColors.textLight, // Updated label color
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: ClientColors.text, // Updated text color
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: ClientColors.primary.withOpacity(0.5), // Updated icon color
             ),
           ],
         ),

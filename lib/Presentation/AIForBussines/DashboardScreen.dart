@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'BarChartWidget.dart';
-import 'DashboardViewModel.dart';
-import 'MarketSelector.dart';
-import 'PieChartWidget.dart';
-import 'StatsCard.dart';
-import 'DemographicsWidget.dart';
+import 'BarChartWidget.dart'; // Assuming these files exist
+import 'DashboardViewModel.dart'; // Assuming these files exist
+import 'MarketSelector.dart'; // Assuming these files exist
+import 'PieChartWidget.dart'; // Assuming these files exist
+import 'StatsCard.dart'; // Assuming these files exist
+import 'DemographicsWidget.dart'; // Assuming these files exist
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -201,11 +201,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (viewModel.demographics != null)
               _buildChartCard(
                 title: 'Customer Demographics',
-                height: 500,
+                height: 500, // Keep original height for desktop for more detail
                 child: DemographicsWidget(
                   demographicsData: viewModel.demographics!,
                   genderChart: viewModel.genderDistributionChart,
-                  ageGroupsChart: viewModel.ageGroupsChart,
                 ),
               ),
           ],
@@ -257,11 +256,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (viewModel.demographics != null)
               _buildChartCard(
                 title: 'Customer Demographics',
-                height: 450,
+                height: 450, // Keep original height for tablet
                 child: DemographicsWidget(
                   demographicsData: viewModel.demographics!,
                   genderChart: viewModel.genderDistributionChart,
-                  ageGroupsChart: viewModel.ageGroupsChart,
                 ),
               ),
           ],
@@ -270,14 +268,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Updated Mobile Layout
   Widget _buildMobileLayout(DashboardViewModel viewModel) {
+    // Adjusted heights for better mobile experience
+    const double mobileChartHeight = 230;
+    const double mobileDemographicsHeight = 480; // Increased from 400
+
     return Column(
       children: [
         // Category Sales Chart
         if (viewModel.categorySalesChart != null)
           _buildChartCard(
             title: 'Category Sales',
-            height: 250,
+            height: mobileChartHeight,
             child: BarChartWidget(
               data: viewModel.categorySalesChart!,
               barColor: Colors.blue,
@@ -288,7 +291,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (viewModel.locationSalesChart != null)
           _buildChartCard(
             title: 'Location Sales',
-            height: 250,
+            height: mobileChartHeight,
             child: BarChartWidget(
               data: viewModel.locationSalesChart!,
               barColor: Colors.green,
@@ -299,7 +302,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (viewModel.genderDistributionChart != null)
           _buildChartCard(
             title: 'Gender Distribution',
-            height: 250,
+            height: mobileChartHeight,
             child: PieChartWidget(
               data: viewModel.genderDistributionChart!,
             ),
@@ -309,7 +312,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (viewModel.seasonalSalesChart != null)
           _buildChartCard(
             title: 'Seasonal Sales',
-            height: 250,
+            height: mobileChartHeight,
             child: BarChartWidget(
               data: viewModel.seasonalSalesChart!,
               barColor: Colors.orange,
@@ -320,11 +323,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (viewModel.demographics != null)
           _buildChartCard(
             title: 'Customer Demographics',
-            height: 500,
+            height: mobileDemographicsHeight, // Use new, increased height
             child: DemographicsWidget(
               demographicsData: viewModel.demographics!,
-              genderChart: viewModel.genderDistributionChart,
-              ageGroupsChart: viewModel.ageGroupsChart,
+
             ),
           ),
       ],
@@ -391,7 +393,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 8.0),
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -399,7 +401,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-            Expanded(child: child),
+            Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: child,
+                )
+            ),
           ],
         ),
       ),

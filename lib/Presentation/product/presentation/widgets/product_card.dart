@@ -8,6 +8,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hanouty/responsive/responsive_layout.dart';
 import 'package:provider/provider.dart';
+import 'package:hanouty/app_colors.dart';
+
+import '../../../../Core/theme/AppColors.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -32,7 +35,7 @@ class ProductCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap ??
-          () {
+              () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -48,13 +51,13 @@ class ProductCard extends StatelessWidget {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: ClientColors.primary.withOpacity(0.08), // Updated shadow color
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: Colors.grey.withOpacity(0.11),
+            color: ClientColors.background.withOpacity(0.5), // Updated border color
             width: 1,
           ),
         ),
@@ -83,11 +86,11 @@ class ProductCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.redAccent,
+                          color: ClientColors.accent, // Updated accent color
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.redAccent.withOpacity(0.18),
+                              color: ClientColors.accent.withOpacity(0.18), // Updated shadow color
                               blurRadius: 6,
                               offset: const Offset(1, 2),
                             ),
@@ -96,7 +99,7 @@ class ProductCard extends StatelessWidget {
                         child: Text(
                           '-${product.discountValue.toStringAsFixed(0)} DT',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: ClientColors.onAccent, // Updated text color
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
                           ),
@@ -113,14 +116,14 @@ class ProductCard extends StatelessWidget {
                             horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(
                           color: product.stock > 0
-                              ? Colors.green.withOpacity(0.95)
+                              ? ClientColors.secondary.withOpacity(0.95) // Updated in-stock color
                               : Colors.red.withOpacity(0.95),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
                               color: (product.stock > 0
-                                      ? Colors.green
-                                      : Colors.red)
+                                  ? ClientColors.secondary
+                                  : Colors.red)
                                   .withOpacity(0.15),
                               blurRadius: 6,
                               offset: const Offset(1, 2),
@@ -149,7 +152,7 @@ class ProductCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: fontSize,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black87,
+                    color: ClientColors.text, // Updated text color
                     letterSpacing: 0.05,
                   ),
                   maxLines: 1,
@@ -162,34 +165,34 @@ class ProductCard extends StatelessWidget {
                     horizontal: horizontalPadding, vertical: 0),
                 child: product.isDiscounted && product.discountValue > 0
                     ? Row(
-                        children: [
-                          Text(
-                            '${product.originalPrice} DT',
-                            style: TextStyle(
-                              fontSize: priceFontSize,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green[700],
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${(product.originalPrice + product.discountValue).toStringAsFixed(0)} DT',
-                            style: TextStyle(
-                              fontSize: discountFontSize,
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        '${product.originalPrice} DT',
-                        style: TextStyle(
-                          fontSize: priceFontSize,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[700],
-                        ),
+                  children: [
+                    Text(
+                      '${product.originalPrice} DT',
+                      style: TextStyle(
+                        fontSize: priceFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: ClientColors.primary, // Updated price color
                       ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${(product.originalPrice + product.discountValue).toStringAsFixed(0)} DT',
+                      style: TextStyle(
+                        fontSize: discountFontSize,
+                        decoration: TextDecoration.lineThrough,
+                        color: ClientColors.textLight, // Updated strike-through color
+                      ),
+                    ),
+                  ],
+                )
+                    : Text(
+                  '${product.originalPrice} DT',
+                  style: TextStyle(
+                    fontSize: priceFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: ClientColors.primary, // Updated price color
+                  ),
+                ),
               ),
               // Shop name and review row
               Padding(
@@ -198,33 +201,36 @@ class ProductCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(Icons.storefront_rounded,
-                        color: Colors.deepOrange, size: 14),
+                        color: ClientColors.primary, size: 14), // Updated icon color
                     const SizedBox(width: 3),
                     Expanded(
                       child: FutureBuilder<NormalMarket?>(
                         future: Provider.of<NormalMarketProvider>(context,
-                                listen: false)
+                            listen: false)
                             .getNormalMarketById(product.shop),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
-                            return const SizedBox(
+                            return SizedBox(
                               height: 10,
                               width: 30,
                               child: LinearProgressIndicator(
                                 minHeight: 2,
                                 backgroundColor: Colors.transparent,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  ClientColors.secondary, // Updated progress indicator color
+                                ),
                               ),
                             );
                           }
                           if (snapshot.hasError ||
                               !snapshot.hasData ||
                               snapshot.data == null) {
-                            return const Text(
+                            return Text(
                               'Unknown',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.deepOrange,
+                                color: ClientColors.primary, // Updated text color
                                 fontWeight: FontWeight.w500,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -235,7 +241,7 @@ class ProductCard extends StatelessWidget {
                             snapshot.data!.marketName ?? '',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Colors.deepOrange[700],
+                              color: ClientColors.primary, // Updated text color
                               fontWeight: FontWeight.w500,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -250,17 +256,22 @@ class ProductCard extends StatelessWidget {
                       Row(
                         children: [
                           const SizedBox(width: 6),
-                          Icon(Icons.star, color: Colors.amber, size: 12),
+                          Icon(Icons.star, color: ClientColors.accent, size: 12), // Updated star color
                           const SizedBox(width: 1),
                           Text(
                             product.ratingsAverage!.toStringAsFixed(1),
-                            style: const TextStyle(
-                                fontSize: 10, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: ClientColors.text, // Updated text color
+                            ),
                           ),
                           Text(
                             ' (${product.ratingsQuantity})',
-                            style:
-                                TextStyle(fontSize: 9, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: ClientColors.textLight, // Updated text color
+                            ),
                           ),
                         ],
                       ),
@@ -292,9 +303,12 @@ class ProductCard extends StatelessWidget {
       placeholder: (context, url) => Container(
         height: height,
         width: double.infinity,
-        color: Colors.grey[100],
-        child: const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
+        color: ClientColors.background.withOpacity(0.5), // Updated placeholder color
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(ClientColors.primary), // Updated progress indicator color
+          ),
         ),
       ),
       errorWidget: (context, url, error) {
@@ -326,7 +340,7 @@ class ProductCard extends StatelessWidget {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
+                    child: Text('Close', style: TextStyle(color: ClientColors.primary)), // Updated button text color
                   ),
                 ],
               ),
@@ -342,26 +356,26 @@ class ProductCard extends StatelessWidget {
     return Container(
       height: height,
       width: double.infinity,
-      color: Colors.grey[200],
+      color: ClientColors.background.withOpacity(0.3), // Updated background color
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             isError ? Icons.broken_image : Icons.image,
-            color: Colors.grey[400],
+            color: ClientColors.textLight, // Updated icon color
             size: 22,
           ),
           const SizedBox(height: 3),
           Text(
             isError ? 'Image not found' : 'No Image',
-            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            style: TextStyle(fontSize: 10, color: ClientColors.textLight), // Updated text color
           ),
           if (isError)
-            const Padding(
-              padding: EdgeInsets.only(top: 2),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
               child: Text(
                 'Tap for details',
-                style: TextStyle(fontSize: 8.5, color: Colors.grey),
+                style: TextStyle(fontSize: 8.5, color: ClientColors.textLight), // Updated text color
               ),
             ),
         ],

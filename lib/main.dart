@@ -38,7 +38,8 @@ import 'package:hanouty/Presentation/auction/presentation/provider/auction_provi
   import 'package:hanouty/Presentation/product/presentation/provider/cart_provider.dart';
   import 'package:hanouty/Presentation/product/presentation/provider/product_provider.dart';
   import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
-  import 'Presentation/Farm/Domain_Layer/usescases/get_farm_by_owner.dart';
+  import 'Core/theme/AppColors.dart';
+import 'Presentation/Farm/Domain_Layer/usescases/get_farm_by_owner.dart';
   import 'Presentation/Farm/Domain_Layer/usescases/get_farm_products.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConfirmAndConvertFarmCrop.dart';
 import 'Presentation/Farm_Crop/Domain_Layer/usecases/TransformCropProd/ConvertFarmCropToProduct.dart';
@@ -151,6 +152,93 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart'
           ResetPasswordUseCase(authRepository);
       final ApiService apiService = ApiService(
         baseUrl: 'https://flask-analytics-api.onrender.com',  // Replace with your Flask server IP
+      );
+
+
+      final ThemeData appGlobalTheme = ThemeData(
+        // Use your custom AppColors everywhere
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme(
+          primary: AppColors.primary,
+          primaryContainer: AppColors.primaryVariant,
+          secondary: AppColors.secondary,
+          secondaryContainer: AppColors.secondaryVariant,
+          surface: AppColors.surface,
+          background: AppColors.background,
+          error: AppColors.error,
+          onPrimary: AppColors.onPrimary,
+          onSecondary: AppColors.onSecondary,
+          onSurface: AppColors.onSurface,
+          onBackground: AppColors.onBackground,
+          onError: AppColors.onError,
+          brightness: Brightness.light,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          elevation: 4.0,
+          iconTheme: IconThemeData(color: AppColors.onPrimary),
+          titleTextStyle: TextStyle(
+            color: AppColors.onPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.onPrimary,
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: AppColors.secondary,
+          foregroundColor: AppColors.onSecondary,
+        ),
+        textTheme: TextTheme(
+          displayLarge: TextStyle(fontSize: 57, fontWeight: FontWeight.bold, color: AppColors.onBackground),
+          displayMedium: TextStyle(fontSize: 45, fontWeight: FontWeight.normal, color: AppColors.onBackground),
+          displaySmall: TextStyle(fontSize: 36, fontWeight: FontWeight.normal, color: AppColors.onBackground),
+          headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.onBackground),
+          headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.normal, color: AppColors.onBackground),
+          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.normal, color: AppColors.onBackground),
+          titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w500, color: AppColors.onBackground),
+          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, letterSpacing: 0.15, color: AppColors.onSurface),
+          titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.1, color: AppColors.onSurface),
+          bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, letterSpacing: 0.5, color: AppColors.onBackground),
+          bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.normal, letterSpacing: 0.25, color: AppColors.onBackground),
+          bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.normal, letterSpacing: 0.4, color: AppColors.onBackground),
+          labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 1.25, color: AppColors.onPrimary),
+          labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 1.25, color: AppColors.onPrimary),
+          labelSmall: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 1.5, color: AppColors.onBackground),
+        ),
+        cardTheme: CardTheme(
+          elevation: 2,
+          color: AppColors.surface,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.darkGrey.withOpacity(0.5)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.primary, width: 2),
+          ),
+          labelStyle: TextStyle(color: AppColors.onSurface.withOpacity(0.7)),
+        ),
+        drawerTheme: DrawerThemeData(
+          backgroundColor: AppColors.surface,
+        ),
+        // Add more widget themes as needed
       );
       return MultiProvider(
         providers: [
@@ -449,7 +537,7 @@ import 'Presentation/Farm_Crop/Domain_Layer/usecases/get_farm_crop_by_farm.dart'
               title: 'Hanouty',
 
 
-
+              theme: appGlobalTheme,
               debugShowCheckedModeBanner: false,
               initialRoute: initialRoute,
 

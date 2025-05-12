@@ -1,5 +1,3 @@
-// lib/Presentation/order/presentation/Page/widgets/market_list_item.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hanouty/Core/heritables/Markets.dart';
@@ -36,11 +34,16 @@ class MarketListItem extends StatelessWidget {
     final smallFontSize = isSmallScreen ? 12.0 : 14.0;
     final iconSize = isSmallScreen ? 14.0 : 16.0;
 
-    // Colors based on theme
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
+    // Merchant/market theme colors
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor = isDarkMode ? Colors.white : colorScheme.primary;
+    final subtitleColor = isDarkMode
+        ? Colors.grey.shade400
+        : colorScheme.onSurface.withOpacity(0.8);
     final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.transparent;
+    final borderColor = isDarkMode
+        ? Colors.grey.shade800.withOpacity(0.5)
+        : colorScheme.secondary.withOpacity(0.09);
     final placeholderColor = isDarkMode ? const Color(0xFF1A2E1A) : const Color(0xFFEEF7ED);
 
     return AnimatedContainer(
@@ -51,7 +54,7 @@ class MarketListItem extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
+            color: Colors.black.withOpacity(isDarkMode ? 0.15 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -66,8 +69,8 @@ class MarketListItem extends StatelessWidget {
             HapticFeedback.mediumImpact();
             onTap();
           },
-          splashColor: accentColor.withOpacity(0.1),
-          highlightColor: accentColor.withOpacity(0.05),
+          splashColor: accentColor.withOpacity(0.09),
+          highlightColor: accentColor.withOpacity(0.04),
           child: Padding(
             padding: EdgeInsets.all(padding),
             child: Row(
@@ -117,7 +120,7 @@ class MarketListItem extends StatelessWidget {
                             margin: EdgeInsets.only(left: isSmallScreen ? 6 : 8),
                             decoration: BoxDecoration(
                               color: orderCount > 0
-                                  ? const Color(0xFF4CAF50)
+                                  ? accentColor
                                   : Colors.orange,
                               borderRadius: BorderRadius.circular(30),
                             ),
@@ -222,7 +225,6 @@ class MarketListItem extends StatelessWidget {
       );
     }
 
-    // Fix backslashes in paths coming from server
     final String imageUrl = ApiConstants.getFullImageUrl(imagePath);
 
     return Stack(
@@ -236,7 +238,6 @@ class MarketListItem extends StatelessWidget {
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            print('Error loading list image: $error');
             return Center(
               child: Icon(
                 Icons.broken_image,

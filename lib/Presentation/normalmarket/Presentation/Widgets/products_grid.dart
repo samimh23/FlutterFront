@@ -9,14 +9,12 @@ import 'package:hanouty/Presentation/product/presentation/provider/product_provi
 import 'package:hanouty/injection_container.dart';
 import 'package:hanouty/Core/network/apiconastant.dart';
 
-
 class HorizontalProductsList extends StatefulWidget {
   final List<String> products; // List of product IDs
   final String marketName; // Optional market name to display
   final Function? onProductsUpdated; // Callback when products are updated
-  final String? marketId; // Added market ID parameter
-  final bool isDarkMode; // Add isDarkMode parameter for theme support
-
+  final String? marketId;
+  final bool isDarkMode;
 
   const HorizontalProductsList({
     super.key,
@@ -24,31 +22,25 @@ class HorizontalProductsList extends StatefulWidget {
     this.marketName = '',
     this.onProductsUpdated,
     this.marketId,
-    this.isDarkMode = false, // Default to light mode
+    this.isDarkMode = false,
   });
-
 
   @override
   State<HorizontalProductsList> createState() => _HorizontalProductsListState();
 }
 
-
 class _HorizontalProductsListState extends State<HorizontalProductsList> {
-  // Create our own ScrollController to ensure it always exists
   final ScrollController _scrollController = ScrollController();
-
 
   @override
   void dispose() {
-    // Dispose the controller when widget is removed
     _scrollController.dispose();
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // Colors based on theme
+    // Theme-based colors
     final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
     final headingColor = widget.isDarkMode ? Colors.white : const Color(0xFF2E7D32);
     final subTextColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey[600];
@@ -56,7 +48,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final orangeBgColor = const Color(0xFFFF9800).withOpacity(widget.isDarkMode ? 0.2 : 0.1);
     final scrollBtnColor = widget.isDarkMode ? Colors.grey[800] : Colors.grey[100];
     final scrollIconColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey[600];
-
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,16 +100,14 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                 ),
                 child: GestureDetector(
                   onTap: () {
-                    // Navigate to Add Product page with market ID
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => AddEditProductPage(
-                          marketId: widget.marketId, // Pass the market ID here
+                          marketId: widget.marketId,
                         ),
                       ),
                     ).then((result) {
-                      // Refresh the product list if a product was added
                       if (result == true && widget.onProductsUpdated != null) {
                         widget.onProductsUpdated!();
                       }
@@ -149,9 +138,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
           ),
         ),
 
-
         const SizedBox(height: 16),
-
 
         // Scrollable indicator with scroll buttons
         if (widget.products.isNotEmpty)
@@ -159,7 +146,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                // Arrow left - scroll left button
                 if (_scrollController.hasClients && _scrollController.position.pixels > 0)
                   GestureDetector(
                     onTap: () {
@@ -182,21 +168,13 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       ),
                     ),
                   ),
-
-
                 const SizedBox(width: 8),
-
-
                 Icon(
                   Icons.swipe,
                   size: 14,
                   color: widget.isDarkMode ? Colors.grey[600] : Colors.grey[400],
                 ),
-
-
                 const SizedBox(width: 6),
-
-
                 Text(
                   'Swipe to see more',
                   style: TextStyle(
@@ -205,13 +183,8 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-
-
                 const Spacer(),
-
-
-                // Arrow right - scroll right button
-                if (widget.products.length > 2) // Only show if we have enough products to scroll
+                if (widget.products.length > 2)
                   GestureDetector(
                     onTap: () {
                       _scrollController.animateTo(
@@ -237,39 +210,31 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             ),
           ),
 
-
         const SizedBox(height: 8),
-
 
         // Main product list
         widget.products.isEmpty
             ? _buildEmptyProductsView(context)
             : _buildProductList(context),
 
-
         const SizedBox(height: 16),
       ],
     );
   }
 
-
   Widget _buildProductList(BuildContext context) {
-    // Get the ProductProvider instance from the GetIt container
     final productProvider = sl<ProductProvider>();
-
 
     // Using NotificationListener to update scroll buttons visibility
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        // Force a rebuild when scroll position changes
         if (notification is ScrollUpdateNotification) {
           setState(() {});
         }
         return false;
       },
       child: Container(
-        // Ensure the parent has constraints for the ListView to work properly
-        height: 250, // Increased height to fit all content
+        height: 250,
         constraints: const BoxConstraints(
           minHeight: 250,
           maxHeight: 250,
@@ -278,12 +243,11 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
           controller: _scrollController,
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          physics: const BouncingScrollPhysics(), // Better scrolling behavior
+          physics: const BouncingScrollPhysics(),
           itemCount: widget.products.length,
           itemBuilder: (context, index) {
             final productId = widget.products[index];
             return FutureBuilder<Product?>(
-              // Use the productProvider from GetIt instead of Provider.of
               future: productProvider.fetchProductById(productId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -302,7 +266,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
   Widget _buildEmptyProductsView(BuildContext context) {
     // Colors for dark mode
     final emptyBgColor = widget.isDarkMode ? const Color(0xFF252525) : const Color(0xFFEEF7ED);
@@ -313,7 +276,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         ? const Color(0xFF81C784).withOpacity(0.5)
         : const Color(0xFF4CAF50).withOpacity(0.5);
     final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -355,16 +317,14 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
-              // Navigate to Add Product page with market ID
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => AddEditProductPage(
-                    marketId: widget.marketId, // Pass the market ID here
+                    marketId: widget.marketId,
                   ),
                 ),
               ).then((result) {
-                // Refresh the product list if a product was added
                 if (result == true && widget.onProductsUpdated != null) {
                   widget.onProductsUpdated!();
                 }
@@ -390,7 +350,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
   Widget _buildProductCard(BuildContext context, Product product, ProductProvider productProvider) {
     final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = widget.isDarkMode ? Colors.white : const Color(0xFF333333);
@@ -400,7 +359,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final shadowColor = widget.isDarkMode
         ? Colors.black.withOpacity(0.2)
         : Colors.black.withOpacity(0.08);
-
 
     return GestureDetector(
       onTap: () {
@@ -439,14 +397,12 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                 child: _buildProductImage(context, product.image),
               ),
             ),
-
-
             // Product details
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // Use min to avoid overflow
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Product name
                   Text(
@@ -456,14 +412,10 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       fontWeight: FontWeight.bold,
                       color: textColor,
                     ),
-                    maxLines: 1, // Limit to 1 line to avoid overflow
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-
-
                   const SizedBox(height: 6),
-
-
                   // Price information
                   Row(
                     children: [
@@ -488,10 +440,8 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       ],
                     ],
                   ),
-
-
-                  // Stock indicator
                   const SizedBox(height: 4),
+                  // Stock indicator
                   Text(
                     "Stock: ${product.stock}",
                     style: TextStyle(
@@ -500,9 +450,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
-
-                  // Action buttons row
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
@@ -516,11 +463,10 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                             MaterialPageRoute(
                               builder: (context) => AddEditProductPage(
                                 product: product,
-                                marketId: widget.marketId, // Also pass market ID when editing
+                                marketId: widget.marketId,
                               ),
                             ),
                           ).then((result) {
-                            // Refresh the product list if a product was updated
                             if (result == true && widget.onProductsUpdated != null) {
                               widget.onProductsUpdated!();
                             }
@@ -532,7 +478,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                         icon: Icons.delete_outline,
                         color: widget.isDarkMode ? Colors.red.shade300 : Colors.red,
                         onTap: () {
-                          // Show confirmation dialog
                           _showDeleteConfirmationDialog(
                             context,
                             product,
@@ -551,8 +496,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
-  // Helper method to build action buttons
   Widget _buildActionButton({
     required IconData icon,
     required Color color,
@@ -575,8 +518,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
-  // Show delete confirmation dialog
   void _showDeleteConfirmationDialog(
       BuildContext context,
       Product product,
@@ -585,7 +526,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final dialogBgColor = widget.isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = widget.isDarkMode ? Colors.white : null;
     final buttonTextColor = widget.isDarkMode ? Colors.grey[300] : Colors.grey;
-
 
     showDialog(
       context: context,
@@ -610,10 +550,7 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             ),
             ElevatedButton(
               onPressed: () async {
-                Navigator.of(context).pop(); // Dismiss confirmation dialog
-
-
-                // Use a local context for the dialog
+                Navigator.of(context).pop();
                 final dialogContext = context;
                 showDialog(
                   context: dialogContext,
@@ -633,7 +570,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                   ),
                 );
 
-
                 bool success = false;
                 try {
                   success = await productProvider.deleteProduct(product.id)
@@ -641,12 +577,10 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                 } catch (e) {
                   print("Delete exception: $e");
                 } finally {
-                  // Always dismiss the loading dialog using dialogContext
                   if (Navigator.of(dialogContext, rootNavigator: true).canPop()) {
                     Navigator.of(dialogContext, rootNavigator: true).pop();
                   }
                 }
-
 
                 if (mounted) {
                   if (success) {
@@ -688,13 +622,10 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
-  // Show loading dialog
   void _showLoadingDialog(BuildContext context) {
     final dialogBgColor = widget.isDarkMode ? const Color(0xFF252525) : Colors.white;
     final textColor = widget.isDarkMode ? Colors.white : null;
     final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-
 
     showDialog(
       context: context,
@@ -721,7 +652,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
   Widget _buildLoadingProductCard() {
     final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final shimmerColor = widget.isDarkMode ? Colors.grey[800] : Colors.grey[200];
@@ -729,7 +659,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
         ? Colors.black.withOpacity(0.2)
         : Colors.black.withOpacity(0.05);
     final loaderColor = widget.isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-
 
     return Container(
       width: 160,
@@ -762,36 +691,23 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
               ),
             ),
           ),
-
-
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Shimmer for title
                 Container(
                   height: 14,
                   width: double.infinity,
                   color: shimmerColor,
                 ),
-
-
                 const SizedBox(height: 8),
-
-
-                // Shimmer for price
                 Container(
                   height: 14,
                   width: 80,
                   color: shimmerColor,
                 ),
-
-
                 const SizedBox(height: 8),
-
-
-                // Shimmer for stock
                 Container(
                   height: 12,
                   width: 60,
@@ -805,7 +721,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
   Widget _buildErrorProductCard() {
     final cardColor = widget.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final errorColor = widget.isDarkMode ? Colors.red[400] : Colors.red[300];
@@ -813,7 +728,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final shadowColor = widget.isDarkMode
         ? Colors.black.withOpacity(0.2)
         : Colors.black.withOpacity(0.05);
-
 
     return Container(
       width: 160,
@@ -850,8 +764,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 
-
-  // Updated image loading function with improved error handling
   Widget _buildProductImage(BuildContext context, String? imageUrl) {
     final placeholderColor = widget.isDarkMode
         ? AppColors.primary.withOpacity(0.2)
@@ -860,7 +772,6 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     final accentColor = widget.isDarkMode ? const Color(0xFF81C784) : AppColors.primary;
     final errorBgColor = widget.isDarkMode ? Colors.grey[900] : Colors.grey[200];
     final errorTextColor = widget.isDarkMode ? Colors.grey[400] : Colors.grey;
-
 
     if (imageUrl == null || imageUrl.isEmpty) {
       return Container(
@@ -875,30 +786,22 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
       );
     }
 
-
     // Get full image URL using ApiConstants
     final String fullImageUrl = kIsWeb
-        ? ApiConstants.getImageUrlWithCacheBusting(imageUrl) // Use with cache busting for web
-        : ApiConstants.getFullImageUrl(imageUrl);            // Use standard URL for mobile
-
+        ? ApiConstants.getImageUrlWithCacheBusting(imageUrl)
+        : ApiConstants.getFullImageUrl(imageUrl);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Base placeholder
         Container(color: placeholderColor),
-
-
-        // Actual image
         CachedNetworkImage(
           imageUrl: fullImageUrl,
           fit: BoxFit.cover,
-          // Add a key based on URL to force refresh when image changes
           key: ValueKey(fullImageUrl),
-          // Add memory & disk cache settings
-          memCacheHeight: 400, // Optimized size for thumbnail
+          memCacheHeight: 400,
           memCacheWidth: 400,
-          maxHeightDiskCache: 800, // Higher quality for disk cache
+          maxHeightDiskCache: 800,
           maxWidthDiskCache: 800,
           placeholder: (context, url) => Center(
             child: CircularProgressIndicator(
@@ -907,10 +810,8 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
             ),
           ),
           errorWidget: (context, url, error) {
-            print('Error loading product image: $url - $error');
             return GestureDetector(
               onTap: () {
-                // Show image URL in dialog for debugging
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -970,11 +871,9 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
                             style: TextStyle(color: accentColor)
                         ),
                       ),
-                      // Add option to retry loading
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          // Force a refresh by clearing the cache for this URL
                           CachedNetworkImage.evictFromCache(fullImageUrl);
                           setState(() {});
                         },
@@ -1014,4 +913,3 @@ class _HorizontalProductsListState extends State<HorizontalProductsList> {
     );
   }
 }
-

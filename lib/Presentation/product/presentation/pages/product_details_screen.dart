@@ -14,6 +14,8 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:hanouty/Presentation/review/presentation/provider/review_provider.dart';
 import 'package:hanouty/Core/Utils/secure_storage.dart';
 
+import '../../../../Core/theme/AppColors.dart';
+
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
 
@@ -81,19 +83,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final isTablet = ResponsiveLayout.isTablet(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: ClientColors.background, // Updated background color
       appBar: AppBar(
         title: Text(
           _product.name,
           style: TextStyle(
-            color: Colors.white,
+            color: ClientColors.onPrimary, // Updated text color
             fontWeight: FontWeight.bold,
             fontSize: isDesktop ? 22 : (isTablet ? 20 : 18),
           ),
         ),
-        backgroundColor: AppColors.primary,
-        elevation: 2,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: ClientColors.primary, // Updated app bar color
+        elevation: 0, // Reduced elevation for modern look
+        iconTheme: IconThemeData(color: ClientColors.onPrimary), // Updated icon color
       ),
       body: isDesktop ? _buildDesktopLayout() : _buildMobileTabletLayout(),
       bottomNavigationBar: isDesktop ? null : _buildAddToCartButton(context),
@@ -105,14 +107,30 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 18.0),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: Colors.white,
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: ClientColors.accent.withOpacity(0.3)), // Updated border color
         ),
-        child: const Column(
-          children:  [
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.error_outline, color: ClientColors.accent), // Updated icon color
+                const SizedBox(width: 8),
+                Text(
+                  'Connection Error',
+                  style: TextStyle(
+                    color: ClientColors.accent, // Updated text color
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Text(
               'Failed to load your previous reviews. Please check your connection and try again.',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(color: ClientColors.text), // Updated text color
             ),
           ],
         ),
@@ -121,36 +139,55 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 18.0),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: ClientColors.primary.withOpacity(0.08), // Updated shadow color
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _userReview != null ? "Update your review" : "Rate this product",
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+          Row(
+            children: [
+              Icon(
+                _userReview != null ? Icons.edit_note : Icons.rate_review,
+                color: ClientColors.primary, // Updated icon color
+                size: 22,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _userReview != null ? "Update your review" : "Rate this product",
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: ClientColors.text, // Updated text color
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          RatingBar.builder(
-            initialRating: _userRating,
-            minRating: 1,
-            direction: Axis.horizontal,
-            allowHalfRating: false,
-            itemCount: 5,
-            itemBuilder: (context, _) => const Icon(
-              Icons.star,
-              color: Colors.amber,
+          const SizedBox(height: 12),
+          Center(
+            child: RatingBar.builder(
+              initialRating: _userRating,
+              minRating: 1,
+              direction: Axis.horizontal,
+              allowHalfRating: false,
+              itemCount: 5,
+              itemBuilder: (context, _) => Icon(
+                Icons.star,
+                color: ClientColors.accent, // Updated star color
+              ),
+              onRatingUpdate: (rating) {
+                setState(() {
+                  _userRating = rating;
+                });
+              },
             ),
-            onRatingUpdate: (rating) {
-              setState(() {
-                _userRating = rating;
-              });
-            },
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -161,9 +198,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                 if (_userId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('User ID not found. Please log in.'),
-                      duration: Duration(seconds: 2),
+                    SnackBar(
+                      content: const Text('User ID not found. Please log in.'),
+                      backgroundColor: ClientColors.primary, // Updated SnackBar color
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                   return;
@@ -172,9 +210,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 // If user reviews failed to fetch, prevent submit and show error.
                 if (_userReviewsFetchFailed) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to fetch your previous reviews. Please try again.'),
-                      duration: Duration(seconds: 2),
+                    SnackBar(
+                      content: const Text('Failed to fetch your previous reviews. Please try again.'),
+                      backgroundColor: ClientColors.accent, // Updated SnackBar color for errors
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                   return;
@@ -208,6 +247,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       content: Text(_userReview != null
                           ? 'Review updated successfully!'
                           : 'Review submitted successfully!'),
+                      backgroundColor: ClientColors.secondary, // Updated SnackBar color for success
                       duration: const Duration(seconds: 2),
                     ),
                   );
@@ -215,9 +255,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   await _initUserReview();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to submit review.'),
-                      duration: Duration(seconds: 2),
+                    SnackBar(
+                      content: const Text('Failed to submit review.'),
+                      backgroundColor: ClientColors.accent, // Updated SnackBar color for errors
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 }
@@ -225,9 +266,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               icon: const Icon(Icons.send_rounded),
               label: Text(_userReview != null ? "Update Review" : "Submit Review"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: ClientColors.primary, // Updated button color
+                foregroundColor: ClientColors.onPrimary, // Updated text color
                 textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                elevation: 0, // Reduced elevation
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
@@ -242,6 +287,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Left side - Image and ratings
           Expanded(
             flex: 5,
             child: Column(
@@ -256,10 +302,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ),
           ),
           const SizedBox(width: 32),
+          // Right side - Product details
           Expanded(
             flex: 7,
             child: Card(
-              elevation: 4,
+              elevation: 2, // Reduced elevation
+              shadowColor: ClientColors.primary.withOpacity(0.1), // Updated shadow color
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -270,15 +318,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   children: [
                     Text(
                       _product.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
+                        color: ClientColors.text, // Updated text color
                       ),
                     ),
                     const SizedBox(height: 16),
                     _buildPriceSection(isDesktop: true),
                     const SizedBox(height: 24),
-                    const Divider(),
+                    Divider(color: ClientColors.primary.withOpacity(0.1)), // Updated divider color
                     const SizedBox(height: 16),
                     _buildInfoRow(
                       Icons.category,
@@ -295,21 +344,38 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       iconSize: 20,
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      "Description",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
+                          color: ClientColors.primary, // Updated icon color
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Description",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: ClientColors.text, // Updated text color
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _product.description,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[700],
-                        height: 1.5,
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: ClientColors.background.withOpacity(0.3), // Light background for description
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _product.description,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: ClientColors.text, // Updated text color
+                          height: 1.5,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -329,9 +395,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final padding = isTablet ? 20.0 : 16.0;
 
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(), // Smoother scrolling
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Product image with badges
           Stack(
             children: [
               _buildProductImage(context),
@@ -366,24 +434,34 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   fontSize: isTablet ? 15 : 14,
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  "Description",
-                  style: TextStyle(
-                    fontSize: isTablet ? 20 : 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey[900],
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.description_outlined,
+                      color: ClientColors.primary, // Updated icon color
+                      size: 22,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Description",
+                      style: TextStyle(
+                        fontSize: isTablet ? 20 : 18,
+                        fontWeight: FontWeight.w700,
+                        color: ClientColors.text, // Updated text color
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.13),
+                        color: ClientColors.primary.withOpacity(0.08), // Updated shadow color
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       )
@@ -393,7 +471,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     _product.description,
                     style: TextStyle(
                       fontSize: isTablet ? 17 : 16,
-                      color: Colors.grey[700],
+                      color: ClientColors.text, // Updated text color
                       height: 1.5,
                     ),
                   ),
@@ -419,7 +497,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             style: TextStyle(
               fontSize: isTablet ? 25 : 22,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[900],
+              color: ClientColors.text, // Updated text color
               letterSpacing: 0.1,
             ),
             maxLines: 2,
@@ -430,19 +508,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: ClientColors.primary.withOpacity(0.1), // Updated background color
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
             children: [
-              const Icon(Icons.category, color: AppColors.primary, size: 15),
+              Icon(Icons.category, color: ClientColors.primary, size: 15), // Updated icon color
               const SizedBox(width: 3),
               Text(
                 _getCategoryName(_product.category),
                 style: TextStyle(
                   fontSize: isTablet ? 13 : 12.5,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.primary,
+                  color: ClientColors.primary, // Updated text color
                 ),
               ),
             ],
@@ -457,11 +535,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: inStock ? Colors.green[600] : Colors.red[600],
+        color: inStock ? ClientColors.secondary : ClientColors.accent, // Updated color based on status
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: (inStock ? Colors.green : Colors.red).withOpacity(0.18),
+            color: (inStock ? ClientColors.secondary : ClientColors.accent).withOpacity(0.18),
             blurRadius: 6,
             offset: const Offset(1, 2),
           ),
@@ -469,8 +547,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
       child: Text(
         inStock ? 'In Stock' : 'Out of Stock',
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: ClientColors.onSecondary, // Updated text color
           fontWeight: FontWeight.bold,
           fontSize: 13,
           letterSpacing: 0.2,
@@ -485,11 +563,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.red[400],
+        color: ClientColors.accent, // Updated badge color
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.18),
+            color: ClientColors.accent.withOpacity(0.18),
             blurRadius: 6,
             offset: const Offset(1, 2),
           ),
@@ -497,8 +575,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
       child: Text(
         '-${discountPercentage.round()}% OFF',
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: ClientColors.onAccent, // Updated text color
           fontWeight: FontWeight.bold,
           fontSize: 13,
           letterSpacing: 0.2,
@@ -511,13 +589,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 24.0),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.09),
+              color: ClientColors.primary.withOpacity(0.08), // Updated shadow color
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -528,9 +606,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           children: [
             RatingBarIndicator(
               rating: _product.ratingsAverage?.toDouble() ?? 0.0,
-              itemBuilder: (context, index) => const Icon(
+              itemBuilder: (context, index) => Icon(
                 Icons.star,
-                color: Colors.amber,
+                color: ClientColors.accent, // Updated star color
               ),
               itemCount: 5,
               itemSize: 24.0,
@@ -539,10 +617,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             const SizedBox(width: 10),
             Text(
               '${_product.ratingsAverage?.toStringAsFixed(1) ?? "0.0"} / 5',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: ClientColors.text, // Updated text color
               ),
             ),
             const SizedBox(width: 10),
@@ -550,9 +628,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               _product.ratingsQuantity == 1
                   ? 'Rated by 1 client'
                   : 'Rated by ${_product.ratingsQuantity} clients',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
-                color: Colors.black54,
+                color: ClientColors.textLight, // Updated text color
               ),
             ),
           ],
@@ -583,9 +661,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           fit: BoxFit.cover,
           placeholder: (context, url) => Container(
             height: 260,
-            color: Colors.grey[200],
-            child: const Center(
-              child: CircularProgressIndicator(),
+            color: ClientColors.background.withOpacity(0.3), // Updated placeholder color
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(ClientColors.primary), // Updated loader color
+              ),
             ),
           ),
           errorWidget: (context, url, error) {
@@ -594,31 +674,68 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Image Error'),
+                    title: Text(
+                      'Image Error',
+                      style: TextStyle(color: ClientColors.text), // Updated text color
+                    ),
                     content: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Failed to load image:'),
+                          Text(
+                            'Failed to load image:',
+                            style: TextStyle(color: ClientColors.text), // Updated text color
+                          ),
                           const SizedBox(height: 8),
-                          Text(fullImageUrl, style: const TextStyle(fontSize: 12)),
+                          Text(
+                            fullImageUrl,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: ClientColors.textLight, // Updated text color
+                            ),
+                          ),
                           const SizedBox(height: 8),
-                          Text('Original path: ${_product.image}', style: const TextStyle(fontSize: 12)),
+                          Text(
+                            'Original path: ${_product.image}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: ClientColors.textLight, // Updated text color
+                            ),
+                          ),
                           const SizedBox(height: 12),
-                          const Text('Check that:'),
-                          const Text('• Backend server is running'),
-                          const Text('• File exists on server'),
-                          const Text('• Path is correct'),
+                          Text(
+                            'Check that:',
+                            style: TextStyle(color: ClientColors.text), // Updated text color
+                          ),
+                          Text(
+                            '• Backend server is running',
+                            style: TextStyle(color: ClientColors.text), // Updated text color
+                          ),
+                          Text(
+                            '• File exists on server',
+                            style: TextStyle(color: ClientColors.text), // Updated text color
+                          ),
+                          Text(
+                            '• Path is correct',
+                            style: TextStyle(color: ClientColors.text), // Updated text color
+                          ),
                         ],
                       ),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: ClientColors.primary, // Updated button color
+                        ),
                         child: const Text('Close'),
                       ),
                     ],
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 );
               },
@@ -634,26 +751,32 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Container(
       height: 260,
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Colors.grey,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: ClientColors.textLight.withOpacity(0.5), // Updated background color
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
       ),
-      child: const Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(Icons.image_not_supported, size: 50, color: Colors.white),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             "Image not available",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          SizedBox(height: 2),
+          const SizedBox(height: 2),
           Text(
             "Tap for details",
-            style: TextStyle(fontSize: 10, color: Colors.white70),
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.white.withOpacity(0.8),
+            ),
           ),
         ],
       ),
@@ -675,7 +798,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           style: TextStyle(
             fontSize: priceFontSize,
             fontWeight: FontWeight.bold,
-            color: AppColors.primary,
+            color: ClientColors.primary, // Updated text color
           ),
         ),
         const SizedBox(width: 8),
@@ -685,7 +808,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             style: TextStyle(
               fontSize: discountFontSize,
               decoration: TextDecoration.lineThrough,
-              color: Colors.grey,
+              color: ClientColors.textLight, // Updated text color
             ),
           ),
       ],
@@ -698,13 +821,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
-          Icon(icon, size: iconSize, color: Colors.grey),
+          Icon(icon, size: iconSize, color: ClientColors.primary), // Updated icon color
           const SizedBox(width: 4),
           Text(
             "$label: ",
             style: TextStyle(
               fontSize: fontSize,
-              color: Colors.grey,
+              color: ClientColors.textLight, // Updated text color
             ),
           ),
           Expanded(
@@ -713,7 +836,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: ClientColors.text, // Updated text color
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -753,6 +876,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       fontSize: isDesktop ? 16 : 14,
                     ),
                   ),
+                  backgroundColor: ClientColors.primary, // Updated snackbar color
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
@@ -760,7 +884,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                   action: SnackBarAction(
                     label: 'VIEW CART',
-                    textColor: Colors.white,
+                    textColor: ClientColors.onPrimary, // Updated text color
                     onPressed: () {
                       Navigator.pushNamed(context, '/cart');
                     },
@@ -769,9 +893,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 2,
+              backgroundColor: ClientColors.primary, // Updated button color
+              foregroundColor: ClientColors.onPrimary, // Updated text color
+              elevation: 0, // Reduced elevation
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
               ),
@@ -819,9 +943,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               });
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              elevation: 2,
+              backgroundColor: ClientColors.secondary, // Updated button color
+              foregroundColor: ClientColors.onSecondary, // Updated text color
+              elevation: 0, // Reduced elevation
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(isDesktop ? 12 : 8),
               ),

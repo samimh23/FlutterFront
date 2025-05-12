@@ -13,22 +13,19 @@ import 'package:intl/intl.dart';
 import 'dart:math' show min;
 
 import '../../../../Core/Utils/Api_EndPoints.dart';
-
+import '../../../../Core/theme/AppColors.dart'; // Import AppColors
 
 class MarketOrdersPage extends StatefulWidget {
   final NormalMarket market;
-
 
   const MarketOrdersPage({
     Key? key,
     required this.market,
   }) : super(key: key);
 
-
   @override
   State<MarketOrdersPage> createState() => _MarketOrdersPageState();
 }
-
 
 class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerProviderStateMixin {
   bool _isLoading = false;
@@ -37,12 +34,10 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
   String _selectedTimeFrame = 'All Time';
   List<String> timeFrames = ['Today', 'This Week', 'This Month', 'All Time'];
 
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-
 
     // Load orders when page initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,25 +45,21 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
     });
   }
 
-
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
 
-
   Future<void> _loadOrders() async {
     setState(() {
       _isLoading = true;
     });
 
-
     try {
       // Get orders from provider
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
       final orders = await orderProvider.findOrdersByShopId(widget.market.id);
-
 
       setState(() {
         _orders = orders;
@@ -79,46 +70,47 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
         _isLoading = false;
       });
 
-
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to load orders: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.red, // Keep red for error messages
         ),
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final isSmallScreen = MediaQuery.of(context).size.width < 360;
 
-
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9F5EC),
+      // Use MarketOwnerColors for background
+      backgroundColor: isDarkMode
+          ? Color(0xFF0D2D4A) // Dark blue background for dark mode
+          : MarketOwnerColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // Use MarketOwnerColors for AppBar
+        backgroundColor: MarketOwnerColors.surface,
         elevation: 0,
         title: Text(
           '${widget.market.marketName} Orders',
-          style: const TextStyle(
-            color: Color(0xFF2E7D32),
+          style: TextStyle(
+            color: MarketOwnerColors.primary, // Use primary blue
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E7D32)),
+          icon: Icon(Icons.arrow_back, color: MarketOwnerColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF43A047),
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF43A047),
+          labelColor: MarketOwnerColors.primary, // Use primary blue
+          unselectedLabelColor: MarketOwnerColors.textLight, // Use lighter text color
+          indicatorColor: MarketOwnerColors.primary, // Use primary blue for indicator
           tabs: const [
             Tab(text: 'All'),
             Tab(text: 'Pending'),
@@ -127,9 +119,9 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
         ),
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+          valueColor: AlwaysStoppedAnimation<Color>(MarketOwnerColors.primary),
         ),
       )
           : Column(
@@ -150,8 +142,9 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
               alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF43A047),
-                  foregroundColor: Colors.white,
+                  // Use MarketOwnerColors for button
+                  backgroundColor: MarketOwnerColors.primary,
+                  foregroundColor: MarketOwnerColors.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
@@ -183,26 +176,46 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
     );
   }
 
-
   Future<void> _onWithdrawMoneyPressed() async {
     final amountController = TextEditingController();
     final amount = await showDialog<double>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Withdraw Money"),
+        backgroundColor: MarketOwnerColors.surface, // Use surface color
+        title: Text(
+          "Withdraw Money",
+          style: TextStyle(
+            color: MarketOwnerColors.text, // Use text color
+          ),
+        ),
         content: TextField(
           controller: amountController,
           keyboardType: TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: "Amount",
+            labelStyle: TextStyle(
+              color: MarketOwnerColors.textLight, // Use lighter text color
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: MarketOwnerColors.primary), // Use primary blue
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(null),
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(
+                color: MarketOwnerColors.textLight, // Use lighter text color
+              ),
+            ),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MarketOwnerColors.primary, // Use primary blue
+              foregroundColor: MarketOwnerColors.onPrimary, // Use on primary color
+            ),
             onPressed: () {
               final entered = double.tryParse(amountController.text);
               if (entered == null || entered <= 0) {
@@ -218,7 +231,6 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
         ],
       ),
     );
-
 
     if (amount != null) {
       try {
@@ -237,32 +249,37 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
           ),
         );
 
-
         if (response.statusCode == 201) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Withdraw successful")),
+            SnackBar(
+              content: Text("Withdraw successful"),
+              backgroundColor: MarketOwnerColors.primary, // Use primary blue for success
+            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Withdraw failed: ${response.statusMessage}")),
+            SnackBar(
+              content: Text("Withdraw failed: ${response.statusMessage}"),
+              backgroundColor: Colors.red, // Keep red for errors
+            ),
           );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+          SnackBar(
+            content: Text("Error: $e"),
+            backgroundColor: Colors.red, // Keep red for errors
+          ),
         );
       }
     }
   }
 
-
   List<Order> _filterOrdersByTab(String tabName) {
     if (_orders.isEmpty) return [];
 
-
     // First filter by time frame
     final filteredByTime = _filterOrdersByTimeFrame(_orders);
-
 
     // Then filter by tab
     switch (tabName) {
@@ -275,7 +292,6 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
         return filteredByTime;
     }
   }
-
 
   // Helper function to safely get DateTime from order
   DateTime _getOrderDate(Order order) {
@@ -291,16 +307,13 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
     return DateTime.now(); // Fallback
   }
 
-
   List<Order> _filterOrdersByTimeFrame(List<Order> orders) {
     if (orders.isEmpty) return [];
-
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
     final startOfMonth = DateTime(now.year, now.month, 1);
-
 
     switch (_selectedTimeFrame) {
       case 'Today':
@@ -326,7 +339,6 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
     }
   }
 
-
   // Helper method to check if two dates are on the same day
   bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
@@ -334,12 +346,10 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
         date1.day == date2.day;
   }
 
-
   Widget _buildOrdersList(List<Order> orders) {
     if (orders.isEmpty) {
       return EmptyOrdersView();
     }
-
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -354,11 +364,11 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
     );
   }
 
-
   void _showOrderDetails(Order order) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: MarketOwnerColors.surface, // Use surface color
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -366,4 +376,3 @@ class _MarketOrdersPageState extends State<MarketOrdersPage> with SingleTickerPr
     );
   }
 }
-

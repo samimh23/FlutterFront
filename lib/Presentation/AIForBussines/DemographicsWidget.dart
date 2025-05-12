@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+// import 'package:fl_chart/fl_chart.dart'; // Keep if Pie chart uses it directly
 import 'PieChartWidget.dart';
-import 'BarChartWidget.dart';
+// import 'BarChartWidget.dart'; // No longer needed if Age Groups (BarChart) is removed
 
 class DemographicsWidget extends StatelessWidget {
   final Map<String, dynamic> demographicsData;
-  final Map<String, dynamic>? genderChart;
-  final Map<String, dynamic>? ageGroupsChart;
+  final Map<String, dynamic>? genderChart; // For Pie Chart
+  // final Map<String, dynamic>? ageGroupsChart; // Removed ageGroupsChart
 
   const DemographicsWidget({
     Key? key,
     required this.demographicsData,
     this.genderChart,
-    this.ageGroupsChart,
+    // this.ageGroupsChart, // Removed ageGroupsChart
   }) : super(key: key);
 
   @override
@@ -23,83 +23,74 @@ class DemographicsWidget extends StatelessWidget {
     final Map<String, dynamic> ageStats = demographicsData['age_stats'] ?? {};
     final Map<String, dynamic> genderSales = demographicsData['gender_sales'] ?? {};
 
+    // Determine if gender chart is available to avoid empty Expanded space
+    final bool hasCharts = genderChart != null;
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Statistics section
           isSmallScreen
               ? _buildMobileStatsView(context, ageStats, genderSales)
               : _buildDesktopStatsView(context, ageStats, genderSales),
 
-          const SizedBox(height: 20),
+          if (hasCharts) const SizedBox(height: 16),
 
-          // Charts section - make it expandable
-          Expanded(
-            child: isSmallScreen
-                ? Column(
-              children: [
-          
-
-
-                if (ageGroupsChart != null)
-                  Expanded(
-                    flex: 1,
-                    child: _buildAgeGroupsSection(context),
-                  ),
-              ],
-            )
-                : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-
-                if (ageGroupsChart != null)
-                  Expanded(
-                    flex: 1,
-                    child: _buildAgeGroupsSection(context),
-                  ),
-              ],
+          // Charts section - now only for Gender Distribution Pie Chart
+          if (hasCharts)
+            Expanded(
+              child: _buildGenderDistributionSection(context), // Directly build gender chart
             ),
-          ),
         ],
       ),
     );
   }
 
+  // _buildMobileChartsLayout and _buildDesktopChartsLayout are no longer needed
+  // as we only have one potential chart in this section now.
 
+  // Removed _buildAgeGroupsSection method
 
-  Widget _buildAgeGroupsSection(BuildContext context) {
+  Map<String, dynamic> _dataWithoutTitle(Map<String, dynamic> originalData) {
+    final newData = Map<String, dynamic>.from(originalData);
+    newData.remove('title');
+    return newData;
+  }
+
+  Widget _buildGenderDistributionSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Age Groups',
-          style: Theme.of(context).textTheme.titleMedium,
+          'Gender Distribution',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Expanded(
-          child: ageGroupsChart != null
-              ? BarChartWidget(
-            data: ageGroupsChart!,
-            barColor: Colors.purple,
+          child: genderChart != null
+              ? PieChartWidget(
+            data: _dataWithoutTitle(genderChart!),
           )
-              : const Center(child: Text('No age group data available')),
+              : const Center(child: Text('No gender data')),
         ),
       ],
     );
   }
 
-  Widget _buildDesktopStatsView(BuildContext context,
-      Map<String, dynamic> ageStats, Map<String, dynamic> genderSales) {
+  Widget _buildDesktopStatsView(
+      BuildContext context,
+      Map<String, dynamic> ageStats,
+      Map<String, dynamic> genderSales,
+      ) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Card(
             elevation: 1,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -107,9 +98,9 @@ class DemographicsWidget extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  _buildStatRow('Average Age', _formatValue(ageStats['average'])),
-                  _buildStatRow('Minimum Age', _formatValue(ageStats['min'])),
-                  _buildStatRow('Maximum Age', _formatValue(ageStats['max'])),
+                  _buildStatRow(context, 'Average Age', _formatValue(ageStats['average'])),
+                  _buildStatRow(context, 'Minimum Age', _formatValue(ageStats['min'])),
+                  _buildStatRow(context, 'Maximum Age', _formatValue(ageStats['max'])),
                 ],
               ),
             ),
@@ -120,7 +111,7 @@ class DemographicsWidget extends StatelessWidget {
           child: Card(
             elevation: 1,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -130,7 +121,8 @@ class DemographicsWidget extends StatelessWidget {
                   const SizedBox(height: 8),
                   ...genderSales.entries.map((entry) {
                     return _buildStatRow(
-                        entry.key,
+                        context,
+                        _capitalize(entry.key),
                         '\$${_formatCurrency(entry.value)}'
                     );
                   }).toList(),
@@ -143,14 +135,17 @@ class DemographicsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileStatsView(BuildContext context,
-      Map<String, dynamic> ageStats, Map<String, dynamic> genderSales) {
+  Widget _buildMobileStatsView(
+      BuildContext context,
+      Map<String, dynamic> ageStats,
+      Map<String, dynamic> genderSales,
+      ) {
     return Column(
       children: [
         Card(
           elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -158,9 +153,9 @@ class DemographicsWidget extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                _buildStatRow('Average Age', _formatValue(ageStats['average'])),
-                _buildStatRow('Minimum Age', _formatValue(ageStats['min'])),
-                _buildStatRow('Maximum Age', _formatValue(ageStats['max'])),
+                _buildStatRow(context, 'Average Age', _formatValue(ageStats['average'])),
+                _buildStatRow(context, 'Minimum Age', _formatValue(ageStats['min'])),
+                _buildStatRow(context, 'Maximum Age', _formatValue(ageStats['max'])),
               ],
             ),
           ),
@@ -169,7 +164,7 @@ class DemographicsWidget extends StatelessWidget {
         Card(
           elevation: 1,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -179,7 +174,8 @@ class DemographicsWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 ...genderSales.entries.map((entry) {
                   return _buildStatRow(
-                      entry.key,
+                      context,
+                      _capitalize(entry.key),
                       '\$${_formatCurrency(entry.value)}'
                   );
                 }).toList(),
@@ -191,10 +187,18 @@ class DemographicsWidget extends StatelessWidget {
     );
   }
 
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
+  }
+
   String _formatValue(dynamic value) {
     if (value == null) return 'N/A';
     if (value is num) {
-      return value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 1);
+      if (value.truncateToDouble() == value) {
+        return value.toInt().toString();
+      }
+      return value.toStringAsFixed(1);
     }
     return value.toString();
   }
@@ -205,16 +209,16 @@ class DemographicsWidget extends StatelessWidget {
     return numValue.toStringAsFixed(2);
   }
 
-  Widget _buildStatRow(String label, String value) {
+  Widget _buildStatRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),

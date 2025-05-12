@@ -1,5 +1,3 @@
-// lib/Presentation/order/presentation/Page/widgets/market_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hanouty/Core/heritables/Markets.dart';
@@ -35,11 +33,11 @@ class MarketCard extends StatelessWidget {
     final iconSize = isSmallScreen ? 12.0 : 14.0;
     final padding = isSmallScreen ? 12.0 : 16.0;
 
-    // Colors based on theme
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey.shade500 : const Color(0xFF666666);
+    // Colors based on theme, merchant/market version
+    final textColor = isDarkMode ? Colors.white : Theme.of(context).colorScheme.primary;
+    final subtitleColor = isDarkMode ? Colors.grey.shade400 : Theme.of(context).colorScheme.onSurface.withOpacity(0.8);
     final accentColor = isDarkMode ? const Color(0xFF81C784) : const Color(0xFF4CAF50);
-    final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.transparent;
+    final borderColor = isDarkMode ? Colors.grey.shade800.withOpacity(0.5) : Colors.grey.withOpacity(0.09);
     final placeholderColor = isDarkMode ? const Color(0xFF1A2E1A) : const Color(0xFFEEF7ED);
 
     return AnimatedContainer(
@@ -50,7 +48,7 @@ class MarketCard extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
+            color: Colors.black.withOpacity(isDarkMode ? 0.15 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -66,7 +64,7 @@ class MarketCard extends StatelessWidget {
             onTap();
           },
           splashColor: accentColor.withOpacity(0.1),
-          highlightColor: accentColor.withOpacity(0.05),
+          highlightColor: accentColor.withOpacity(0.04),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -116,11 +114,11 @@ class MarketCard extends StatelessWidget {
                                       vertical: isSmallScreen ? 4 : 5,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: orderCount > 0 ? const Color(0xFF4CAF50) : Colors.orange,
+                                      color: orderCount > 0 ? accentColor : Colors.orange,
                                       borderRadius: BorderRadius.circular(30),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
+                                          color: Colors.black.withOpacity(0.26),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         ),
@@ -215,7 +213,7 @@ class MarketCard extends StatelessWidget {
                           Container(
                             padding: EdgeInsets.all(isSmallScreen ? 4 : 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2196F3).withOpacity(isDarkMode ? 0.2 : 0.1),
+                              color: const Color(0xFF2196F3).withOpacity(isDarkMode ? 0.22 : 0.11),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -250,7 +248,7 @@ class MarketCard extends StatelessWidget {
                                       backgroundColor: Colors.grey.withOpacity(isDarkMode ? 0.3 : 0.2),
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         orderCount > 0
-                                            ? (isDarkMode ? const Color(0xFF4CAF50) : const Color(0xFF4CAF50))
+                                            ? accentColor
                                             : Colors.orange,
                                       ),
                                       minHeight: 5,
@@ -321,7 +319,6 @@ class MarketCard extends StatelessWidget {
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            print('Error loading image: $error');
             return Center(
               child: Icon(
                 Icons.broken_image,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 // Import your Dashboard screen
 import '../../../AIForBussines/DashboardScreen.dart';
+import '../../../../Core/theme/AppColors.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -33,31 +34,32 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7F3), // Light cream background
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              color: colorScheme.secondary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back,
-              color: Color(0xFF4CAF50),
+              color: colorScheme.secondary,
               size: 20,
             ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Settings',
-          style: TextStyle(
-            color: Color(0xFF2E7D32),
-            fontSize: 22,
+          style: textTheme.titleLarge?.copyWith(
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -67,12 +69,12 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                color: colorScheme.secondary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.help_outline,
-                color: Color(0xFF4CAF50),
+                color: colorScheme.secondary,
                 size: 20,
               ),
             ),
@@ -92,30 +94,36 @@ class _SettingsPageState extends State<SettingsPage> {
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           children: [
-            _buildProfileSection(),
+            _buildProfileSection(colorScheme, textTheme),
             const SizedBox(height: 24),
 
             // Analytics Preview Card
-            _buildAnalyticsPreviewCard(),
+            _buildAnalyticsPreviewCard(colorScheme, textTheme),
             const SizedBox(height: 24),
 
-            _buildSectionHeader('Account Settings', Icons.account_circle_outlined),
+            _buildSectionHeader('Account Settings', Icons.account_circle_outlined, colorScheme, textTheme),
             _buildSettingsCard([
               _buildNavigationItem(
                 'Personal Information',
                 Icons.person_outline,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToPersonalInfo(),
               ),
               const Divider(height: 1),
               _buildNavigationItem(
                 'Wallet & Payment Methods',
                 Icons.account_balance_wallet_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToPaymentMethods(),
               ),
               const Divider(height: 1),
               _buildNavigationItem(
                 'Security Settings',
                 Icons.security_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToSecurity(),
                 showBadge: true,
               ),
@@ -124,11 +132,13 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 24),
 
             // Add Analytics & Reports Section
-            _buildSectionHeader('Analytics & Reports', Icons.analytics_outlined),
+            _buildSectionHeader('Analytics & Reports', Icons.analytics_outlined, colorScheme, textTheme),
             _buildSettingsCard([
               _buildNavigationItem(
                 'AI Sales Dashboard',
                 Icons.dashboard_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToAIDashboard(),
                 showBadge: true,
               ),
@@ -136,29 +146,37 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildNavigationItem(
                 'Market Performance',
                 Icons.show_chart,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToMarketPerformance(),
               ),
               const Divider(height: 1),
               _buildNavigationItem(
                 'Customer Insights',
                 Icons.people_outline,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToCustomerInsights(),
               ),
               const Divider(height: 1),
               _buildNavigationItem(
                 'Report Settings',
                 Icons.settings_applications_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToReportSettings(),
               ),
             ]),
 
             const SizedBox(height: 24),
 
-            _buildSectionHeader('App Settings', Icons.settings_outlined),
+            _buildSectionHeader('App Settings', Icons.settings_outlined, colorScheme, textTheme),
             _buildSettingsCard([
               _buildSwitchItem(
                 'Notifications',
                 Icons.notifications_outlined,
+                colorScheme,
+                textTheme,
                 _notificationsEnabled,
                     (value) => setState(() => _notificationsEnabled = value),
                 subtitle: 'Receive updates about your markets and products',
@@ -167,6 +185,8 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildExpandableItem(
                 'Language',
                 Icons.language_outlined,
+                colorScheme,
+                textTheme,
                 _selectedLanguage,
                 _languages,
                     (value) => setState(() => _selectedLanguage = value),
@@ -175,6 +195,8 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildExpandableItem(
                 'Currency',
                 Icons.currency_exchange_outlined,
+                colorScheme,
+                textTheme,
                 _selectedCurrency,
                 _currencies,
                     (value) => setState(() => _selectedCurrency = value),
@@ -183,12 +205,13 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSwitchItem(
                 'Use System Theme',
                 Icons.brightness_auto_outlined,
+                colorScheme,
+                textTheme,
                 _useSystemTheme,
                     (value) {
                   setState(() {
                     _useSystemTheme = value;
                     if (value) {
-                      // Reset dark mode to system default if using system theme
                       _darkModeEnabled = false;
                     }
                   });
@@ -199,6 +222,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 _buildSwitchItem(
                   'Dark Mode',
                   Icons.dark_mode_outlined,
+                  colorScheme,
+                  textTheme,
                   _darkModeEnabled,
                       (value) => setState(() => _darkModeEnabled = value),
                 ),
@@ -207,6 +232,8 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSwitchItem(
                 'Biometric Authentication',
                 Icons.fingerprint,
+                colorScheme,
+                textTheme,
                 _useBiometrics,
                     (value) => setState(() => _useBiometrics = value),
               ),
@@ -214,44 +241,52 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 24),
 
-            _buildSectionHeader('App Information', Icons.info_outline),
+            _buildSectionHeader('App Information', Icons.info_outline, colorScheme, textTheme),
             _buildSettingsCard([
               _buildNavigationItem(
                 'About Hanouty',
                 Icons.store_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _showAboutDialog(),
               ),
               const Divider(height: 1),
               _buildNavigationItem(
                 'Terms & Conditions',
                 Icons.description_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToTerms(),
               ),
               const Divider(height: 1),
               _buildNavigationItem(
                 'Privacy Policy',
                 Icons.privacy_tip_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToPrivacyPolicy(),
               ),
               const Divider(height: 1),
               _buildNavigationItem(
                 'Contact Support',
                 Icons.support_agent_outlined,
+                colorScheme,
+                textTheme,
                 onTap: () => _navigateToSupport(),
               ),
             ]),
 
             const SizedBox(height: 24),
 
-            _buildLogoutButton(),
+            _buildLogoutButton(colorScheme, textTheme),
 
             const SizedBox(height: 40),
 
             Center(
               child: Text(
                 'App Version: 1.0.5',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
                   fontSize: 14,
                 ),
               ),
@@ -263,11 +298,11 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _buildProfileSection(ColorScheme colorScheme, TextTheme textTheme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -287,7 +322,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFF4CAF50),
+                    color: colorScheme.secondary,
                     width: 2,
                   ),
                 ),
@@ -303,28 +338,26 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Aladin Ayari',
-                      style: TextStyle(
-                        fontSize: 20,
+                      style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.email_outlined,
                           size: 16,
-                          color: Color(0xFF4CAF50),
+                          color: colorScheme.secondary,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'aladin.ayari@example.com',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -338,23 +371,22 @@ class _SettingsPageState extends State<SettingsPage> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF4CAF50).withOpacity(0.1),
+                            color: colorScheme.secondary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.verified,
                                 size: 14,
-                                color: Color(0xFF4CAF50),
+                                color: colorScheme.secondary,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 'Verified',
-                                style: TextStyle(
-                                  color: Color(0xFF4CAF50),
-                                  fontSize: 12,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.secondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -371,12 +403,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
+                    color: colorScheme.secondary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_outlined,
-                    color: Color(0xFF4CAF50),
+                    color: colorScheme.secondary,
                     size: 20,
                   ),
                 ),
@@ -387,10 +419,10 @@ class _SettingsPageState extends State<SettingsPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF7ED),
+              color: colorScheme.background,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFFD8EBD8),
+                color: colorScheme.secondary.withOpacity(0.15),
                 width: 1,
               ),
             ),
@@ -401,33 +433,36 @@ class _SettingsPageState extends State<SettingsPage> {
                     'Your Markets',
                     '5',
                     Icons.storefront_outlined,
-                    const Color(0xFF4CAF50),
+                    colorScheme.secondary,
+                    textTheme,
                   ),
                 ),
                 Container(
                   height: 40,
                   width: 1,
-                  color: const Color(0xFFD8EBD8),
+                  color: colorScheme.secondary.withOpacity(0.15),
                 ),
                 Expanded(
                   child: _buildProfileStat(
                     'Products',
                     '12',
                     Icons.inventory_2_outlined,
-                    const Color(0xFF2196F3),
+                    Colors.blue,
+                    textTheme,
                   ),
                 ),
                 Container(
                   height: 40,
                   width: 1,
-                  color: const Color(0xFFD8EBD8),
+                  color: colorScheme.secondary.withOpacity(0.15),
                 ),
                 Expanded(
                   child: _buildProfileStat(
                     'NFTs',
                     '3',
                     Icons.token_outlined,
-                    const Color(0xFFFF9800),
+                    colorScheme.primary,
+                    textTheme,
                   ),
                 ),
               ],
@@ -439,11 +474,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // Analytics Preview Card
-  Widget _buildAnalyticsPreviewCard() {
+  Widget _buildAnalyticsPreviewCard(ColorScheme colorScheme, TextTheme textTheme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -459,20 +494,19 @@ class _SettingsPageState extends State<SettingsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Sales Analytics',
-                style: TextStyle(
-                  fontSize: 18,
+                style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E7D32),
+                  color: colorScheme.onSurface,
                 ),
               ),
               TextButton(
                 onPressed: () => _navigateToAIDashboard(),
-                child: const Text(
+                child: Text(
                   'View Dashboard',
-                  style: TextStyle(
-                    color: Color(0xFF4CAF50),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.secondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -486,16 +520,18 @@ class _SettingsPageState extends State<SettingsPage> {
                   'This Month',
                   '₮3,456',
                   Icons.trending_up,
-                  const Color(0xFF4CAF50),
-                  '+12%'
+                  colorScheme.secondary,
+                  '+12%',
+                  textTheme
               ),
               const SizedBox(width: 16),
               _buildAnalyticItem(
                   'Orders',
                   '48',
                   Icons.shopping_bag_outlined,
-                  const Color(0xFF2196F3),
-                  '+8%'
+                  Colors.blue,
+                  '+8%',
+                  textTheme
               ),
             ],
           ),
@@ -504,7 +540,7 @@ class _SettingsPageState extends State<SettingsPage> {
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
+              color: colorScheme.background,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -514,13 +550,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   Icon(
                     Icons.bar_chart,
                     size: 40,
-                    color: Colors.grey.shade400,
+                    color: colorScheme.onSurface.withOpacity(0.2),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Tap to view full analytics',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 14,
                     ),
                   ),
@@ -531,11 +567,14 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => _navigateToAIDashboard(),
-            icon: const Icon(Icons.analytics_outlined),
-            label: const Text('Open AI Dashboard'),
+            icon: Icon(Icons.analytics_outlined, color: colorScheme.onPrimary),
+            label: Text(
+              'Open AI Dashboard',
+              style: textTheme.labelLarge?.copyWith(color: colorScheme.onPrimary),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.secondary,
+              foregroundColor: colorScheme.onSecondary,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -549,7 +588,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildAnalyticItem(String label, String value, IconData icon, Color color, String trend) {
+  Widget _buildAnalyticItem(String label, String value, IconData icon, Color color, String trend, TextTheme textTheme) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -570,9 +609,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(width: 8),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: textTheme.bodySmall?.copyWith(
                     color: Colors.grey.shade700,
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -580,18 +619,18 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 8),
             Text(
               value,
-              style: TextStyle(
-                fontSize: 20,
+              style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: color,
+                fontSize: 20,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               trend,
-              style: TextStyle(
+              style: textTheme.bodySmall?.copyWith(
                 fontSize: 12,
-                color: const Color(0xFF4CAF50),
+                color: AppColors.primary, // Show green for positive trends
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -601,7 +640,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildProfileStat(String label, String value, IconData icon, Color color) {
+  Widget _buildProfileStat(String label, String value, IconData icon, Color color, TextTheme textTheme) {
     return Column(
       children: [
         Container(
@@ -619,25 +658,25 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 8),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 18,
+          style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: color,
+            fontSize: 18,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
+          style: textTheme.bodySmall?.copyWith(
             color: Colors.grey.shade700,
+            fontSize: 12,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(String title, IconData icon, ColorScheme colorScheme, TextTheme textTheme) {
     return Padding(
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Row(
@@ -645,15 +684,15 @@ class _SettingsPageState extends State<SettingsPage> {
           Icon(
             icon,
             size: 18,
-            color: const Color(0xFF2E7D32),
+            color: colorScheme.secondary,
           ),
           const SizedBox(width: 8),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
+            style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2E7D32),
+              color: colorScheme.secondary,
+              fontSize: 16,
             ),
           ),
         ],
@@ -664,7 +703,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSettingsCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -683,6 +722,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSwitchItem(
       String title,
       IconData icon,
+      ColorScheme colorScheme,
+      TextTheme textTheme,
       bool value,
       Function(bool) onChanged,
       {String? subtitle}
@@ -695,22 +736,22 @@ class _SettingsPageState extends State<SettingsPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                color: colorScheme.secondary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: const Color(0xFF4CAF50),
+                color: colorScheme.secondary,
                 size: 20,
               ),
             ),
             const SizedBox(width: 16),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
+              style: textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF333333),
+                color: colorScheme.onSurface,
+                fontSize: 16,
               ),
             ),
           ],
@@ -720,16 +761,16 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: const EdgeInsets.only(left: 52),
           child: Text(
             subtitle,
-            style: TextStyle(
+            style: textTheme.bodySmall?.copyWith(
               fontSize: 13,
-              color: Colors.grey.shade600,
+              color: colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         )
             : null,
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF4CAF50),
+        activeColor: colorScheme.secondary,
         contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       ),
     );
@@ -738,27 +779,29 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildNavigationItem(
       String title,
       IconData icon,
+      ColorScheme colorScheme,
+      TextTheme textTheme,
       {required VoidCallback onTap, bool showBadge = false}
       ) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withOpacity(0.1),
+          color: colorScheme.secondary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
-          color: const Color(0xFF4CAF50),
+          color: colorScheme.secondary,
           size: 20,
         ),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: 16,
+        style: textTheme.bodyLarge?.copyWith(
           fontWeight: FontWeight.w500,
-          color: Color(0xFF333333),
+          color: colorScheme.onSurface,
+          fontSize: 16,
         ),
       ),
       trailing: Row(
@@ -768,23 +811,23 @@ class _SettingsPageState extends State<SettingsPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50),
+                color: colorScheme.secondary,
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: const Text(
+              child: Text(
                 'NEW',
-                style: TextStyle(
+                style: textTheme.labelSmall?.copyWith(
                   fontSize: 10,
-                  color: Colors.white,
+                  color: colorScheme.onSecondary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           const SizedBox(width: 8),
-          const Icon(
+          Icon(
             Icons.arrow_forward_ios,
             size: 16,
-            color: Color(0xFF999999),
+            color: colorScheme.onSurface.withOpacity(0.5),
           ),
         ],
       ),
@@ -796,6 +839,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildExpandableItem(
       String title,
       IconData icon,
+      ColorScheme colorScheme,
+      TextTheme textTheme,
       String currentValue,
       List<String> options,
       Function(String) onChanged,
@@ -806,28 +851,28 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF4CAF50).withOpacity(0.1),
+            color: colorScheme.secondary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: const Color(0xFF4CAF50),
+            color: colorScheme.secondary,
             size: 20,
           ),
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
+          style: textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.w500,
-            color: Color(0xFF333333),
+            color: colorScheme.onSurface,
+            fontSize: 16,
           ),
         ),
         subtitle: Text(
           currentValue,
-          style: const TextStyle(
+          style: textTheme.bodySmall?.copyWith(
             fontSize: 13,
-            color: Color(0xFF4CAF50),
+            color: colorScheme.secondary,
           ),
         ),
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -844,10 +889,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     Expanded(
                       child: Text(
                         option,
-                        style: TextStyle(
+                        style: textTheme.bodyLarge?.copyWith(
                           color: option == currentValue
-                              ? const Color(0xFF4CAF50)
-                              : const Color(0xFF555555),
+                              ? colorScheme.secondary
+                              : colorScheme.onSurface.withOpacity(0.65),
                           fontWeight: option == currentValue
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -855,9 +900,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     if (option == currentValue)
-                      const Icon(
+                      Icon(
                         Icons.check_circle,
-                        color: Color(0xFF4CAF50),
+                        color: colorScheme.secondary,
                         size: 18,
                       ),
                   ],
@@ -869,13 +914,19 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(ColorScheme colorScheme, TextTheme textTheme) {
     return ElevatedButton.icon(
-      onPressed: () => _showLogoutDialog(),
-      icon: const Icon(Icons.logout),
-      label: const Text('Log Out'),
+      onPressed: () => _showLogoutDialog(colorScheme, textTheme),
+      icon: Icon(Icons.logout, color: Colors.redAccent),
+      label: Text(
+        'Log Out',
+        style: textTheme.labelLarge?.copyWith(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         foregroundColor: Colors.redAccent,
         side: const BorderSide(color: Colors.redAccent, width: 1),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -883,38 +934,38 @@ class _SettingsPageState extends State<SettingsPage> {
           borderRadius: BorderRadius.circular(12),
         ),
         elevation: 0,
-        textStyle: const TextStyle(
-          fontSize: 16,
+        textStyle: textTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.bold,
+          fontSize: 16,
         ),
       ),
     );
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog(ColorScheme colorScheme, TextTheme textTheme) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Row(
+        title: Row(
           children: [
             Icon(
               Icons.logout,
               color: Colors.redAccent,
             ),
-            SizedBox(width: 10),
-            Text('Log Out'),
+            const SizedBox(width: 10),
+            Text('Log Out', style: textTheme.titleMedium),
           ],
         ),
-        content: const Text('Are you sure you want to log out?'),
+        content: Text('Are you sure you want to log out?', style: textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: Color(0xFF666666)),
+              style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.7)),
             ),
           ),
           ElevatedButton(
@@ -922,16 +973,16 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.of(context).pop();
               // Implement logout logic
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Logged out successfully'),
-                  backgroundColor: Color(0xFF4CAF50),
+                SnackBar(
+                  content: Text('Logged out successfully', style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary)),
+                  backgroundColor: colorScheme.secondary,
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
             ),
-            child: const Text('Log Out'),
+            child: Text('Log Out', style: textTheme.labelLarge?.copyWith(color: colorScheme.onPrimary)),
           ),
         ],
       ),
@@ -939,20 +990,22 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showHelpDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Row(
+        title: Row(
           children: [
             Icon(
               Icons.help_outline,
-              color: Color(0xFF4CAF50),
+              color: colorScheme.secondary,
             ),
-            SizedBox(width: 10),
-            Text('Help & Support'),
+            const SizedBox(width: 10),
+            Text('Help & Support', style: textTheme.titleMedium),
           ],
         ),
         content: const Column(
@@ -983,21 +1036,20 @@ class _SettingsPageState extends State<SettingsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
+            child: Text(
               'Close',
-              style: TextStyle(color: Color(0xFF4CAF50)),
+              style: textTheme.bodyMedium?.copyWith(color: colorScheme.secondary),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // Navigate to support page
               _navigateToSupport();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: colorScheme.secondary,
             ),
-            child: const Text('Contact Support'),
+            child: Text('Contact Support', style: textTheme.labelLarge?.copyWith(color: colorScheme.onSecondary)),
           ),
         ],
       ),
@@ -1005,20 +1057,22 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showAboutDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Row(
+        title: Row(
           children: [
             Icon(
               Icons.store,
-              color: Color(0xFF4CAF50),
+              color: colorScheme.secondary,
             ),
-            SizedBox(width: 10),
-            Text('About Hanouty'),
+            const SizedBox(width: 10),
+            Text('About Hanouty', style: textTheme.titleMedium),
           ],
         ),
         content: Column(
@@ -1030,34 +1084,33 @@ class _SettingsPageState extends State<SettingsPage> {
               width: 100,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Hanouty',
-              style: TextStyle(
-                fontSize: 20,
+              style: textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2E7D32),
+                color: colorScheme.secondary,
+                fontSize: 20,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Version 1.0.5',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF666666),
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Hanouty is a marketplace for tokenized produce, connecting farmers directly with consumers through blockchain technology.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14),
+              style: textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '© 2025 Hanouty Inc. All rights reserved.',
-              style: TextStyle(
+              style: textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.5),
                 fontSize: 12,
-                color: Color(0xFF999999),
               ),
             ),
           ],
@@ -1065,9 +1118,9 @@ class _SettingsPageState extends State<SettingsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
+            child: Text(
               'Close',
-              style: TextStyle(color: Color(0xFF4CAF50)),
+              style: textTheme.bodyMedium?.copyWith(color: colorScheme.secondary),
             ),
           ),
         ],
@@ -1075,46 +1128,45 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Navigation methods
+  // Navigation methods (unchanged)
   void _navigateToEditProfile() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Edit Profile'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Edit Profile'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToPersonalInfo() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Personal Information'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Personal Information'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToPaymentMethods() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Payment Methods'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Payment Methods'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToSecurity() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Security Settings'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Security Settings'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   // Analytics navigation methods
   void _navigateToAIDashboard() {
-    // Navigate to the AI Dashboard screen
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const DashboardScreen()),
@@ -1123,54 +1175,54 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _navigateToMarketPerformance() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Market Performance'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Market Performance'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToCustomerInsights() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Customer Insights'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Customer Insights'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToReportSettings() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Report Settings'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Report Settings'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToTerms() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Terms & Conditions'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Terms & Conditions'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToPrivacyPolicy() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Privacy Policy'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Privacy Policy'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
 
   void _navigateToSupport() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigate to Support'),
-        backgroundColor: Color(0xFF4CAF50),
+      SnackBar(
+        content: const Text('Navigate to Support'),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }

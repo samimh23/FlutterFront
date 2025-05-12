@@ -32,18 +32,24 @@ class _DashboardPageState extends State<DashboardPage> {
   final GlobalKey<_OrdersPageWrapperState> _ordersKey = GlobalKey();
   final GlobalKey<_FarmPageWrapperState> _farmKey = GlobalKey();
 
-
   late final List<Widget> _pages = [
     NormalMarketsPageWrapper(key: _marketsKey),
     MarketOwnerAuctionsScreen(),
     SettingsPageWrapper(key: _settingsKey),
     OrdersPageWrapper(key: _ordersKey),
     FarmMarketplaceScreen(key: _farmKey),
-    WalletScreen(),
-
+     WalletScreen(),
   ];
 
-  final List<String> _titles = ['Fresh Markets', 'Auctions' ,'Settings', 'Market Orders','Farms','My Wallet'];
+
+  final List<String> _titles = [
+    'Fresh Markets',
+    'Auctions',
+    'Settings',
+    'Market Orders',
+    'Farms',
+    'My Wallet'
+  ];
   final List<IconData> _pageIcons = [
     Icons.storefront_outlined,
     Icons.gavel,
@@ -59,12 +65,15 @@ class _DashboardPageState extends State<DashboardPage> {
         _marketsKey.currentState?.reload();
         break;
       case 1:
-        _settingsKey.currentState?.reload();
+      // If MarketOwnerAuctionsScreen needs reload, add logic here
         break;
       case 2:
-        _ordersKey.currentState?.reload();
+        _settingsKey.currentState?.reload();
         break;
       case 3:
+        _ordersKey.currentState?.reload();
+        break;
+      case 4:
         _farmKey.currentState?.reload();
         break;
     }
@@ -72,85 +81,49 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F5EC),
-      appBar: _buildAppBar(),
-      drawer: _buildDrawer(),
+      backgroundColor: colorScheme.background,
+      appBar: _buildAppBar(theme, colorScheme),
+      drawer: _buildDrawer(theme, colorScheme),
       body: _pages[_selectedIndex],
-
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    const List<Color> veggieMarketGradient = [
-      Color(0xFFFDF6ED),
-      Color(0xFFE2C79E),
-      Color(0xFFA8CF6A),
-    ];
-    final bool showGradient = _selectedIndex == 0;
-
+  PreferredSizeWidget _buildAppBar(ThemeData theme, ColorScheme colorScheme) {
     return AppBar(
-      backgroundColor: showGradient ? Colors.transparent : const Color(0xFFFDF6ED),
-      elevation: showGradient ? 0 : 2,
+      backgroundColor: colorScheme.secondary, // Use your teal accent for a fresh look
+      elevation: 2,
       scrolledUnderElevation: 0,
-      flexibleSpace: showGradient
-          ? Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: veggieMarketGradient,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      )
-          : null,
-      title: _selectedIndex == 0
-          ? Row(
+      title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFFA8CF6A).withOpacity(0.16),
+              color: colorScheme.onSecondary.withOpacity(0.16),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.eco_rounded,
+            child: Icon(
+              _selectedIndex == 0 ? Icons.eco_rounded : _pageIcons[_selectedIndex],
               size: 28,
-              color: Color(0xFFA8CF6A),
+              color: colorScheme.onSecondary,
             ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            "Tokenized Veg Markets",
-            style: TextStyle(
-              color: Color(0xFF6A4D24),
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ],
-      )
-          : Row(
-        children: [
-          Icon(
-            _pageIcons[_selectedIndex],
-            color: const Color(0xFFA8CF6A),
-            size: 24,
           ),
           const SizedBox(width: 12),
           Text(
-            _titles[_selectedIndex],
-            style: const TextStyle(
-              color: Color(0xFF6A4D24),
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+            _selectedIndex == 0 ? "Tokenized Veg Markets" : _titles[_selectedIndex],
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSecondary,
+              fontSize: _selectedIndex == 0 ? 22 : 20,
+              fontWeight: _selectedIndex == 0 ? FontWeight.w700 : FontWeight.w600,
+              letterSpacing: 0.3,
             ),
           ),
         ],
       ),
       iconTheme: IconThemeData(
-        color: showGradient ? const Color(0xFF6A4D24) : const Color(0xFFA8CF6A),
+        color: colorScheme.onSecondary,
       ),
       actions: [
         if (_selectedIndex == 1)
@@ -158,38 +131,36 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.account_circle, size: 28),
             tooltip: 'Profile',
             onPressed: () {},
-            color: const Color(0xFFA8CF6A),
+            color: colorScheme.onSecondary,
           ),
         const SizedBox(width: 8),
       ],
-      shadowColor: showGradient ? Colors.transparent : null,
+      shadowColor: Colors.black12,
     );
   }
-
-  Widget _buildDrawer() {
+  Widget _buildDrawer(ThemeData theme, ColorScheme colorScheme) {
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       elevation: 2,
       surfaceTintColor: Colors.transparent,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          _buildDrawerHeader(),
+          _buildDrawerHeader(theme, colorScheme),
           const SizedBox(height: 8),
           _buildNavItem(0, 'Markets', Icons.storefront_outlined, 'Manage your produce markets'),
           _buildNavItem(1, 'Auctions', Icons.gavel, 'All auctions'),
           _buildNavItem(2, 'Settings', Icons.settings_outlined, 'Account & app preferences'),
           _buildNavItem(3, 'Orders', Icons.receipt_long, 'View Current orders'),
-          _buildNavItem(4, 'Farms', Icons.receipt_long, 'View Current Farms'),
+          _buildNavItem(4, 'Farms', Icons.storefront, 'View Current Farms'),
           _buildNavItem(5, 'My Wallet', Icons.wallet, 'View Your Funds'),
-
           const SizedBox(height: 8),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Divider(color: Colors.black12),
           ),
           const SizedBox(height: 8),
-          _buildLogoutItem(),
+          _buildLogoutItem(theme, colorScheme),
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -199,18 +170,18 @@ class _DashboardPageState extends State<DashboardPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFA8CF6A).withOpacity(0.1),
+                    color: colorScheme.secondary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.eco, size: 14, color: Color(0xFFA8CF6A)),
-                      SizedBox(width: 6),
+                      Icon(Icons.eco, size: 14, color: colorScheme.secondary),
+                      const SizedBox(width: 6),
                       Text(
                         'FreshToken v1.0.0',
-                        style: TextStyle(
-                          color: Color(0xFFA8CF6A),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.secondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -225,19 +196,19 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
-
-  Widget _buildDrawerHeader() {
+  Widget _buildDrawerHeader(ThemeData theme, ColorScheme colorScheme) {
     return DrawerHeader(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFA8CF6A),
-            Color(0xFFE2C79E),
-            Color(0xFFF9F5EC),
-          ],
-        ),
+      decoration: BoxDecoration(
+        color: colorScheme.secondary, // Use solid teal for a modern, bold look
+        // OR you can keep a gradient (if you want it softer):
+        // gradient: LinearGradient(
+        //   begin: Alignment.topLeft,
+        //   end: Alignment.bottomRight,
+        //   colors: [
+        //     colorScheme.secondary,
+        //     colorScheme.primary,
+        //   ],
+        // ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,32 +218,32 @@ class _DashboardPageState extends State<DashboardPage> {
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: colorScheme.onSecondary.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 28,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.eco, size: 32, color: Color(0xFFA8CF6A)),
+                  backgroundColor: colorScheme.surface,
+                  child: Icon(Icons.eco, size: 32, color: colorScheme.secondary),
                 ),
               ),
               const SizedBox(width: 16),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '',
-                    style: TextStyle(
-                      color: Color(0xFF6A4D24),
+                    '', // You can add the market owner name here if available
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSecondary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     'Market Owner',
-                    style: TextStyle(
-                      color: Color(0xFF6A4D24),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w300,
                     ),
@@ -285,22 +256,22 @@ class _DashboardPageState extends State<DashboardPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: colorScheme.onSecondary.withOpacity(0.08),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.verified,
-                  color: Color(0xFFA8CF6A),
+                  color: colorScheme.onSecondary,
                   size: 16,
                 ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Text(
                   'Tokenized Marketplace',
-                  style: TextStyle(
-                    color: Color(0xFF6A4D24),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSecondary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -315,33 +286,35 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildNavItem(int index, String title, IconData icon, String subtitle) {
     final isSelected = _selectedIndex == index;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: isSelected
-            ? const Color(0xFFA8CF6A).withOpacity(0.08)
+            ? colorScheme.secondary.withOpacity(0.12)
             : Colors.transparent,
       ),
       child: ListTile(
         leading: Icon(
           icon,
-          color: isSelected ? const Color(0xFFA8CF6A) : Colors.grey[700],
+          color: isSelected ? colorScheme.secondary : colorScheme.onSurface.withOpacity(0.7),
           size: 26,
         ),
         title: Text(
           title,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF6A4D24) : Colors.black87,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 16,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(
-            color: Colors.grey[600],
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurface.withOpacity(0.6),
             fontSize: 12,
           ),
         ),
@@ -360,8 +333,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
-
-  Widget _buildLogoutItem() {
+  Widget _buildLogoutItem(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -373,9 +345,9 @@ class _DashboardPageState extends State<DashboardPage> {
           color: Colors.redAccent,
           size: 24,
         ),
-        title: const Text(
+        title: Text(
           'Logout',
-          style: TextStyle(
+          style: theme.textTheme.titleMedium?.copyWith(
             color: Colors.redAccent,
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -383,8 +355,8 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         subtitle: Text(
           'Sign out of your account',
-          style: TextStyle(
-            color: Colors.grey[600],
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurface.withOpacity(0.6),
             fontSize: 12,
           ),
         ),
@@ -392,19 +364,18 @@ class _DashboardPageState extends State<DashboardPage> {
           borderRadius: BorderRadius.circular(12),
         ),
         onTap: () async {
-          // --- Show Confirmation Dialog ---
           final shouldLogout = await showDialog<bool>(
             context: context,
-            builder: (dialogContext) => AlertDialog( // Use dialogContext
+            builder: (dialogContext) => AlertDialog(
               title: const Text("Log out"),
               content: const Text("Are you sure you want to disconnect?"),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false), // Use dialogContext
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
                   child: const Text("Cancel"),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true), // Use dialogContext
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
                   child: const Text(
                     "Disconnect",
                     style: TextStyle(color: Colors.red),
@@ -413,105 +384,35 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           );
-
-          // --- Proceed if confirmed ---
-          // Check if the widget is still mounted before proceeding after the dialog
           if (shouldLogout == true && mounted) {
-            // Capture the provider and navigator using the current context
-            // before the async gap, in case the context becomes invalid.
             final profileProvider = context.read<ProfileProvider>();
             final navigator = Navigator.of(context);
-            final scaffoldMessenger = ScaffoldMessenger.of(context); // Capture ScaffoldMessenger
-
+            final scaffoldMessenger = ScaffoldMessenger.of(context);
             try {
-              // --- Call Logout Logic ---
-              await profileProvider.logout(); // Clears state and tokens
-
-              // --- Navigate AFTER logout ---
-              // Check if the navigator is still mounted before navigation
+              await profileProvider.logout();
               if (navigator.mounted) {
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const LoginPage()),
-                      (route) => false, // Remove all previous routes
+                      (route) => false,
                 );
               }
             } catch (e) {
-              // --- Handle Logout Errors ---
-              // Check if the scaffoldMessenger's context is still valid
               if (scaffoldMessenger.mounted) {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('Error during logout: ${e.toString()}')),
                 );
               }
-              // Optionally print the error for debugging
               print('Logout error: $e');
             }
           }
         },
       ),
     );
-  }
+  }}
 
-  void _handleLogout(BuildContext context) {
-    Navigator.pop(context); // Close the drawer
+// --- Wrappers for each main page to support reload on reentry ---
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.logout, color: Colors.redAccent),
-            SizedBox(width: 12),
-            Text('Logout', style: TextStyle(color: Colors.black87)),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to logout?',
-              style: TextStyle(color: Colors.black87),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'You will need to sign in again to access your markets.',
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[700],
-            ),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              // Add your logout logic here
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
+
 
 // --- Wrappers for each main page to support reload on reentry ---
 
@@ -525,11 +426,10 @@ class _NormalMarketsPageWrapperState extends State<NormalMarketsPageWrapper> wit
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Subscribe to route changes for reload logic
     routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
     reload();
   }
-
-
 
   @override
   void dispose() {
@@ -541,13 +441,9 @@ class _NormalMarketsPageWrapperState extends State<NormalMarketsPageWrapper> wit
   Widget build(BuildContext context) => const NormalMarketsPage();
 
   @override
-  void didPopNext() {
-    reload();
-  }
+  void didPopNext() => reload();
   @override
-  void didPush() {
-    reload();
-  }
+  void didPush() => reload();
   @override
   void didPop() {}
   @override
@@ -558,20 +454,16 @@ class _NormalMarketsPageWrapperState extends State<NormalMarketsPageWrapper> wit
     provider.loadMarkets();
   }
 }
+
 class FarmPageWrapper extends StatefulWidget {
   const FarmPageWrapper({Key? key}) : super(key: key);
-
   @override
   State<FarmPageWrapper> createState() => _FarmPageWrapperState();
 }
 
 class _FarmPageWrapperState extends State<FarmPageWrapper> {
-  // Optional: Add any state variables here
-
   void reload() {
-    setState(() {
-      // Trigger rebuild, optionally reset data
-    });
+    setState(() {});
   }
 
   @override
@@ -579,7 +471,6 @@ class _FarmPageWrapperState extends State<FarmPageWrapper> {
     return const FarmMarketplaceScreen();
   }
 }
-
 
 class SettingsPageWrapper extends StatefulWidget {
   const SettingsPageWrapper({Key? key}) : super(key: key);
@@ -605,17 +496,14 @@ class _SettingsPageWrapperState extends State<SettingsPageWrapper> with RouteAwa
   Widget build(BuildContext context) => const SettingsPage();
 
   @override
-  void didPopNext() {
-    reload();
-  }
+  void didPopNext() => reload();
   @override
-  void didPush() {
-    reload();
-  }
+  void didPush() => reload();
   @override
   void didPop() {}
   @override
   void didPushNext() {}
+
   void reload() {
     setState(() {});
   }
@@ -635,8 +523,6 @@ class _OrdersPageWrapperState extends State<OrdersPageWrapper> with RouteAware {
     reload();
   }
 
-
-
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
@@ -647,17 +533,14 @@ class _OrdersPageWrapperState extends State<OrdersPageWrapper> with RouteAware {
   Widget build(BuildContext context) => const OrdersPage();
 
   @override
-  void didPopNext() {
-    reload();
-  }
+  void didPopNext() => reload();
   @override
-  void didPush() {
-    reload();
-  }
+  void didPush() => reload();
   @override
   void didPop() {}
   @override
   void didPushNext() {}
+
   void reload() {
     setState(() {});
   }

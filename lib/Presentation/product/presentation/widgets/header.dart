@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hanouty/app_colors.dart';
 
+import '../../../../Core/theme/AppColors.dart';
+
 class AnimatedHeader extends StatefulWidget {
   const AnimatedHeader({super.key});
 
@@ -12,7 +14,7 @@ class AnimatedHeaderState extends State<AnimatedHeader>
     with SingleTickerProviderStateMixin {
   double _headerHeight = 108.0;
   static const double _minHeight = 108.0;
-  static const double _maxHeight = 900.0; 
+  static const double _maxHeight = 900.0;
   bool isExpanded = false;
 
   void _snapToState() {
@@ -49,8 +51,9 @@ class AnimatedHeaderState extends State<AnimatedHeader>
             height: height,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.grey, AppColors.grey],
+              // Update to client gradient using ClientColors
+              gradient: LinearGradient(
+                colors: [ClientColors.primary, ClientColors.accent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -60,7 +63,7 @@ class AnimatedHeaderState extends State<AnimatedHeader>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
+                  color: ClientColors.primary.withOpacity(0.3), // Update shadow color
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -81,7 +84,7 @@ class AnimatedHeaderState extends State<AnimatedHeader>
                         const Text(
                           'El Hanout',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: ClientColors.onPrimary, // Update text color
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                           ),
@@ -90,7 +93,7 @@ class AnimatedHeaderState extends State<AnimatedHeader>
                         const Text(
                           'Your favorite minimarket',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: ClientColors.onPrimary, // Update text color
                             fontSize: 16,
                           ),
                         ),
@@ -106,10 +109,26 @@ class AnimatedHeaderState extends State<AnimatedHeader>
                     Alignment.topCenter,
                     expansionFactor,
                   )!,
-                  child: CircleAvatar(
-                    radius: 40 + (expansionFactor * 20),
-                    backgroundImage: const NetworkImage(
-                      'https://thumbs.dreamstime.com/b/profil-d-un-visage-triste-d-homme-d%C3%A9courag%C3%A9-sur-le-noir-48067290.jpg',
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: ClientColors.secondary, // Add border in client secondary color
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ClientColors.accent.withOpacity(0.3),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 40 + (expansionFactor * 20),
+                      backgroundImage: const NetworkImage(
+                        'https://thumbs.dreamstime.com/b/profil-d-un-visage-triste-d-homme-d%C3%A9courag%C3%A9-sur-le-noir-48067290.jpg',
+                      ),
                     ),
                   ),
                 ),
@@ -128,11 +147,11 @@ class AnimatedHeaderState extends State<AnimatedHeader>
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: ClientColors.onPrimary, // Update text color
                           ),
                         ),
                         const SizedBox(height: 5),
-                        
+
                         const SizedBox(height: 10),
 
                         // Follow & Message Buttons
@@ -142,55 +161,41 @@ class AnimatedHeaderState extends State<AnimatedHeader>
                             ElevatedButton(
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
+                                backgroundColor: ClientColors.secondary, // Update button color
+                                foregroundColor: ClientColors.onSecondary, // Update text color
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
                               ),
-                              child: const Text('Wallet', style: TextStyle(color: Colors.white)),
+                              child: const Text('Wallet'), // Text color controlled by foregroundColor
                             ),
                             const SizedBox(width: 10),
                             OutlinedButton(
                               onPressed: () {},
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Colors.white),
+                                side: const BorderSide(color: ClientColors.onPrimary), // Update border color
+                                foregroundColor: ClientColors.onPrimary, // Update text color
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
                               ),
-                              child: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+                              child: const Text('Edit Profile'), // Text color controlled by foregroundColor
                             ),
                           ],
                         ),
                         const SizedBox(height: 15),
 
-                        // Follower Stats (Posts, Followers, Following)
+                        // Statistics Section (Products, Money, Shops)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              Column(
-                                children: const [
-                                  Text('23', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text('Product Bought', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                                ],
-                              ),
-                              Column(
-                                children: const [
-                                  Text('1.2K', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text('Money Spent', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                                ],
-                              ),
-                              Column(
-                                children: const [
-                                  Text('567', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text('Shop Visited', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                                ],
-
-                              ),
+                              _buildStatColumn('23', 'Products Bought'),
+                              _buildStatColumn('1.2K', 'Money Spent'),
+                              _buildStatColumn('567', 'Shops Visited'),
                             ],
                           ),
                         ),
@@ -203,6 +208,29 @@ class AnimatedHeaderState extends State<AnimatedHeader>
           );
         },
       ),
+    );
+  }
+
+  // Helper method to create consistent stat columns
+  Widget _buildStatColumn(String count, String label) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: const TextStyle(
+            color: ClientColors.onPrimary, // Update text color
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: ClientColors.onPrimary.withOpacity(0.7), // Update text color with opacity
+            fontSize: 14,
+          ),
+        ),
+      ],
     );
   }
 }

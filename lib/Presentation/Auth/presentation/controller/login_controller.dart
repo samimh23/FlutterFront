@@ -261,6 +261,21 @@ class AuthProvider extends ChangeNotifier {
     // Ensure you save the correct user ID (e.g., _id from your backend)
     await _secureStorageService.saveUserId(response.user!.id ?? '');
 
+    // Save the user's role to secure storage
+    if (response.user!.role != null) {
+      // Convert enum to string properly
+      final roleString = response.user!.role.toString();
+      // If your enum is prefixed with "Role.", remove it
+      final cleanRoleString = roleString.contains('.')
+          ? roleString.split('.').last
+          : roleString;
+
+      await _secureStorageService.saveUserRole(cleanRoleString);
+      print("✅ User role saved: $cleanRoleString (from ${response.user!.role})");
+    } else {
+      print("⚠️ Warning: User role is null in user data during save.");
+    }
+
     // --- SAVE HEDERA DETAILS ---
     // Ensure your AuthResponse.User model has these fields correctly mapped
     final hederaAccountId = response.user!.headerAccountId;
@@ -279,7 +294,7 @@ class AuthProvider extends ChangeNotifier {
       print("⚠️ Warning: Hedera Private Key not found in user data during save.");
       // Consider if this should be an error state
     }
-    print("✅ Auth data (Tokens, UserID, Hedera creds) saved.");
+    print("✅ Auth data (Tokens, UserID, Role, Hedera creds) saved.");
   }
 
 

@@ -1,4 +1,4 @@
-  import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:hanouty/Presentation/normalmarket/Presentation/Provider/normal_market_provider.dart';
 import 'package:hanouty/Presentation/product/domain/entities/product.dart';
 import 'package:hanouty/Presentation/product/presentation/pages/market_details_screen.dart';
@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../Core/Utils/Api_EndPoints.dart';
+import '../../../../Core/theme/AppColors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,52 +46,54 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      // Update background color to client theme
+      backgroundColor: ClientColors.background,
       appBar: isDesktop
           ? AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              shadowColor: Colors.transparent,
-              title: const Text(
-                'El Hanout',
-                style: TextStyle(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        title: const Text(
+          'El Hanout',
+          style: TextStyle(
+            // Update to client text color
+            color: ClientColors.text,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        actions: [
+          Container(
+            width: 240,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: _isShimmer
+                ? _buildShimmerBox(height: 40, width: 220)
+                : TextField(
+              decoration: InputDecoration(
+                hintText: 'Search products...',
+                hintStyle:
+                TextStyle(color: ClientColors.textLight, fontSize: 14),
+                prefixIcon: Icon(Icons.search,
+                    color: ClientColors.textLight, size: 20),
+                border: InputBorder.none,
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 12),
               ),
-              actions: [
-                Container(
-                  width: 240,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: _isShimmer
-                      ? _buildShimmerBox(height: 40, width: 220)
-                      : TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search products...',
-                            hintStyle:
-                                TextStyle(color: Colors.grey[600], fontSize: 14),
-                            prefixIcon: Icon(Icons.search,
-                                color: Colors.grey[600], size: 20),
-                            border: InputBorder.none,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: const Icon(Icons.notifications_none_outlined,
-                      color: AppColors.black),
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 16),
-              ],
-            )
+            ),
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            icon: const Icon(Icons.notifications_none_outlined,
+                color: ClientColors.text), // Update icon color
+            onPressed: () {},
+          ),
+          const SizedBox(width: 16),
+        ],
+      )
           : null,
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -109,14 +112,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (!isDesktop)
                   Padding(
                     padding:
-                        EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    EdgeInsets.symmetric(horizontal: horizontalPadding),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: ClientColors.primary.withOpacity(0.05), // Update shadow color
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -125,30 +128,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _isShimmer
                           ? _buildShimmerBox(height: 45, width: double.infinity)
                           : TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search products...',
-                                hintStyle: TextStyle(
-                                    color: Colors.grey[600], fontSize: 14),
-                                prefixIcon: Icon(Icons.search,
-                                    color: Colors.grey[600], size: 20),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 15,
-                                  horizontal: 20,
-                                ),
-                              ),
-                              onChanged: (value) {
-                                // Handle search logic here
-                              },
-                            ),
+                        decoration: InputDecoration(
+                          hintText: 'Search products...',
+                          hintStyle: TextStyle(
+                              color: ClientColors.textLight, fontSize: 14), // Update hint color
+                          prefixIcon: Icon(Icons.search,
+                              color: ClientColors.textLight, size: 20), // Update icon color
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 15,
+                            horizontal: 20,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          // Handle search logic here
+                        },
+                      ),
                     ),
                   ),
                 const SizedBox(height: 24),
                 _isShimmer
                     ? Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: _buildShimmerBox(height: 35, width: 200),
-                      )
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: _buildShimmerBox(height: 35, width: 200),
+                )
                     : const SizedBox(height: 12),
                 _isShimmer
                     ? _buildShimmerBox(height: 40, width: double.infinity)
@@ -161,28 +164,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       _isShimmer
                           ? _buildShimmerBox(height: 28, width: 180)
                           : const Text(
-                              'Products of the Month',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.black,
-                              ),
-                            ),
+                        'Products of the Month',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: ClientColors.text, // Update text color
+                        ),
+                      ),
                       _isShimmer
                           ? _buildShimmerBox(height: 24, width: 70)
                           : TextButton(
-                              onPressed: () {
-                                // Handle see all products
-                              },
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                              ),
-                              child: const Row(
-                                children: [
-                                  SizedBox(width: 4),
-                                ],
-                              ),
-                            ),
+                        onPressed: () {
+                          // Handle see all products
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: ClientColors.primary, // Update button color
+                        ),
+                        child: const Row(
+                          children: [
+                            SizedBox(width: 4),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -225,33 +228,33 @@ class _HomeScreenState extends State<HomeScreen> {
       highlightColor: Colors.grey[100]!,
       child: isDesktop
           ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 64.0),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  childAspectRatio: 0.75,
-                  crossAxisSpacing: 24,
-                  mainAxisSpacing: 24,
-                ),
-                itemCount: 4,
-                itemBuilder: (context, index) =>
-                    _buildShimmerBox(height: 240, width: 200),
-              ),
-            )
+        padding: const EdgeInsets.symmetric(horizontal: 64.0),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            childAspectRatio: 0.75,
+            crossAxisSpacing: 24,
+            mainAxisSpacing: 24,
+          ),
+          itemCount: 4,
+          itemBuilder: (context, index) =>
+              _buildShimmerBox(height: 240, width: 200),
+        ),
+      )
           : SizedBox(
-              height: 220,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: 4,
-                itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: _buildShimmerBox(height: 200, width: 140),
-                ),
-              ),
-            ),
+        height: 220,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 4,
+          itemBuilder: (context, index) => Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _buildShimmerBox(height: 200, width: 140),
+          ),
+        ),
+      ),
     );
   }
 
@@ -275,31 +278,31 @@ class _HomeScreenState extends State<HomeScreen> {
             highlightColor: Colors.grey[100]!,
             child: isDesktop
                 ? GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 1.5,
-                      crossAxisSpacing: 24,
-                      mainAxisSpacing: 24,
-                    ),
-                    itemCount: 3,
-                    itemBuilder: (context, index) =>
-                        _buildShimmerBox(height: 140, width: 260),
-                  )
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate:
+              const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 1.5,
+                crossAxisSpacing: 24,
+                mainAxisSpacing: 24,
+              ),
+              itemCount: 3,
+              itemBuilder: (context, index) =>
+                  _buildShimmerBox(height: 140, width: 260),
+            )
                 : SizedBox(
-                    height: isDesktop ? 200.0 : 180.0,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: 3,
-                      itemBuilder: (context, index) => Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: _buildShimmerBox(
-                            height: isDesktop ? 200 : 180, width: 200),
-                      ),
-                    ),
-                  ),
+              height: isDesktop ? 200.0 : 180.0,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 3,
+                itemBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: _buildShimmerBox(
+                      height: isDesktop ? 200 : 180, width: 200),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -332,8 +335,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Try Again'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: ClientColors.primary, // Update button color
+                      foregroundColor: ClientColors.onPrimary, // Update text color
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -354,13 +357,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 children: [
                   Icon(Icons.shopping_basket_outlined,
-                      color: Colors.grey[400], size: 48),
+                      color: ClientColors.textLight, size: 48), // Update icon color
                   const SizedBox(height: 16),
                   Text(
                     'No products available at the moment.',
                     style: TextStyle(
                         fontSize: 18,
-                        color: Colors.grey[700],
+                        color: ClientColors.text, // Update text color
                         fontWeight: FontWeight.w500),
                     textAlign: TextAlign.center,
                   ),
@@ -398,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSpacing: 16,
               ),
               itemCount:
-                  provider.products.length > 6 ? 6 : provider.products.length,
+              provider.products.length > 6 ? 6 : provider.products.length,
               itemBuilder: (context, index) {
                 return ProductCard(product: provider.products[index]);
               },
@@ -416,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSpacing: 24,
               ),
               itemCount:
-                  provider.products.length > 8 ? 8 : provider.products.length,
+              provider.products.length > 8 ? 8 : provider.products.length,
               itemBuilder: (context, index) {
                 return AnimatedOpacity(
                   duration: const Duration(milliseconds: 500),
@@ -454,7 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.black,
+                    color: ClientColors.text, // Update text color
                   ),
                 ),
               ),
@@ -463,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Navigate to all stores page
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
+                  foregroundColor: ClientColors.primary, // Update button color
                 ),
                 child: const Row(),
               ),
@@ -503,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           provider.errorMessage,
                           style:
-                              TextStyle(color: Colors.red[400], fontSize: 16),
+                          TextStyle(color: Colors.red[400], fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
@@ -512,8 +515,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: const Icon(Icons.refresh),
                           label: const Text('Try Again'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
+                            backgroundColor: ClientColors.primary, // Update button color
+                            foregroundColor: ClientColors.onPrimary, // Update text color
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -534,13 +537,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       children: [
                         Icon(Icons.storefront_outlined,
-                            color: Colors.grey[400], size: 48),
+                            color: ClientColors.textLight, size: 48), // Update icon color
                         const SizedBox(height: 16),
                         Text(
                           'No stores available at the moment.',
                           style: TextStyle(
                               fontSize: 18,
-                              color: Colors.grey[700],
+                              color: ClientColors.text, // Update text color
                               fontWeight: FontWeight.w500),
                           textAlign: TextAlign.center,
                         ),
@@ -577,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSpacing: 16,
                   ),
                   itemCount:
-                      provider.markets.length > 4 ? 4 : provider.markets.length,
+                  provider.markets.length > 4 ? 4 : provider.markets.length,
                   itemBuilder: (context, index) {
                     return _buildStoreCard(provider.markets[index]);
                   },
@@ -592,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSpacing: 24,
                   ),
                   itemCount:
-                      provider.markets.length ,
+                  provider.markets.length,
                   itemBuilder: (context, index) {
                     return _buildStoreCard(provider.markets[index]);
                   },
@@ -637,7 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: ClientColors.primary.withOpacity(0.05), // Update shadow color
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -662,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 110,
                     width: double.infinity,
                     color: Colors.grey[300],
-                    child: Icon(Icons.store, size: 40, color: Colors.grey[500]),
+                    child: Icon(Icons.store, size: 40, color: ClientColors.textLight), // Update icon color
                   );
                 },
               ),
@@ -682,16 +685,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.black,
+                            color: ClientColors.text, // Update text color
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.star,
-                            color: Colors.amber,
+                            color: ClientColors.accent, // Update star color to client accent
                             size: 14,
                           ),
                           const SizedBox(width: 2),
@@ -700,7 +703,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.black,
+                              color: ClientColors.text, // Update text color
                             ),
                           ),
                         ],
@@ -714,14 +717,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: ClientColors.secondary.withOpacity(0.1), // Update with client secondary color
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '2.5',
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.green,
+                            color: ClientColors.secondary, // Update text color
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -731,14 +734,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: ClientColors.primary.withOpacity(0.1), // Update with client primary color
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '20 min',
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.blue,
+                            color: ClientColors.primary, // Update text color
                             fontWeight: FontWeight.w500,
                           ),
                         ),

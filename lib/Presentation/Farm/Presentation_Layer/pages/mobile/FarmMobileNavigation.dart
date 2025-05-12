@@ -57,6 +57,7 @@ class _MainNavigationState extends State<FarmMobileNavigation> {
             icon: Icon(Icons.list),
             label: 'Manage Farms',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
             label: 'Product IA',

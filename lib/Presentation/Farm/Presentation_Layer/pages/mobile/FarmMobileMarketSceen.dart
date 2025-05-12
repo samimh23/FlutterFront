@@ -347,7 +347,7 @@ class _FarmMarketplaceScreenState extends State<FarmMarketplaceScreen> {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: GridView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.75,
